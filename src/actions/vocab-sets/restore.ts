@@ -1,0 +1,23 @@
+"use server";
+
+import { requireUser } from "@/lib/auth/require-user";
+import { VocabSetRepository } from "@/repositories/vocab-set";
+import { revalidatePath } from "next/cache";
+
+export async function restoreVocabularySet(id: string) {
+  const profile = await requireUser();
+  const userId = profile.id;
+
+  try {
+    await VocabSetRepository.restoreVocabSet(id, userId);
+  } catch (error) {
+    const err = error as Error;
+    return {
+      success: false,
+      error: err.message || "Đã xảy ra lỗi khi khôi phục bộ từ vựng.",
+    };
+  }
+
+  revalidatePath("/vocabulary");
+  return { success: true };
+}
