@@ -1,18 +1,18 @@
 "use client";
 
 import React from "react";
-import { Bot } from "lucide-react";
+import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { mockUserProfile } from "@/mock/user";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
   timestamp?: string;
+  userName?: string;
 }
 
-export function ChatMessage({ role, content, timestamp = "Vừa xong" }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp = "Vừa xong", userName = "Học viên" }: ChatMessageProps) {
   const isAI = role === "assistant";
 
   return (
@@ -24,10 +24,9 @@ export function ChatMessage({ role, content, timestamp = "Vừa xong" }: ChatMes
             <Bot className="h-4 w-4" />
           </AvatarFallback>
         ) : (
-          <>
-            <AvatarImage src={mockUserProfile.avatar} alt={mockUserProfile.name} />
-            <AvatarFallback>{mockUserProfile.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </>
+          <AvatarFallback className="bg-muted text-muted-foreground">
+            <User className="h-4 w-4" />
+          </AvatarFallback>
         )}
       </Avatar>
 

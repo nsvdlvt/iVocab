@@ -1,7 +1,8 @@
 "use server";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { VocabSetRepository } from "@/repositories/vocab-set";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
+import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { vocabSetSchema, type VocabSetFormValues } from "@/lib/validators/vocab-set";
 import { generateVocabSetId } from "@/lib/id/generate-vocab-set-id";
 import { getRandomVocabularySetColor } from "@/constants/vocab-set";
@@ -15,6 +16,9 @@ const vocabularyFormItemSchema = z.object({
   partOfSpeech: z.string().optional().or(z.literal("")),
   example: z.string().optional().or(z.literal("")),
   synonyms: z.string().optional().or(z.literal("")),
+  antonyms: z.string().optional().or(z.literal("")),
+  note: z.string().optional().or(z.literal("")),
+  example_translation: z.string().optional().or(z.literal("")),
 });
 
 export async function createVocabularySet(
@@ -26,6 +30,9 @@ export async function createVocabularySet(
     partOfSpeech?: string;
     example?: string;
     synonyms?: string;
+    antonyms?: string;
+    note?: string;
+    example_translation?: string;
   }>
 ) {
   const profile = await requireUser();
@@ -109,11 +116,14 @@ export async function createVocabularySet(
         ipa: item.ipa || null,
         part_of_speech: item.partOfSpeech || null,
         example: item.example || null,
+        example_translation: item.example_translation || null,
         synonyms: item.synonyms ? item.synonyms.split(",").map((s) => s.trim()).filter(Boolean) : null,
+        antonyms: item.antonyms ? item.antonyms.split(",").map((s) => s.trim()).filter(Boolean) : null,
+        note: item.note || null,
         source: "manual" as const,
       }));
 
-      await VocabSetRepository.bulkInsertVocabularyItems(dbItems);
+      await VocabularyRepository.bulkInsert(dbItems);
     } catch (error) {
       const err = error as Error;
       return {

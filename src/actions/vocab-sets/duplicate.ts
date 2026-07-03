@@ -1,7 +1,8 @@
 "use server";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { VocabSetRepository } from "@/repositories/vocab-set";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
+import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { generateVocabSetId } from "@/lib/id/generate-vocab-set-id";
 import { revalidatePath } from "next/cache";
 
@@ -60,7 +61,7 @@ export async function duplicateVocabularySet(id: string) {
     }
 
     // 3. Fetch vocabulary items from original set
-    const originalItems = await VocabSetRepository.getVocabularyItems(id, userId);
+    const originalItems = await VocabularyRepository.getBySetId(id, userId);
 
     // 4. Duplicate items if any exist
     if (originalItems.length > 0) {
@@ -82,7 +83,7 @@ export async function duplicateVocabularySet(id: string) {
         source: "manual",
       }));
 
-      await VocabSetRepository.bulkInsertVocabularyItems(duplicatedItems);
+      await VocabularyRepository.bulkInsert(duplicatedItems);
     }
 
     revalidatePath("/vocabulary");

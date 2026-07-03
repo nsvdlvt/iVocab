@@ -6,7 +6,6 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/common/SearchBar";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
-import { UserMenu } from "@/components/common/UserMenu";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { ROUTES } from "@/constants/routes";
 
@@ -44,7 +43,6 @@ export function Navbar() {
         {/* Right side utilities */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <UserMenu />
         </div>
       </div>
     </header>

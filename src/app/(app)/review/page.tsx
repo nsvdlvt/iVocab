@@ -1,16 +1,20 @@
 import React from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
-import { FlashcardViewer } from "@/components/features/review/FlashcardViewer";
-import { ReviewControls } from "@/components/features/review/ReviewControls";
-import { mockReviewWords } from "@/mock/review";
-import { Progress } from "@/components/ui/progress";
+import { ReviewClient } from "@/components/features/review/ReviewClient";
+import { requireUser } from "@/lib/auth/require-user";
+import { ReviewRepository } from "@/repositories/review.repository";
+import { GraduationCap, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 
-export default function ReviewPage() {
-  const currentWord = mockReviewWords[0]; // Statically display the first word in the queue
-  const totalWords = mockReviewWords.length;
-  const currentIndex = 1;
-  const progressPercent = Math.round((currentIndex / totalWords) * 100);
+export const dynamic = "force-dynamic";
+
+export default async function ReviewPage() {
+  const profile = await requireUser();
+  const reviewItems = await ReviewRepository.getDueReviews(profile.id);
+  const words = reviewItems.map((item) => item.vocabulary);
 
   return (
     <PageContainer className="max-w-4xl space-y-6 md:space-y-8">
@@ -19,25 +23,33 @@ export default function ReviewPage() {
         description="Ôn tập các từ vựng đến hạn hôm nay để ghi nhớ sâu sắc hơn."
       />
 
-      {/* Spaced Repetition queue progress */}
-      <div className="max-w-xl mx-auto space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground font-medium">
-          <span>Tiến trình ôn tập</span>
-          <span>{currentIndex} / {totalWords} từ</span>
-        </div>
-        <Progress value={progressPercent} className="h-1.5 rounded-full" />
-      </div>
-
-      {/* Card viewer & controls */}
-      {currentWord ? (
-        <div className="space-y-8">
-          <FlashcardViewer word={currentWord} />
-          <ReviewControls />
+      {words.length === 0 ? (
+        /* Empty State */
+        <div className="max-w-xl mx-auto text-center py-16 space-y-5">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-emerald-500/10 p-5">
+              <GraduationCap className="h-10 w-10 text-emerald-500" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-foreground">Không có từ nào cần ôn tập!</h3>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              Tuyệt vời! Bạn đã ôn tập hết các từ đến hạn hôm nay.
+              Hãy tiếp tục thêm từ mới và quay lại đây để ôn luyện.
+            </p>
+          </div>
+          <Link
+            href={ROUTES.VOCABULARY}
+            className={buttonVariants({
+              className: "rounded-xl cursor-pointer gap-2",
+            })}
+          >
+            <BookOpen className="h-4 w-4" />
+            Quản lý từ vựng
+          </Link>
         </div>
       ) : (
-        <div className="text-center py-12 border border-dashed rounded-2xl text-muted-foreground text-sm max-w-xl mx-auto">
-          Chúc mừng! Bạn đã hoàn thành tất cả các thẻ ôn tập ngày hôm nay.
-        </div>
+        <ReviewClient words={words} />
       )}
     </PageContainer>
   );

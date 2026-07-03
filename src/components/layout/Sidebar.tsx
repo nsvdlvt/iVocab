@@ -9,6 +9,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { UserMenu } from "@/components/common/UserMenu";
 
 const SidebarIcon = ({ name, className }: { name: string; className?: string }) => {
   const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[name];
@@ -76,8 +77,10 @@ export function Sidebar() {
             </SheetTitle>
           </div>
           {renderNavLinks(true)}
-          <div className="p-4 border-t border-sidebar-border text-center text-xs text-muted-foreground">
-            Phiên bản 1.0.0
+          
+          {/* User profile dropdown in Mobile Drawer */}
+          <div className="p-4 border-t border-sidebar-border bg-muted/10">
+            <UserMenu showName={true} />
           </div>
         </SheetContent>
       </Sheet>
@@ -91,6 +94,11 @@ export function Sidebar() {
       >
         {/* Navigation list */}
         {renderNavLinks(false)}
+
+        {/* User profile dropdown at the bottom of the Desktop Sidebar */}
+        <div className="p-3 border-t border-border bg-muted/10">
+          <UserMenu showName={!isCollapsed} />
+        </div>
 
         {/* Collapse toggle button at bottom - only visible on desktop screen size */}
         <div className="hidden lg:flex p-4 border-t border-border justify-end">

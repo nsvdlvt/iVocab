@@ -1,45 +1,17 @@
-"use client";
+import React from "react";
 
-import React, { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { Database } from "@/types/database";
+interface WelcomeSectionProps {
+  displayName: string;
+}
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Chào buổi sáng";
+  if (hour < 18) return "Chào buổi chiều";
+  return "Chào buổi tối";
+};
 
-export function WelcomeSection() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-          if (data) {
-            setProfile(data);
-          }
-        }
-      } catch (error) {
-        console.error("Lỗi lấy thông tin lời chào:", error);
-      }
-    }
-    fetchProfile();
-  }, [supabase]);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Chào buổi sáng";
-    if (hour < 18) return "Chào buổi chiều";
-    return "Chào buổi tối";
-  };
-
-  const displayName = profile?.display_name || "Học viên";
-
+export function WelcomeSection({ displayName }: WelcomeSectionProps) {
   return (
     <div className="space-y-1.5 py-1">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight">

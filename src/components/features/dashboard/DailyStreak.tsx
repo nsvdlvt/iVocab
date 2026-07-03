@@ -1,21 +1,21 @@
-"use client";
-
 import React from "react";
 import { Flame } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
-import { mockUserProfile } from "@/mock/user";
 
-export function DailyStreak() {
-  const weekDays = [
-    { label: "T2", active: true },
-    { label: "T3", active: true },
-    { label: "T4", active: true },
-    { label: "T5", active: true },
-    { label: "T6", active: true },
-    { label: "T7", active: false },
-    { label: "CN", active: false },
-  ];
+interface DailyStreakProps {
+  streak: number;
+}
+
+const WEEK_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+export function DailyStreak({ streak }: DailyStreakProps) {
+  // Highlight the last N days of the week based on the real streak (max 7)
+  const activeDays = Math.min(streak, 7);
+  const weekDays = WEEK_LABELS.map((label, idx) => ({
+    label,
+    active: idx < activeDays,
+  }));
 
   return (
     <SectionCard className="flex flex-col h-full justify-between">
@@ -29,14 +29,23 @@ export function DailyStreak() {
             <Flame className="h-8 w-8 fill-current" />
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
-              {mockUserProfile.streak} ngày
-            </div>
-            <p className="text-xs text-muted-foreground">liên tiếp học tập</p>
+            {streak > 0 ? (
+              <>
+                <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">
+                  {streak} ngày
+                </div>
+                <p className="text-xs text-muted-foreground">liên tiếp học tập</p>
+              </>
+            ) : (
+              <>
+                <div className="text-3xl font-extrabold text-muted-foreground">0 ngày</div>
+                <p className="text-xs text-muted-foreground">Hãy bắt đầu hôm nay!</p>
+              </>
+            )}
           </div>
         </div>
       </div>
-      
+
       <div>
         <div className="grid grid-cols-7 gap-1 text-center mt-2">
           {weekDays.map((day, idx) => (
@@ -49,7 +58,7 @@ export function DailyStreak() {
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                ✓
+                {day.active ? "✓" : "·"}
               </div>
             </div>
           ))}

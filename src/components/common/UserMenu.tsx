@@ -15,10 +15,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { logoutAction } from "@/actions/auth/logout";
 import { Database } from "@/types/database";
+import { cn } from "@/lib/utils";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-export function UserMenu() {
+interface UserMenuProps {
+  showName?: boolean;
+}
+
+export function UserMenu({ showName = false }: UserMenuProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
@@ -62,8 +67,11 @@ export function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center justify-center rounded-full ring-2 ring-primary/10 hover:ring-primary/20 transition-all outline-none cursor-pointer">
-        <Avatar className="h-9 w-9">
+      <DropdownMenuTrigger className={cn(
+        "flex items-center gap-2 rounded-full outline-none cursor-pointer transition-all hover:opacity-90",
+        showName ? "px-3 py-1.5 hover:bg-muted w-full" : "ring-2 ring-primary/10 hover:ring-primary/20 justify-center"
+      )}>
+        <Avatar className="h-9 w-9 shrink-0">
           <AvatarImage src={avatar} alt={name} />
           <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
             {isLoading ? (
@@ -73,8 +81,14 @@ export function UserMenu() {
             )}
           </AvatarFallback>
         </Avatar>
+        {showName && (
+          <div className="flex flex-col text-left overflow-hidden">
+            <span className="text-sm font-semibold text-foreground leading-none truncate">{name}</span>
+            <span className="text-[10px] text-muted-foreground mt-0.5 truncate">{email}</span>
+          </div>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end">
+      <DropdownMenuContent className="w-56 rounded-2xl p-2" align={showName ? "start" : "end"}>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none line-clamp-1">{name}</p>

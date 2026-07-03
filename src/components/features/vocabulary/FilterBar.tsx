@@ -60,20 +60,20 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
       {/* Left side: Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1 max-w-2xl">
         {/* Search Input */}
-        <div className="relative flex-1">
+        <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground animate-pulse" />
           <Input
             placeholder="Tìm kiếm bộ từ vựng theo tên hoặc mô tả..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="pl-9 h-9.5 text-xs rounded-lg"
+            className="pl-9 h-9.5 text-xs rounded-lg w-full"
           />
         </div>
 
         {/* Visibility Filter */}
         <div className="w-full sm:w-[160px] shrink-0">
           <Select defaultValue={currentVisibility} onValueChange={(val) => updateParams("visibility", val || "all")}>
-            <SelectTrigger className="h-9.5 text-xs rounded-lg">
+            <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +89,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
         {/* Sort select */}
         <div className="w-full sm:w-[180px] shrink-0">
           <Select defaultValue={currentSort} onValueChange={(val) => updateParams("sort", val || "updated_at_desc")}>
-            <SelectTrigger className="h-9.5 text-xs rounded-lg">
+            <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
               <SelectValue placeholder="Sắp xếp" />
             </SelectTrigger>
             <SelectContent>

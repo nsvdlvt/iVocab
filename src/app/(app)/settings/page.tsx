@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { User, Target, Monitor, Bell, Save } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -9,10 +7,16 @@ import { SectionHeader } from "@/components/common/SectionHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockUserProfile } from "@/mock/user";
+import { requireUser } from "@/lib/auth/require-user";
 
-export default function SettingsPage() {
-  const profile = mockUserProfile;
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage() {
+  const profile = await requireUser();
+
+  // default profile name fallback if empty
+  const displayName = profile.display_name || "Học viên";
+  const userEmail = profile.email || "";
 
   return (
     <PageContainer className="max-w-4xl space-y-6 md:space-y-8">
@@ -51,11 +55,11 @@ export default function SettingsPage() {
             <div className="space-y-4 max-w-md">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase">Họ và tên</label>
-                <Input type="text" defaultValue={profile.name} className="rounded-xl h-10 border-border" />
+                <Input type="text" defaultValue={displayName} className="rounded-xl h-10 border-border" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase">Email liên hệ</label>
-                <Input type="email" defaultValue={profile.email} className="rounded-xl h-10 border-border" />
+                <Input type="email" defaultValue={userEmail} disabled className="rounded-xl h-10 border-border opacity-70" />
               </div>
             </div>
             <div className="pt-2">
@@ -82,7 +86,7 @@ export default function SettingsPage() {
                     <Button
                       key={num}
                       type="button"
-                      variant={profile.dailyGoal === num ? "default" : "outline"}
+                      variant={num === 20 ? "default" : "outline"}
                       className="rounded-xl h-10 font-semibold cursor-pointer"
                     >
                       {num} từ / ngày

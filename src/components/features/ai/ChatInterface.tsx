@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { Bot } from "lucide-react";
+import { Bot, MessageSquare } from "lucide-react";
 
 interface Message {
   id: string;
@@ -13,33 +13,8 @@ interface Message {
 }
 
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "msg-1",
-      role: "assistant",
-      content: "Xin chào! Tôi là Trợ lý AI học từ vựng IVocab. Bạn cần tôi hỗ trợ giải thích ý nghĩa từ vựng, đặt câu ví dụ học thuật hay phân biệt các từ đồng nghĩa không?",
-      timestamp: "10:30 AM",
-    },
-    {
-      id: "msg-2",
-      role: "user",
-      content: "Phân biệt giúp tôi 'Consistent' và 'Persistent' nhé.",
-      timestamp: "10:31 AM",
-    },
-    {
-      id: "msg-3",
-      role: "assistant",
-      content: `Dưới đây là cách phân biệt đơn giản:
-
-1. **Consistent** (Nhất quán, kiên định): Chỉ hành động không thay đổi, nhất quán với tiêu chuẩn hoặc với quá khứ.
-   * *Ví dụ:* His work is consistent. (Công việc của anh ấy luôn ổn định, chất lượng không thay đổi).
-
-2. **Persistent** (Bền bỉ, dai dẳng): Chỉ sự kiên trì làm gì đó bất chấp khó khăn, cản trở, hoặc chỉ một hiện tượng kéo dài (thường mang nét tiêu cực như bệnh tật dai dẳng).
-   * *Ví dụ:* She was persistent in her search for the truth. (Cô ấy bền bỉ tìm kiếm sự thật).`,
-      timestamp: "10:32 AM",
-    },
-  ]);
-
+  // Start with an empty conversation — no fake/seeded messages
+  const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,18 +31,14 @@ export function ChatInterface() {
 
     setMessages((prev) => [...prev, userMsg]);
 
+    // TODO: Replace with real AI API call (Gemini / OpenAI)
     setTimeout(() => {
-      const aiResponseText = `Cảm ơn câu hỏi của bạn! Đây là câu trả lời mô phỏng cho yêu cầu: "${text}". 
-
-Trợ lý AI sẽ được kết nối với API (Gemini/OpenAI) để sinh nội dung thực tế ở các phiên bản phát triển tiếp theo.`;
-
       const aiMsg: Message = {
         id: `ai-msg-${Date.now()}`,
         role: "assistant",
-        content: aiResponseText,
+        content: `Trợ lý AI chưa được kết nối với API. Câu hỏi của bạn: "${text}"`,
         timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
       };
-
       setMessages((prev) => [...prev, aiMsg]);
     }, 800);
   };
@@ -81,27 +52,41 @@ Trợ lý AI sẽ được kết nối với API (Gemini/OpenAI) để sinh nộ
         </div>
         <div>
           <h3 className="text-sm font-bold text-foreground">Trợ lý ảo AI</h3>
-          <p className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            Trực tuyến (Minh họa giao diện)
+          <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
+            Đang phát triển — Sẽ kết nối API sớm
           </p>
         </div>
       </div>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-muted/5 scrollbar-thin">
-        {messages.map((msg) => (
-          <ChatMessage
-            key={msg.id}
-            role={msg.role}
-            content={msg.content}
-            timestamp={msg.timestamp}
-          />
-        ))}
+        {messages.length === 0 ? (
+          /* Empty state */
+          <div className="h-full flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
+            <div className="rounded-full bg-muted/60 p-4">
+              <MessageSquare className="h-8 w-8 opacity-50" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Cuộc trò chuyện mới</p>
+              <p className="text-xs mt-1 max-w-[220px] leading-relaxed">
+                Hỏi tôi về nghĩa từ vựng, cách phát âm, đặt câu ví dụ hoặc phân biệt từ đồng nghĩa.
+              </p>
+            </div>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <ChatMessage
+              key={msg.id}
+              role={msg.role}
+              content={msg.content}
+              timestamp={msg.timestamp}
+            />
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Inputs area */}
+      {/* Input area */}
       <div className="p-4 border-t border-border bg-card">
         <ChatInput onSendMessage={handleSendMessage} />
       </div>

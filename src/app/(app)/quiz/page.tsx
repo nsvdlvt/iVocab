@@ -1,14 +1,19 @@
 import React from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
-import { QuizProgress } from "@/components/features/quiz/QuizProgress";
-import { QuizQuestion } from "@/components/features/quiz/QuizQuestion";
-import { QuizOptions } from "@/components/features/quiz/QuizOptions";
-import { QuizResultPlaceholder } from "@/components/features/quiz/QuizResultPlaceholder";
-import { mockQuizQuestions } from "@/mock/quiz";
+import { QuizClient } from "@/components/features/quiz/QuizClient";
+import { requireUser } from "@/lib/auth/require-user";
+import { QuizRepository, MIN_QUIZ_WORDS } from "@/repositories/quiz.repository";
+import { Gamepad2, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 
-export default function QuizPage() {
-  const currentQuestion = mockQuizQuestions[0];
+export const dynamic = "force-dynamic";
+
+export default async function QuizPage() {
+  const profile = await requireUser();
+  const questions = await QuizRepository.generateQuestions(profile.id, 10);
 
   return (
     <PageContainer className="max-w-4xl space-y-8">
@@ -17,30 +22,34 @@ export default function QuizPage() {
         description="Kiểm tra vốn từ vựng của bạn bằng các câu hỏi trắc nghiệm khách quan nhanh."
       />
 
-      {currentQuestion ? (
-        <div className="space-y-6 max-w-2xl mx-auto">
-          <QuizProgress current={1} total={mockQuizQuestions.length} />
-          <QuizQuestion question={currentQuestion} />
-          <QuizOptions
-            options={currentQuestion.options}
-            correctIndex={currentQuestion.correctOptionIndex}
-          />
+      {questions.length === 0 ? (
+        /* Empty state — not enough words */
+        <div className="max-w-xl mx-auto text-center py-16 space-y-5">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-primary/10 p-5">
+              <Gamepad2 className="h-10 w-10 text-primary" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-foreground">Chưa đủ từ vựng để làm bài!</h3>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              Bạn cần ít nhất <strong>{MIN_QUIZ_WORDS}</strong> từ vựng để tạo bài trắc nghiệm.
+              Hãy thêm từ vựng vào bộ học trước rồi quay lại đây.
+            </p>
+          </div>
+          <Link
+            href={ROUTES.VOCABULARY}
+            className={buttonVariants({
+              className: "rounded-xl cursor-pointer gap-2",
+            })}
+          >
+            <BookOpen className="h-4 w-4" />
+            Quản lý từ vựng
+          </Link>
         </div>
       ) : (
-        <div className="text-center py-10 border border-dashed rounded-2xl text-muted-foreground text-sm">
-          Không tìm thấy câu hỏi trắc nghiệm nào.
-        </div>
+        <QuizClient questions={questions} />
       )}
-
-      <hr className="border-border max-w-2xl mx-auto" />
-
-      {/* Mock Score Summary Card at the bottom */}
-      <div className="space-y-4">
-        <h3 className="text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Xem trước giao diện kết quả hoàn thành bài thi
-        </h3>
-        <QuizResultPlaceholder />
-      </div>
     </PageContainer>
   );
 }

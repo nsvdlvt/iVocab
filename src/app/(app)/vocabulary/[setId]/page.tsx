@@ -1,19 +1,21 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, GraduationCap } from "lucide-react";
+import { ChevronLeft, GraduationCap, BookOpen } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { WordTable } from "@/components/features/vocabulary/WordTable";
 import { requireUser } from "@/lib/auth/require-user";
-import { VocabSetRepository } from "@/repositories/vocab-set";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
+import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { ROUTES } from "@/constants/routes";
-import { VocabularyWord } from "@/types/vocabulary";
 
 interface PageProps {
   params: Promise<{ setId: string }>;
 }
+
+export const dynamic = "force-dynamic";
 
 export default async function VocabSetDetailPage({ params }: PageProps) {
   const { setId } = await params;
@@ -24,18 +26,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const words = await VocabSetRepository.getVocabularyItems(setId, user.id);
-
-  const mappedWords: VocabularyWord[] = words.map((w) => ({
-    id: w.id,
-    word: w.word,
-    ipa: w.ipa || "",
-    partOfSpeech: (w.part_of_speech || "noun") as VocabularyWord["partOfSpeech"],
-    definition: w.meaning,
-    example: w.example || "",
-    exampleTranslation: w.example_translation || "",
-    status: "new" as const,
-  }));
+  const words = await VocabularyRepository.getBySetId(setId, user.id);
 
   const backButton = (
     <Link
@@ -70,19 +61,27 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
 
       <PageHeader
         title={set.title}
-        description={set.description || ""}
+        description={set.description ?? ""}
         action={startReviewButton}
       />
 
       <div className="space-y-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-          Danh sách từ vựng ({mappedWords.length} từ)
+          Danh sách từ vựng ({words.length} từ)
         </h2>
-        {mappedWords.length > 0 ? (
-          <WordTable words={mappedWords} />
+        {words.length > 0 ? (
+          <WordTable words={words} />
         ) : (
-          <div className="text-center py-12 border border-dashed rounded-2xl text-muted-foreground text-xs bg-muted/5">
-            Bộ từ vựng này hiện chưa có từ nào.
+          <div className="flex flex-col items-center justify-center text-center py-14 border border-dashed rounded-2xl bg-muted/5 gap-3">
+            <div className="rounded-full bg-muted/60 p-3">
+              <BookOpen className="h-6 w-6 text-muted-foreground/50" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Bộ từ vựng chưa có từ nào</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Hãy chỉnh sửa bộ từ và thêm từ vựng đầu tiên.
+              </p>
+            </div>
           </div>
         )}
       </div>

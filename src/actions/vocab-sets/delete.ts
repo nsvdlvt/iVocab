@@ -1,7 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth/require-user";
-import { VocabSetRepository } from "@/repositories/vocab-set";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { revalidatePath } from "next/cache";
 
 export async function deleteVocabularySet(id: string, isPermanent = false) {

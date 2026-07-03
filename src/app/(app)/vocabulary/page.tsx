@@ -3,7 +3,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { VocabularyClient } from "@/components/features/vocabulary/VocabularyClient";
 import { requireUser } from "@/lib/auth/require-user";
-import { VocabSetRepository } from "@/repositories/vocab-set";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 
 interface PageProps {
   searchParams: Promise<{

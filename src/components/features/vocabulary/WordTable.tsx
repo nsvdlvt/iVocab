@@ -1,39 +1,30 @@
 "use client";
 
 import React from "react";
-import { VocabularyWord } from "@/types/vocabulary";
+import { Database } from "@/types/database";
 import { Badge } from "@/components/ui/badge";
 
+type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
+
 interface WordTableProps {
-  words: VocabularyWord[];
+  words: VocabularyRow[];
 }
 
-export function WordTable({ words }: WordTableProps) {
-  const getStatusBadge = (status: VocabularyWord["status"]) => {
-    switch (status) {
-      case "mastered":
-        return <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20 rounded-lg text-[10px] font-bold">Đã thuộc</Badge>;
-      case "learning":
-        return <Badge className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border-purple-500/20 rounded-lg text-[10px] font-bold">Đang học</Badge>;
-      case "new":
-        return <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20 rounded-lg text-[10px] font-bold">Từ mới</Badge>;
-      default:
-        return null;
-    }
-  };
+const PART_OF_SPEECH_LABELS: Record<string, string> = {
+  noun: "danh từ",
+  verb: "động từ",
+  adjective: "tính từ",
+  adverb: "trạng từ",
+  preposition: "giới từ",
+  conjunction: "liên từ",
+  pronoun: "đại từ",
+  interjection: "thán từ",
+};
 
-  const getPartOfSpeechLabel = (pos: VocabularyWord["partOfSpeech"]) => {
-    const labels: Record<string, string> = {
-      noun: "danh từ",
-      verb: "động từ",
-      adjective: "tính từ",
-      adverb: "trạng từ",
-      preposition: "giới từ",
-      conjunction: "liên từ",
-      pronoun: "đại từ",
-      interjection: "thán từ",
-    };
-    return labels[pos] || pos;
+export function WordTable({ words }: WordTableProps) {
+  const getPartOfSpeechLabel = (pos: string | null) => {
+    if (!pos) return null;
+    return PART_OF_SPEECH_LABELS[pos] ?? pos;
   };
 
   return (
@@ -45,37 +36,46 @@ export function WordTable({ words }: WordTableProps) {
             <th className="px-6 py-4">Phiên âm / Loại từ</th>
             <th className="px-6 py-4">Ý nghĩa</th>
             <th className="px-6 py-4">Ví dụ thực tế</th>
-            <th className="px-6 py-4 text-center">Trạng thái</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {words.map((w) => (
-            <tr key={w.id} className="hover:bg-muted/10 transition-all duration-200">
-              <td className="px-6 py-4">
-                <span className="font-bold text-foreground text-base">{w.word}</span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-mono text-xs text-muted-foreground">{w.ipa}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">
-                    {getPartOfSpeechLabel(w.partOfSpeech)}
-                  </span>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span className="text-sm font-medium text-foreground">{w.definition}</span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex flex-col gap-0.5 max-w-sm">
-                  <span className="text-xs italic text-foreground/90">&ldquo;{w.example}&rdquo;</span>
-                  <span className="text-[11px] text-muted-foreground">{w.exampleTranslation}</span>
-                </div>
-              </td>
-              <td className="px-6 py-4 text-center whitespace-nowrap">
-                {getStatusBadge(w.status)}
-              </td>
-            </tr>
-          ))}
+          {words.map((w) => {
+            const posLabel = getPartOfSpeechLabel(w.part_of_speech);
+            return (
+              <tr key={w.id} className="hover:bg-muted/10 transition-all duration-200">
+                <td className="px-6 py-4">
+                  <span className="font-bold text-foreground text-base">{w.word}</span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    {w.ipa && (
+                      <span className="font-mono text-xs text-muted-foreground">{w.ipa}</span>
+                    )}
+                    {posLabel && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">
+                        {posLabel}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="text-sm font-medium text-foreground">{w.meaning}</span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col gap-0.5 max-w-sm">
+                    {w.example ? (
+                      <span className="text-xs italic text-foreground/90">&ldquo;{w.example}&rdquo;</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50 italic">Chưa có ví dụ</span>
+                    )}
+                    {w.example_translation && (
+                      <span className="text-[11px] text-muted-foreground">{w.example_translation}</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
