@@ -9,7 +9,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { UserMenu } from "@/components/common/UserMenu";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 const SidebarIcon = ({ name, className }: { name: string; className?: string }) => {
   const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[name];
@@ -73,14 +73,14 @@ export function Sidebar() {
         <SheetContent side="left" className="p-0 w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
           <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
             <SheetTitle className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-lg font-extrabold tracking-wider text-transparent">
-              IVOCAB
+              VOCABEE
             </SheetTitle>
           </div>
           {renderNavLinks(true)}
           
           {/* User profile dropdown in Mobile Drawer */}
           <div className="p-4 border-t border-sidebar-border bg-muted/10">
-            <UserMenu showName={true} />
+            <UserMenu />
           </div>
         </SheetContent>
       </Sheet>
@@ -97,7 +97,7 @@ export function Sidebar() {
 
         {/* User profile dropdown at the bottom of the Desktop Sidebar */}
         <div className="p-3 border-t border-border bg-muted/10">
-          <UserMenu showName={!isCollapsed} />
+          <UserMenu />
         </div>
 
         {/* Collapse toggle button at bottom - only visible on desktop screen size */}

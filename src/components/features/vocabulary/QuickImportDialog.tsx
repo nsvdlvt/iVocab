@@ -90,7 +90,7 @@ export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProp
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-xl h-8.5 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer"
+            className="rounded-xl h-9 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all cursor-pointer min-h-[44px] md:min-h-0"
             disabled={isPending}
           >
             <FileInput className="h-3.5 w-3.5 opacity-80" />

@@ -58,11 +58,41 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
     }
   };
 
-  const formattedDate = new Date(set.updated_at).toLocaleDateString("vi-VN", {
+  // Load last studied session timestamp from localStorage
+  const [lastStudiedDate, setLastStudiedDate] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // Check key patterns matches getStorageKey(set.id) -> ivocab_learn_v1_${set.id}
+    const storageKey = `ivocab_learn_v1_${set.id}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        if (data && data.timestamp) {
+          const formatted = new Date(data.timestamp).toLocaleDateString("vi-VN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          });
+          const handle = setTimeout(() => {
+            setLastStudiedDate(formatted);
+          }, 0);
+          return () => clearTimeout(handle);
+        }
+      } catch {
+        // Fallback silently
+      }
+    }
+  }, [set.id]);
+
+  const formattedUpdateDate = new Date(set.updated_at).toLocaleDateString("vi-VN", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
   });
+
+  const displayDate = lastStudiedDate || formattedUpdateDate;
+  const dateLabel = lastStudiedDate ? "Học lần cuối" : "Cập nhật";
 
   const cardContent = (
     <div className="p-5 flex flex-col justify-between h-[185px] w-full">
@@ -131,7 +161,7 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t text-[10px] text-muted-foreground">
-        <span className="font-medium">Cập nhật: {formattedDate}</span>
+        <span className="font-medium">{dateLabel}: {displayDate}</span>
         {isDeleted ? (
           <Badge variant="destructive" className="rounded-lg text-[9px] font-bold px-1.5 py-0.5">Đã xóa</Badge>
         ) : (

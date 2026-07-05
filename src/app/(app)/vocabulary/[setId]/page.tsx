@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { WordTable } from "@/components/features/vocabulary/WordTable";
+import { StudyModes } from "@/components/features/vocabulary/StudyModes";
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
@@ -43,16 +44,28 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
   );
 
   const startReviewButton = (
-    <Link
-      href={ROUTES.REVIEW}
-      className={buttonVariants({
-        variant: "default",
-        className: "rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center",
-      })}
-    >
-      <GraduationCap className="h-4 w-4" />
-      Bắt đầu ôn tập
-    </Link>
+    <div className="flex flex-wrap items-center gap-3">
+      <Link
+        href={`/vocabulary/${setId}/edit`}
+        className={buttonVariants({
+          variant: "outline",
+          className: "rounded-xl gap-2 cursor-pointer shadow-xs inline-flex items-center",
+        })}
+      >
+        Chỉnh sửa bộ thẻ
+      </Link>
+
+      <Link
+        href={ROUTES.REVIEW}
+        className={buttonVariants({
+          variant: "default",
+          className: "rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center",
+        })}
+      >
+        <GraduationCap className="h-4 w-4" />
+        Bắt đầu ôn tập
+      </Link>
+    </div>
   );
 
   return (
@@ -64,6 +77,8 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
         description={set.description ?? ""}
         action={startReviewButton}
       />
+
+      <StudyModes setId={setId} />
 
       <div className="space-y-4">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">

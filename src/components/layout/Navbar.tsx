@@ -30,7 +30,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href={ROUTES.HOME} className="flex items-center gap-2">
             <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-xl font-extrabold tracking-wider text-transparent select-none">
-              IVOCAB
+              VOCABEE
             </span>
           </Link>
         </div>

@@ -1,4 +1,4 @@
 export const THEME_CONFIG = {
   defaultTheme: "system",
-  storageKey: "ivocab-theme",
+  storageKey: "vocabee-theme",
 } as const;

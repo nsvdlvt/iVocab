@@ -134,6 +134,7 @@ export interface Database {
           updated_at: string;
           deleted_at: string | null;
           fts_vector: unknown | null;
+          is_starred: boolean | null;
         };
         Insert: {
           id?: string;
@@ -155,6 +156,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
+          is_starred?: boolean | null;
         };
         Update: {
           id?: string;
@@ -176,6 +178,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
+          is_starred?: boolean | null;
         };
         Relationships: [
           {
@@ -373,6 +376,97 @@ export interface Database {
             columns: ["user_id"];
             isOneToOne: true;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sentence_practice_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          vocab_set_id: string;
+          vocab_id: string;
+          attempt_number: number;
+          overall_score: number;
+          grammar_score: number;
+          vocabulary_score: number;
+          naturalness_score: number;
+          context_score: number;
+          richness_score: number;
+          used_correctly: boolean;
+          user_sentence: string;
+          corrected_sentence: string | null;
+          advanced_sentence: string | null;
+          mistakes_json: Json;
+          feedback_json: Json;
+          feedback_language: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          vocab_set_id: string;
+          vocab_id: string;
+          attempt_number: number;
+          overall_score: number;
+          grammar_score: number;
+          vocabulary_score: number;
+          naturalness_score: number;
+          context_score: number;
+          richness_score: number;
+          used_correctly?: boolean;
+          user_sentence: string;
+          corrected_sentence?: string | null;
+          advanced_sentence?: string | null;
+          mistakes_json?: Json;
+          feedback_json?: Json;
+          feedback_language?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          vocab_set_id?: string;
+          vocab_id?: string;
+          attempt_number?: number;
+          overall_score?: number;
+          grammar_score?: number;
+          vocabulary_score?: number;
+          naturalness_score?: number;
+          context_score?: number;
+          richness_score?: number;
+          used_correctly?: boolean;
+          user_sentence?: string;
+          corrected_sentence?: string | null;
+          advanced_sentence?: string | null;
+          mistakes_json?: Json;
+          feedback_json?: Json;
+          feedback_language?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sentence_practice_history_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sentence_practice_history_vocab_set_id_fkey";
+            columns: ["vocab_set_id"];
+            isOneToOne: false;
+            referencedRelation: "vocab_sets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sentence_practice_history_vocab_id_fkey";
+            columns: ["vocab_id"];
+            isOneToOne: false;
+            referencedRelation: "vocabularies";
             referencedColumns: ["id"];
           }
         ];

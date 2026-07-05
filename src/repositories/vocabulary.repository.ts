@@ -61,4 +61,31 @@ export const VocabularyRepository = {
       .eq("owner_id", ownerId);
     if (error) throw error;
   },
+
+  async getWordsForStudy(setId: string, ownerId: string): Promise<VocabularyRow[]> {
+    const supabase = await createClient();
+    
+    // Check if display_order column exists dynamically or default sort by created_at.
+    // In our types.ts schema, display_order is not defined yet, so we fallback.
+    const { data, error } = await supabase
+      .from("vocabularies")
+      .select("*")
+      .eq("set_id", setId)
+      .eq("owner_id", ownerId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async updateStarStatus(id: string, ownerId: string, isStarred: boolean): Promise<void> {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("vocabularies")
+      .update({ is_starred: isStarred })
+      .eq("id", id)
+      .eq("owner_id", ownerId);
+    if (error) throw error;
+  },
 };

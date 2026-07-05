@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Database } from "@/types/database";
-import { Badge } from "@/components/ui/badge";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 

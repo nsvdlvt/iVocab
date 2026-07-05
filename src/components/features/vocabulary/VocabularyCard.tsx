@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -29,16 +28,6 @@ interface VocabularyCardProps {
   isPending: boolean;
   errors?: { word?: string; meaning?: string };
 }
-
-const PART_OF_SPEECH_OPTIONS = [
-  { label: "Danh từ (Noun)", value: "noun" },
-  { label: "Động từ (Verb)", value: "verb" },
-  { label: "Tính từ (Adj)", value: "adjective" },
-  { label: "Trạng từ (Adv)", value: "adverb" },
-  { label: "Giới từ (Prep)", value: "preposition" },
-  { label: "Liên từ (Conj)", value: "conjunction" },
-  { label: "Đại từ (Pronoun)", value: "pronoun" },
-];
 
 export function VocabularyCard({
   index,
@@ -163,22 +152,14 @@ export function VocabularyCard({
 
           <div className="space-y-1">
             <Label className="text-[10px] font-bold text-muted-foreground/75 uppercase tracking-wide">Từ loại</Label>
-            <Select
+            <input
+              type="text"
+              placeholder="Ví dụ: noun, verb, adjective, phrasal verb..."
               value={item.partOfSpeech}
-              onValueChange={(val) => onChangeField(item.id, "partOfSpeech", val ?? "")}
+              onChange={(e) => onChangeField(item.id, "partOfSpeech", e.target.value)}
               disabled={isPending}
-            >
-              <SelectTrigger className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 rounded-xl border-0 text-xs text-foreground/80 cursor-pointer transition-all">
-                <SelectValue placeholder="Chọn từ loại" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl shadow-md border-border/40">
-                {PART_OF_SPEECH_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="text-xs rounded-lg">
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
+            />
           </div>
 
           <div className="space-y-1">

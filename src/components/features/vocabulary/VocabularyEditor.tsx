@@ -2,15 +2,16 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, BookOpen } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createVocabularySet } from "@/actions/vocab-sets/create";
+import { updateVocabularySetWithWords } from "@/actions/vocab-sets/update-with-words";
 import { VocabularyToolbar } from "./VocabularyToolbar";
 import { VocabularyInfoCard } from "./VocabularyInfoCard";
 import { VocabularyCard } from "./VocabularyCard";
 import { ROUTES } from "@/constants/routes";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 
 interface VocabularyItem {
   id: string;
@@ -25,14 +26,30 @@ interface VocabularyItem {
   example_translation: string;
 }
 
-export function VocabularyEditor() {
+interface VocabularyEditorProps {
+  initialSetId?: string;
+  initialTitle?: string;
+  initialDescription?: string;
+  initialVisibility?: "private" | "public" | "unlisted";
+  initialItems?: VocabularyItem[];
+}
+
+export function VocabularyEditor({
+  initialSetId,
+  initialTitle = "",
+  initialDescription = "",
+  initialVisibility = "private",
+  initialItems = [],
+}: VocabularyEditorProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
-  // Vocabulary Set Form States
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [visibility, setVisibility] = useState<"private" | "public" | "unlisted">("private");
+  const isEditMode = !!initialSetId;
+
+  // Form states
+  const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [visibility, setVisibility] = useState<"private" | "public" | "unlisted">(initialVisibility);
 
   // Error States
   const [errors, setErrors] = useState<{
@@ -40,45 +57,49 @@ export function VocabularyEditor() {
     items?: Record<string, { word?: string; meaning?: string }>;
   }>({});
 
-  // Dynamic Vocabulary List States (Initial with 3 empty items for editing)
-  const [items, setItems] = useState<VocabularyItem[]>([
-    {
-      id: "vocab-init-1",
-      word: "",
-      meaning: "",
-      ipa: "",
-      partOfSpeech: "",
-      example: "",
-      synonyms: "",
-      antonyms: "",
-      note: "",
-      example_translation: "",
-    },
-    {
-      id: "vocab-init-2",
-      word: "",
-      meaning: "",
-      ipa: "",
-      partOfSpeech: "",
-      example: "",
-      synonyms: "",
-      antonyms: "",
-      note: "",
-      example_translation: "",
-    },
-    {
-      id: "vocab-init-3",
-      word: "",
-      meaning: "",
-      ipa: "",
-      partOfSpeech: "",
-      example: "",
-      synonyms: "",
-      antonyms: "",
-      note: "",
-      example_translation: "",
-    },
-  ]);
+  // Dynamic Vocabulary List States (Initial with 3 empty items if Create, or initial list if Edit)
+  const [items, setItems] = useState<VocabularyItem[]>(
+    initialItems.length > 0
+      ? initialItems
+      : [
+          {
+            id: "vocab-init-1",
+            word: "",
+            meaning: "",
+            ipa: "",
+            partOfSpeech: "",
+            example: "",
+            synonyms: "",
+            antonyms: "",
+            note: "",
+            example_translation: "",
+          },
+          {
+            id: "vocab-init-2",
+            word: "",
+            meaning: "",
+            ipa: "",
+            partOfSpeech: "",
+            example: "",
+            synonyms: "",
+            antonyms: "",
+            note: "",
+            example_translation: "",
+          },
+          {
+            id: "vocab-init-3",
+            word: "",
+            meaning: "",
+            ipa: "",
+            partOfSpeech: "",
+            example: "",
+            synonyms: "",
+            antonyms: "",
+            note: "",
+            example_translation: "",
+          },
+        ]
+  );
 
   const handleAddCard = () => {
     const newId = `vocab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -159,7 +180,6 @@ export function VocabularyEditor() {
     }));
 
     setItems((prev) => {
-      // If we only have completely empty cards initially, overwrite them
       const onlyHasInitialEmpty = prev.every((item) => !item.word.trim() && !item.meaning.trim());
       if (onlyHasInitialEmpty) {
         return importedItems;
@@ -168,7 +188,7 @@ export function VocabularyEditor() {
     });
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     const newErrors: typeof errors = {};
 
     if (!title.trim()) {
@@ -218,6 +238,8 @@ export function VocabularyEditor() {
       };
 
       const mappedWords = filledItems.map((item) => ({
+        // Keep ID for updates in Edit Mode, exclude placeholder generated IDs in Create Mode
+        id: item.id.startsWith("vocab-init-") || item.id.startsWith("vocab-import-") || item.id.startsWith("vocab-") ? undefined : item.id,
         word: item.word.trim(),
         meaning: item.meaning.trim(),
         ipa: item.ipa.trim() || undefined,
@@ -229,13 +251,19 @@ export function VocabularyEditor() {
         example_translation: item.example_translation.trim() || undefined,
       }));
 
-      const res = await createVocabularySet(vocabSetData, mappedWords);
-
-      if (res.success && res.setId) {
-        toast.success("Đã tạo bộ thẻ học thành công!");
-        router.push(ROUTES.VOCABULARY_DETAIL(res.setId));
+      let res;
+      if (isEditMode && initialSetId) {
+        res = await updateVocabularySetWithWords(initialSetId, vocabSetData, mappedWords);
       } else {
-        toast.error(res.error || "Không thể lưu bộ từ vựng.");
+        res = await createVocabularySet(vocabSetData, mappedWords);
+      }
+
+      if (res.success) {
+        const targetSetId = initialSetId || (res as { setId?: string }).setId || "";
+        toast.success(isEditMode ? "Đã cập nhật bộ từ vựng thành công!" : "Đã tạo bộ thẻ học thành công!");
+        router.push(ROUTES.VOCABULARY_DETAIL(targetSetId));
+      } else {
+        toast.error((res as { error?: string }).error || "Không thể lưu bộ từ vựng.");
       }
     } catch (err) {
       console.error(err);
@@ -252,8 +280,9 @@ export function VocabularyEditor() {
         visibility={visibility}
         onChangeVisibility={setVisibility}
         isPending={isPending}
-        onCreateClick={handleCreate}
+        onCreateClick={handleSave}
         onImportCards={handleImportCards}
+        existingWords={items.map(item => ({ word: item.word, meaning: item.meaning }))}
       />
 
       <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">

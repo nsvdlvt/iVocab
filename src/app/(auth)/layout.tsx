@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <Link href={ROUTES.HOME} className="flex items-center gap-2 select-none w-fit">
           <BookOpen className="h-6 w-6 text-blue-400" />
           <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-            IVOCAB
+            VOCABEE
           </span>
         </Link>
 
@@ -38,7 +38,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Bottom footer */}
         <div className="text-xs text-slate-400">
-          © 2026 IVocab. Thiết kế và phát triển theo chuẩn kiến trúc chuyên nghiệp.
+          © 2026 Vocabee. Thiết kế và phát triển theo chuẩn kiến trúc chuyên nghiệp.
         </div>
       </div>
 
@@ -49,7 +49,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex lg:hidden justify-center mb-6">
             <Link href={ROUTES.HOME} className="flex items-center gap-2">
               <span className="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                IVOCAB
+                VOCABEE
               </span>
             </Link>
           </div>

@@ -12,7 +12,7 @@ interface ChatMessageProps {
   userName?: string;
 }
 
-export function ChatMessage({ role, content, timestamp = "Vừa xong", userName = "Học viên" }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp = "Vừa xong" }: ChatMessageProps) {
   const isAI = role === "assistant";
 
   return (
