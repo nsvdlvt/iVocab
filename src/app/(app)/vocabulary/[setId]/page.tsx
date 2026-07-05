@@ -19,87 +19,94 @@ interface PageProps {
 export const dynamic = "force-dynamic";
 
 export default async function VocabSetDetailPage({ params }: PageProps) {
-  const { setId } = await params;
-  const user = await requireUser();
+  console.time("TOTAL PAGE");
+  try {
+    const { setId } = await params;
+    const user = await requireUser();
 
-  const set = await VocabSetRepository.getVocabSetById(setId, user.id);
+  const [set, words] = await Promise.all([
+    VocabSetRepository.getVocabSetById(setId, user.id),
+    VocabularyRepository.getBySetId(setId, user.id),
+  ]);
+
   if (!set || set.deleted_at) {
     notFound();
   }
 
-  const words = await VocabularyRepository.getBySetId(setId, user.id);
-
-  const backButton = (
-    <Link
-      href={ROUTES.VOCABULARY}
-      className={buttonVariants({
-        variant: "ghost",
-        size: "sm",
-        className: "-ml-3 gap-1 rounded-xl cursor-pointer inline-flex items-center",
-      })}
-    >
-      <ChevronLeft className="h-4 w-4" />
-      Quay lại danh sách bộ từ
-    </Link>
-  );
-
-  const startReviewButton = (
-    <div className="flex flex-wrap items-center gap-3">
+    const backButton = (
       <Link
-        href={`/vocabulary/${setId}/edit`}
+        href={ROUTES.VOCABULARY}
         className={buttonVariants({
-          variant: "outline",
-          className: "rounded-xl gap-2 cursor-pointer shadow-xs inline-flex items-center",
+          variant: "ghost",
+          size: "sm",
+          className: "-ml-3 gap-1 rounded-xl cursor-pointer inline-flex items-center",
         })}
       >
-        Chỉnh sửa bộ thẻ
+        <ChevronLeft className="h-4 w-4" />
+        Quay lại danh sách bộ từ
       </Link>
+    );
 
-      <Link
-        href={ROUTES.REVIEW}
-        className={buttonVariants({
-          variant: "default",
-          className: "rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center",
-        })}
-      >
-        <GraduationCap className="h-4 w-4" />
-        Bắt đầu ôn tập
-      </Link>
-    </div>
-  );
+    const startReviewButton = (
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={`/vocabulary/${setId}/edit`}
+          className={buttonVariants({
+            variant: "outline",
+            className: "rounded-xl gap-2 cursor-pointer shadow-xs inline-flex items-center",
+          })}
+        >
+          Chỉnh sửa bộ thẻ
+        </Link>
 
-  return (
-    <PageContainer className="space-y-6">
-      <div>{backButton}</div>
-
-      <PageHeader
-        title={set.title}
-        description={set.description ?? ""}
-        action={startReviewButton}
-      />
-
-      <StudyModes setId={setId} />
-
-      <div className="space-y-4">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-          Danh sách từ vựng ({words.length} từ)
-        </h2>
-        {words.length > 0 ? (
-          <WordTable words={words} />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center py-14 border border-dashed rounded-2xl bg-muted/5 gap-3">
-            <div className="rounded-full bg-muted/60 p-3">
-              <BookOpen className="h-6 w-6 text-muted-foreground/50" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Bộ từ vựng chưa có từ nào</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Hãy chỉnh sửa bộ từ và thêm từ vựng đầu tiên.
-              </p>
-            </div>
-          </div>
-        )}
+        <Link
+          href={ROUTES.REVIEW}
+          className={buttonVariants({
+            variant: "default",
+            className: "rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center",
+          })}
+        >
+          <GraduationCap className="h-4 w-4" />
+          Bắt đầu ôn tập
+        </Link>
       </div>
-    </PageContainer>
-  );
+    );
+
+    return (
+      <PageContainer className="space-y-6">
+        <div>{backButton}</div>
+
+        <PageHeader
+          title={set.title}
+          description={set.description ?? ""}
+          action={startReviewButton}
+        />
+
+        <StudyModes setId={setId} />
+
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            Danh sách từ vựng ({words.length} từ)
+          </h2>
+          {words.length > 0 ? (
+            <WordTable words={words} />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-14 border border-dashed rounded-2xl bg-muted/5 gap-3">
+              <div className="rounded-full bg-muted/60 p-3">
+                <BookOpen className="h-6 w-6 text-muted-foreground/50" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Bộ từ vựng chưa có từ nào</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Hãy chỉnh sửa bộ từ và thêm từ vựng đầu tiên.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </PageContainer>
+    );
+  } finally {
+    console.timeEnd("TOTAL PAGE");
+  }
 }

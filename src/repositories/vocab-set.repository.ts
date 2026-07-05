@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { cache } from "react";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 type VocabSetInsert = Database["public"]["Tables"]["vocab_sets"]["Insert"];
 type VocabSetUpdate = Database["public"]["Tables"]["vocab_sets"]["Update"];
 
 export const VocabSetRepository = {
-  async getVocabSets(
+  getVocabSets: cache(async (
     userId: string,
     options: {
       search?: string;
@@ -16,7 +17,7 @@ export const VocabSetRepository = {
       limit?: number;
       showDeleted?: boolean;
     } = {}
-  ) {
+  ) => {
     const supabase = await createClient();
     const {
       search,
@@ -64,9 +65,9 @@ export const VocabSetRepository = {
     if (error) throw error;
 
     return { data: data ?? [], count: count ?? 0 };
-  },
+  }),
 
-  async getVocabSetById(id: string, userId: string): Promise<VocabSetRow | null> {
+  getVocabSetById: cache(async (id: string, userId: string): Promise<VocabSetRow | null> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("vocab_sets")
@@ -77,9 +78,9 @@ export const VocabSetRepository = {
 
     if (error) throw error;
     return data;
-  },
+  }),
 
-  async getRecentVocabSets(userId: string, limit = 4): Promise<VocabSetRow[]> {
+  getRecentVocabSets: cache(async (userId: string, limit = 4): Promise<VocabSetRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("vocab_sets")
@@ -91,7 +92,7 @@ export const VocabSetRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
   async createVocabSet(
     id: string,

@@ -17,12 +17,14 @@ export default async function FlashcardPage({ params }: PageProps) {
   const { setId } = await params;
   const user = await requireUser();
 
-  const set = await VocabSetRepository.getVocabSetById(setId, user.id);
+  const [set, words] = await Promise.all([
+    VocabSetRepository.getVocabSetById(setId, user.id),
+    VocabularyRepository.getWordsForStudy(setId, user.id),
+  ]);
+
   if (!set || set.deleted_at) {
     notFound();
   }
-
-  const words = await VocabularyRepository.getWordsForStudy(setId, user.id);
 
   return (
     <PageContainer className="py-6 sm:py-8">

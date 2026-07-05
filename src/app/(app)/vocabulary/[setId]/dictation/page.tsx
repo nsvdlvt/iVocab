@@ -14,12 +14,14 @@ export default async function DictationPage({ params }: PageProps) {
   const { setId } = await params;
   const user = await requireUser();
 
-  const vocabSet = await VocabSetRepository.getVocabSetById(setId, user.id);
+  const [vocabSet, words] = await Promise.all([
+    VocabSetRepository.getVocabSetById(setId, user.id),
+    VocabularyRepository.getBySetId(setId, user.id),
+  ]);
+
   if (!vocabSet) {
     notFound();
   }
-
-  const words = await VocabularyRepository.getBySetId(setId, user.id);
 
   return (
     <PageContainer className="pt-2 md:pt-4">

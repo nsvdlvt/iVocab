@@ -29,9 +29,11 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  console.time("middleware - getUser");
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  console.timeEnd("middleware - getUser");
 
   const url = request.nextUrl.clone();
   const path = url.pathname;

@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { cache } from "react";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type VocabularyInsert = Database["public"]["Tables"]["vocabularies"]["Insert"];
 
 export const VocabularyRepository = {
-  async getBySetId(setId: string, ownerId: string): Promise<VocabularyRow[]> {
+  getBySetId: cache(async (setId: string, ownerId: string): Promise<VocabularyRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("vocabularies")
@@ -17,9 +18,9 @@ export const VocabularyRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
-  async countByUser(userId: string): Promise<number> {
+  countByUser: cache(async (userId: string): Promise<number> => {
     const supabase = await createClient();
     const { count, error } = await supabase
       .from("vocabularies")
@@ -29,10 +30,10 @@ export const VocabularyRepository = {
 
     if (error) throw error;
     return count ?? 0;
-  },
+  }),
 
   /** Returns up to `limit` vocabulary rows owned by user (across all sets), used for quiz generation. */
-  async getForQuiz(userId: string, limit = 40): Promise<VocabularyRow[]> {
+  getForQuiz: cache(async (userId: string, limit = 40): Promise<VocabularyRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("vocabularies")
@@ -43,16 +44,16 @@ export const VocabularyRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
-  async bulkInsert(items: VocabularyInsert[]): Promise<void> {
+  bulkInsert: async (items: VocabularyInsert[]): Promise<void> => {
     if (items.length === 0) return;
     const supabase = await createClient();
     const { error } = await supabase.from("vocabularies").insert(items);
     if (error) throw error;
   },
 
-  async softDelete(id: string, ownerId: string): Promise<void> {
+  softDelete: async (id: string, ownerId: string): Promise<void> => {
     const supabase = await createClient();
     const { error } = await supabase
       .from("vocabularies")
@@ -62,7 +63,7 @@ export const VocabularyRepository = {
     if (error) throw error;
   },
 
-  async getWordsForStudy(setId: string, ownerId: string): Promise<VocabularyRow[]> {
+  getWordsForStudy: cache(async (setId: string, ownerId: string): Promise<VocabularyRow[]> => {
     const supabase = await createClient();
     
     // Check if display_order column exists dynamically or default sort by created_at.
@@ -77,7 +78,7 @@ export const VocabularyRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
   async updateStarStatus(id: string, ownerId: string, isStarred: boolean): Promise<void> {
     const supabase = await createClient();

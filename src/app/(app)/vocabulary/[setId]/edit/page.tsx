@@ -19,14 +19,14 @@ export default async function EditVocabularyPage({ params }: EditVocabularyPageP
   const profile = await requireUser();
   const userId = profile.id;
 
-  // 1. Fetch vocabulary set metadata details
-  const vocabSet = await VocabSetRepository.getVocabSetById(setId, userId);
+  const [vocabSet, words] = await Promise.all([
+    VocabSetRepository.getVocabSetById(setId, userId),
+    VocabularyRepository.getBySetId(setId, userId),
+  ]);
+
   if (!vocabSet) {
     return notFound();
   }
-
-  // 2. Fetch vocabulary list items details
-  const words = await VocabularyRepository.getBySetId(setId, userId);
 
   // 3. Map database schema to internal editor types
   const initialItems = words.map((item) => ({

@@ -1,25 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { cache } from "react";
 
 export type UserProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
-export async function getCurrentUser(): Promise<UserProfile | null> {
+export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   try {
     const supabase = await createClient();
     
     const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (userError || !user) {
+    if (sessionError || !session?.user) {
       return null;
     }
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", session.user.id)
       .single();
 
     if (profileError || !profile) {
@@ -31,4 +32,4 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     console.error("Lỗi lấy thông tin user hiện tại:", error);
     return null;
   }
-}
+});
