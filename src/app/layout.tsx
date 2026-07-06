@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import { siteConfig } from "@/constants/site";
 import { Providers } from "@/providers/Providers";
 import "./globals.css";
+import { perfEnd, perfStart } from "@/lib/perf";
 
 const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-sans",
@@ -49,17 +50,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html
-      lang="vi"
-      className={`${beVietnamPro.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Providers>
-          {children}
-        </Providers>
-      </body>
-    </html>
-  );
+  const timer = perfStart("route:root-layout");
+  try {
+    return (
+      <html
+        lang="vi"
+        className={`${beVietnamPro.variable} h-full antialiased`}
+        suppressHydrationWarning
+      >
+        <body className="min-h-full flex flex-col bg-background text-foreground">
+          <Providers>{children}</Providers>
+        </body>
+      </html>
+    );
+  } finally {
+    perfEnd(timer);
+  }
 }

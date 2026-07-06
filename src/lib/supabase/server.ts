@@ -2,11 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Database } from "@/types/database";
 import { env } from "@/lib/env";
+import { perfEnd, perfStart } from "@/lib/perf";
 
 export const createClient = async () => {
+  const timer = perfStart("createServerClient");
   const cookieStore = await cookies();
-
-  return createServerClient<Database>(
+  const client = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
@@ -26,4 +27,7 @@ export const createClient = async () => {
       },
     }
   );
+
+  perfEnd(timer);
+  return client;
 };
