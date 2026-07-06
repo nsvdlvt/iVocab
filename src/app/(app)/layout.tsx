@@ -7,7 +7,6 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  console.log("APP LAYOUT LOADED");
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />

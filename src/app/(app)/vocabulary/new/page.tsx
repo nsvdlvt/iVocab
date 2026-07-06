@@ -7,7 +7,6 @@ import { requireUser } from "@/lib/auth/require-user";
 export const dynamic = "force-dynamic";
 
 export default async function NewVocabularySetPage() {
-  console.log("NEW PAGE LOADED");
   await requireUser();
 
   const breadcrumb = (
