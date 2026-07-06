@@ -49,6 +49,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log("ROOT LAYOUT LOADED");
   return (
     <html
       lang="vi"

@@ -37,6 +37,10 @@ export async function updateSession(request: NextRequest) {
 
   const url = request.nextUrl.clone();
   const path = url.pathname;
+  console.log("MIDDLEWARE", {
+    pathname: path,
+    user: user?.id ?? null,
+  });
 
   const isAuthPage =
     path.startsWith("/login") ||
@@ -48,13 +52,31 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isPublicPage) {
     url.pathname = "/login";
+    console.log("MIDDLEWARE_DECISION", {
+      pathname: path,
+      user: user?.id ?? null,
+      decision: "redirect",
+      destination: url.pathname,
+    });
     return NextResponse.redirect(url);
   }
 
   if (user && isAuthPage) {
     url.pathname = "/vocabulary";
+    console.log("MIDDLEWARE_DECISION", {
+      pathname: path,
+      user: user?.id ?? null,
+      decision: "redirect",
+      destination: url.pathname,
+    });
     return NextResponse.redirect(url);
   }
 
+  console.log("MIDDLEWARE_DECISION", {
+    pathname: path,
+    user: user?.id ?? null,
+    decision: "next",
+    destination: null,
+  });
   return supabaseResponse;
 }
