@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { BrandLogo } from "@/components/common/BrandLogo";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -19,11 +19,13 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top brand logo */}
-        <Link href={ROUTES.HOME} className="flex items-center gap-2 select-none w-fit">
-          <BookOpen className="h-6 w-6 text-blue-400" />
-          <span className="text-xl font-extrabold tracking-wider bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-            VOCABEE
-          </span>
+        <Link href={ROUTES.HOME} className="w-fit select-none">
+          <BrandLogo
+            className="gap-3"
+            imageClassName="h-11 w-11 sm:h-12 sm:w-12"
+            textClassName="scale-100"
+            subtitleClassName="text-[0.7rem] tracking-[0.26em] text-slate-200"
+          />
         </Link>
 
         {/* Center welcome information */}
@@ -38,7 +40,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Bottom footer */}
         <div className="text-xs text-slate-400">
-          © 2026 Vocabee. Thiết kế và phát triển theo chuẩn kiến trúc chuyên nghiệp.
+          © 2026. Thiết kế và phát triển theo chuẩn kiến trúc chuyên nghiệp.
         </div>
       </div>
 
@@ -47,10 +49,13 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="w-full max-w-md space-y-6">
           {/* Mobile Logo */}
           <div className="flex lg:hidden justify-center mb-6">
-            <Link href={ROUTES.HOME} className="flex items-center gap-2">
-              <span className="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                VOCABEE
-              </span>
+            <Link href={ROUTES.HOME} className="flex items-center">
+              <BrandLogo
+                className="gap-3"
+                imageClassName="h-10 w-10"
+                textClassName="scale-[0.95] origin-left"
+                subtitleClassName="text-[0.62rem] tracking-[0.24em]"
+              />
             </Link>
           </div>
           {children}

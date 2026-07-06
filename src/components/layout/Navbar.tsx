@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/common/SearchBar";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { BrandLogo } from "@/components/common/BrandLogo";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { ROUTES } from "@/constants/routes";
 
@@ -27,11 +28,8 @@ export function Navbar() {
             <span className="sr-only">Mở menu</span>
           </Button>
 
-          {/* Logo */}
-          <Link href={ROUTES.HOME} className="flex items-center gap-2">
-            <span className="bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400 bg-clip-text text-xl font-extrabold tracking-wider text-transparent select-none">
-              VOCABEE
-            </span>
+          <Link href={ROUTES.HOME} className="flex items-center">
+            <BrandLogo className="gap-2" imageClassName="h-9 w-9 sm:h-10 sm:w-10" textClassName="scale-[0.9] origin-left" />
           </Link>
         </div>
 

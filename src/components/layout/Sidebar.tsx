@@ -10,6 +10,8 @@ import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { BrandLogo } from "@/components/common/BrandLogo";
+import { ROUTES } from "@/constants/routes";
 
 const SidebarIcon = ({ name, className }: { name: string; className?: string }) => {
   const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[name];
@@ -71,10 +73,16 @@ export function Sidebar() {
       {/* 1. Mobile Sidebar Drawer */}
       <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="p-0 w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
-          <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
-            <SheetTitle className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-lg font-extrabold tracking-wider text-transparent">
-              VOCABEE
-            </SheetTitle>
+          <div className="flex h-16 items-center px-5 border-b border-sidebar-border">
+            <SheetTitle className="sr-only">Vocabee</SheetTitle>
+            <Link href={ROUTES.HOME} className="flex items-center">
+              <BrandLogo
+                className="gap-2"
+                imageClassName="h-9 w-9"
+                textClassName="scale-[0.88] origin-left"
+                subtitleClassName="text-[0.6rem] tracking-[0.22em]"
+              />
+            </Link>
           </div>
           {renderNavLinks(true)}
           
