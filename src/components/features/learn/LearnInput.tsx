@@ -14,6 +14,7 @@ interface LearnInputProps {
   answerState: AnswerState;
   onInputChange: (val: string) => void;
   onSubmit: () => void;
+  onContinue: () => void;
   onSkip?: () => void;
   // Audio configuration switches
   autoPlayQuestionAudio?: boolean;
@@ -27,6 +28,7 @@ export function LearnInput({
   answerState,
   onInputChange,
   onSubmit,
+  onContinue,
   onSkip,
   autoPlayQuestionAudio,
   onToggleAutoPlayQuestion,
@@ -42,10 +44,17 @@ export function LearnInput({
   }, [isSubmitted, question]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      if (!isSubmitted && inputValue.trim()) {
-        onSubmit();
-      }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isSubmitted) {
+      onContinue();
+      return;
+    }
+
+    if (inputValue.trim()) {
+      onSubmit();
     }
   };
 
@@ -104,7 +113,7 @@ export function LearnInput({
         <Input
           ref={inputRef}
           type="text"
-          disabled={isSubmitted}
+          readOnly={isSubmitted}
           placeholder="Nhập câu trả lời..."
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}

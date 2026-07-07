@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Volume2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { Database } from "@/types/database";
 import { AnswerState } from "@/lib/learning/question-types";
 import { Switch } from "@/components/ui/switch";
@@ -19,9 +18,7 @@ interface StudyExplanationProps {
   autoPlayExplanationAudio?: boolean;
   onToggleAutoPlayExplanation?: () => void;
   onSpeakWord?: () => void;
-  isMCQ?: boolean;
   sentenceContext?: string; // Optional sentence dictation context
-  hideStatus?: boolean;
 }
 
 export function StudyExplanation({
@@ -32,9 +29,7 @@ export function StudyExplanation({
   autoPlayExplanationAudio,
   onToggleAutoPlayExplanation,
   onSpeakWord,
-  isMCQ = false,
   sentenceContext,
-  hideStatus = false,
 }: StudyExplanationProps) {
   const isCorrect = answerState === "correct";
   const isNearly = answerState === "near";
@@ -79,35 +74,6 @@ export function StudyExplanation({
 
   return (
     <div className="w-full max-w-xl mx-auto space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300 select-none">
-      {/* Visual Status Banner */}
-      {!isMCQ && !hideStatus && (
-        <div
-          className={cn(
-            "rounded-2xl p-3 border text-xs font-bold flex items-center justify-between text-left",
-            answerState === "correct" && "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400",
-            answerState === "near" && "bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-400",
-            answerState === "wrong" && "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400",
-            answerState === "unknown" && "bg-zinc-500/10 border-zinc-400 text-zinc-700 dark:text-zinc-400"
-          )}
-        >
-          <div>
-            <span className="text-sm block font-black uppercase tracking-wider mb-0.5">
-              {answerState === "correct" && "✓ Chính xác"}
-              {answerState === "near" && "🟡 Đúng 1 phần (Gần đúng)"}
-              {answerState === "wrong" && "✗ Sai"}
-              {answerState === "unknown" && "✗ Không biết"}
-            </span>
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {answerState === "correct" && "Làm tốt lắm!"}
-              {answerState === "near" && "Gần như hoàn toàn chính xác. Hãy tiếp tục cố gắng!"}
-              {answerState === "wrong" && `Đáp án chuẩn: ${word.word} - ${word.meaning}`}
-              {answerState === "unknown" && `Đáp án chuẩn: ${word.word} - ${word.meaning}`}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Explanation Box */}
       <div className="border border-border/80 rounded-2xl p-4 bg-card shadow-xs space-y-3">
         {/* Core word block */}
         <div className="flex items-center justify-between pb-2 border-b border-border/40">

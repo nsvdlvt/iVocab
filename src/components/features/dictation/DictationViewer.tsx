@@ -495,6 +495,7 @@ export function DictationViewer({ initialWords, setInfo, onBack }: DictationView
                 answerState={answerState}
                 onInputChange={setInputValue}
                 onSubmit={() => handleCheckAnswer(inputValue)}
+                onContinue={handleContinue}
                 onSkip={handleSkip}
                 onSpeakPrompt={speakCurrentText}
               />
@@ -505,6 +506,7 @@ export function DictationViewer({ initialWords, setInfo, onBack }: DictationView
                 answerState={answerState}
                 onInputChange={setInputValue}
                 onSubmit={() => handleCheckAnswer(inputValue)}
+                onContinue={handleContinue}
                 onSkip={handleSkip}
                 onSpeakPrompt={speakCurrentText}
               />
@@ -518,9 +520,7 @@ export function DictationViewer({ initialWords, setInfo, onBack }: DictationView
                 autoContinue={settings.autoContinue}
                 autoPlayExplanationAudio={false} // Explanation autoplay disabled in dictation to avoid audio conflicts
                 onSpeakWord={() => speakText(currentQuestion.word.word)}
-                isMCQ={false}
                 sentenceContext={sentenceHighlightContext}
-                hideStatus={true}
               />
             )}
           </>

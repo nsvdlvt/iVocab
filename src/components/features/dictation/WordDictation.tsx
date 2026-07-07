@@ -13,6 +13,7 @@ interface WordDictationProps {
   answerState: AnswerState;
   onInputChange: (val: string) => void;
   onSubmit: () => void;
+  onContinue: () => void;
   onSkip?: () => void;
   onSpeakPrompt?: () => void;
 }
@@ -23,6 +24,7 @@ export function WordDictation({
   answerState,
   onInputChange,
   onSubmit,
+  onContinue,
   onSkip,
   onSpeakPrompt,
 }: WordDictationProps) {
@@ -36,10 +38,17 @@ export function WordDictation({
   }, [isSubmitted, question]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      if (!isSubmitted && inputValue.trim()) {
-        onSubmit();
-      }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isSubmitted) {
+      onContinue();
+      return;
+    }
+
+    if (inputValue.trim()) {
+      onSubmit();
     }
   };
 
@@ -83,7 +92,7 @@ export function WordDictation({
         <Input
           ref={inputRef}
           type="text"
-          disabled={isSubmitted}
+          readOnly={isSubmitted}
           placeholder="Nhập từ bạn nghe được..."
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}

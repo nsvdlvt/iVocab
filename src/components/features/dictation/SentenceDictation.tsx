@@ -13,6 +13,7 @@ interface SentenceDictationProps {
   answerState: AnswerState;
   onInputChange: (val: string) => void;
   onSubmit: () => void;
+  onContinue: () => void;
   onSkip?: () => void;
   onSpeakPrompt?: () => void;
 }
@@ -23,6 +24,7 @@ export function SentenceDictation({
   answerState,
   onInputChange,
   onSubmit,
+  onContinue,
   onSkip,
   onSpeakPrompt,
 }: SentenceDictationProps) {
@@ -36,10 +38,17 @@ export function SentenceDictation({
   }, [isSubmitted, question]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      if (!isSubmitted && inputValue.trim()) {
-        onSubmit();
-      }
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isSubmitted) {
+      onContinue();
+      return;
+    }
+
+    if (inputValue.trim()) {
+      onSubmit();
     }
   };
 
@@ -99,7 +108,7 @@ export function SentenceDictation({
         <Input
           ref={inputRef}
           type="text"
-          disabled={isSubmitted}
+          readOnly={isSubmitted}
           placeholder="Điền từ vựng còn thiếu..."
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}

@@ -462,6 +462,7 @@ export function LearnViewer({ initialWords, setInfo, onBack }: LearnViewerProps)
                 answerState={answerState}
                 onInputChange={setInputValue}
                 onSubmit={() => handleCheckAnswer(inputValue)}
+                onContinue={handleContinue}
                 onSkip={handleSkip}
                 autoPlayQuestionAudio={autoPlayQuestionAudio}
                 onToggleAutoPlayQuestion={() => setAutoPlayQuestionAudio((prev) => !prev)}
@@ -478,7 +479,6 @@ export function LearnViewer({ initialWords, setInfo, onBack }: LearnViewerProps)
                 autoPlayExplanationAudio={autoPlayExplanationAudio}
                 onToggleAutoPlayExplanation={() => setAutoPlayExplanationAudio((prev) => !prev)}
                 onSpeakWord={() => speakText(currentQuestion.word.word)}
-                isMCQ={currentQuestion.type === "mcq"}
               />
             )}
           </>
