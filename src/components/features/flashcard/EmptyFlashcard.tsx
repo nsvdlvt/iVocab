@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 interface EmptyFlashcardProps {
   onBack: () => void;
   onAddWords: () => void;
+  readOnly?: boolean;
 }
 
-export function EmptyFlashcard({ onBack, onAddWords }: EmptyFlashcardProps) {
+export function EmptyFlashcard({ onBack, onAddWords, readOnly = false }: EmptyFlashcardProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center p-8 bg-card border border-border/80 rounded-2xl shadow-sm max-w-lg mx-auto space-y-5 my-12 select-none">
       <div className="rounded-full bg-muted/60 p-5">
@@ -30,12 +31,14 @@ export function EmptyFlashcard({ onBack, onAddWords }: EmptyFlashcardProps) {
           <ArrowLeft className="h-3.5 w-3.5" />
           Quay lại bộ thẻ
         </Button>
-        <Button
-          onClick={onAddWords}
-          className="rounded-xl h-10 w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white cursor-pointer text-xs font-semibold"
-        >
-          Thêm từ vựng
-        </Button>
+        {!readOnly && (
+          <Button
+            onClick={onAddWords}
+            className="rounded-xl h-10 w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white cursor-pointer text-xs font-semibold"
+          >
+            Thêm từ vựng
+          </Button>
+        )}
       </div>
     </div>
   );

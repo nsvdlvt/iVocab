@@ -20,6 +20,19 @@ export const VocabularyRepository = {
     return data ?? [];
   }),
 
+  getPublicBySetId: cache(async (setId: string): Promise<VocabularyRow[]> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("vocabularies")
+      .select("*")
+      .eq("set_id", setId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return data ?? [];
+  }),
+
   countByUser: cache(async (userId: string): Promise<number> => {
     const supabase = await createClient();
     const { count, error } = await supabase

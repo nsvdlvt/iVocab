@@ -10,9 +10,10 @@ import { getMetadataOptions } from "@/constants/vocab-set";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight } from "lucide-react";
+import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight, Share2 } from "lucide-react";
 import { duplicateVocabularySet } from "@/actions/vocab-sets/duplicate";
 import { toast } from "sonner";
+import { ShareSetDialog } from "./ShareSetDialog";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 
@@ -25,7 +26,9 @@ interface VocabSetCardProps {
 
 export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardProps) {
   const [isPending, setIsPending] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isDeleted = !!set.deleted_at;
+  const shareLink = `${typeof window !== "undefined" ? window.location.origin : ""}${ROUTES.SHARE_VOCABULARY_DETAIL(set.id)}`;
 
   const { color, LucideIcon } = getMetadataOptions(set.color || "blue", set.icon || "BookOpen");
 
@@ -43,8 +46,22 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
       error: (err) => {
         setIsPending(false);
         return err.message || "Lỗi nhân bản.";
-      }
+      },
     });
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      toast.success("Đã sao chép liên kết.");
+    } catch {
+      toast.error("Không thể sao chép liên kết.");
+    }
+
+    setShareDialogOpen(true);
   };
 
   const getVisibilityBadge = (vis: string) => {
@@ -58,11 +75,9 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
     }
   };
 
-  // Load last studied session timestamp from localStorage
   const [lastStudiedDate, setLastStudiedDate] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    // Check key patterns matches getStorageKey(set.id) -> ivocab_learn_v1_${set.id}
     const storageKey = `ivocab_learn_v1_${set.id}`;
     const stored = localStorage.getItem(storageKey);
     if (stored) {
@@ -72,7 +87,7 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
           const formatted = new Date(data.timestamp).toLocaleDateString("vi-VN", {
             year: "numeric",
             month: "2-digit",
-            day: "2-digit"
+            day: "2-digit",
           });
           const handle = setTimeout(() => {
             setLastStudiedDate(formatted);
@@ -80,7 +95,7 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
           return () => clearTimeout(handle);
         }
       } catch {
-        // Fallback silently
+        // Ignore invalid local storage payloads.
       }
     }
   }, [set.id]);
@@ -88,7 +103,7 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
   const formattedUpdateDate = new Date(set.updated_at).toLocaleDateString("vi-VN", {
     year: "numeric",
     month: "2-digit",
-    day: "2-digit"
+    day: "2-digit",
   });
 
   const displayDate = lastStudiedDate || formattedUpdateDate;
@@ -102,7 +117,7 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
             <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border shrink-0", color.lightBg, color.border)}>
               <LucideIcon className={cn("h-5 w-5", color.text)} />
             </div>
-            
+
             <div className="min-w-0">
               <h3 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-1">
                 {set.title}
@@ -132,6 +147,10 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
                     <DropdownMenuItem onClick={handleDuplicate} className="gap-2 text-xs cursor-pointer">
                       <Copy className="h-3.5 w-3.5" />
                       Nhân bản
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShare} className="gap-2 text-xs cursor-pointer">
+                      <Share2 className="h-3.5 w-3.5" />
+                      Chia sẻ
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete(set, false)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -172,16 +191,25 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
   );
 
   return (
-    <SectionCard hoverable className="p-0 overflow-hidden flex flex-col justify-between h-[185px] group border-border/80">
-      {isDeleted ? (
-        <div className="w-full h-full relative bg-muted/20">
-          {cardContent}
-        </div>
-      ) : (
-        <Link href={ROUTES.VOCABULARY_DETAIL(set.id)} className="flex w-full h-full">
-          {cardContent}
-        </Link>
-      )}
-    </SectionCard>
+    <>
+      <SectionCard hoverable className="p-0 overflow-hidden flex flex-col justify-between h-[185px] group border-border/80">
+        {isDeleted ? (
+          <div className="w-full h-full relative bg-muted/20">
+            {cardContent}
+          </div>
+        ) : (
+          <Link href={ROUTES.VOCABULARY_DETAIL(set.id)} className="flex w-full h-full">
+            {cardContent}
+          </Link>
+        )}
+      </SectionCard>
+
+      <ShareSetDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        shareLink={shareLink}
+        visibility={(set.visibility as "public" | "private" | "unlisted" | null) ?? "private"}
+      />
+    </>
   );
 }

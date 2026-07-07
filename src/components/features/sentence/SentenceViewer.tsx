@@ -54,6 +54,7 @@ export interface SentenceViewerProps {
   }>;
   setInfo: { id: string; title: string };
   onBack: () => void;
+  readOnly?: boolean;
 }
 
 interface SentenceHistoryItem {
@@ -76,7 +77,7 @@ interface SentenceHistoryItem {
   };
 }
 
-export function SentenceViewer({ initialWords, setInfo, onBack }: SentenceViewerProps) {
+export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false }: SentenceViewerProps) {
   const [words, setWords] = useState(initialWords);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [evaluating, setEvaluating] = useState(false);
@@ -305,6 +306,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack }: SentenceViewer
   };
 
   const toggleBookmark = () => {
+    if (readOnly) return;
     if (!currentWord) return;
     const isBookmarked = !!bookmarks[currentWord.id];
     const newStatus = !isBookmarked;
@@ -800,23 +802,25 @@ export function SentenceViewer({ initialWords, setInfo, onBack }: SentenceViewer
         {/* Bookmark utility button (Center) */}
         <div className="flex justify-center">
           <motion.div whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
-            <Button
-              variant="outline"
-              onClick={toggleBookmark}
-              aria-label="Star vocabulary"
-              className={`h-11 w-11 md:h-11 md:w-auto md:px-6 rounded-full md:rounded-xl gap-2 font-semibold transition-all duration-200 select-none flex justify-center items-center ${
-                bookmarks[currentWord.id]
-                  ? "border-yellow-400 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10"
-                  : "border-gray-200 dark:border-border/80 text-foreground/80 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-              }`}
-            >
-              <Star
-                className={`h-4.5 w-4.5 transition-transform duration-200 ${
-                  bookmarks[currentWord.id] ? "fill-yellow-400 text-yellow-500 scale-110" : ""
+            {!readOnly && (
+              <Button
+                variant="outline"
+                onClick={toggleBookmark}
+                aria-label="Star vocabulary"
+                className={`h-11 w-11 md:h-11 md:w-auto md:px-6 rounded-full md:rounded-xl gap-2 font-semibold transition-all duration-200 select-none flex justify-center items-center ${
+                  bookmarks[currentWord.id]
+                    ? "border-yellow-400 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10"
+                    : "border-gray-200 dark:border-border/80 text-foreground/80 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10"
                 }`}
-              />
-              <span className="hidden md:inline">Đánh dấu sao</span>
-            </Button>
+              >
+                <Star
+                  className={`h-4.5 w-4.5 transition-transform duration-200 ${
+                    bookmarks[currentWord.id] ? "fill-yellow-400 text-yellow-500 scale-110" : ""
+                  }`}
+                />
+                <span className="hidden md:inline">Đánh dấu sao</span>
+              </Button>
+            )}
           </motion.div>
         </div>
 

@@ -1,92 +1,97 @@
-// src/app/api/ai/import/route.ts
 import { NextResponse } from "next/server";
 import { importVocabulary } from "@/lib/ai/import-vocabulary";
 import { createClient } from "@/lib/supabase/server";
-import { AI_MODEL } from "@/lib/ai/constants";
+import { AIAbortError, AINetworkError, AIResponseError, AIValidationError } from "@/lib/ai/errors";
+import { extractTextFromImageInput } from "@/lib/ocr/extract-text";
+import { performance } from "perf_hooks";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-/**
- * POST /api/ai/import
- * Handles both JSON and multipart/form-data requests for vocabulary import.
- * Includes extensive logging for debugging server‑side failures.
- */
 export async function POST(request: Request) {
-  // [1] Route entered
-  console.log("[1] Route entered");
+  const requestStart = performance.now();
   try {
+    const contentType = request.headers.get("content-type") || "";
+    const isMultipart = contentType.includes("multipart/form-data");
+    let prompt = "";
+    let imageFile: File | null = null;
+    let imageBase64: string | undefined;
+
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      console.warn("[2] Unauthorized access attempt");
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Determine request type
-    const contentType = request.headers.get("content-type") || "";
-    const isMultipart = contentType.includes("multipart/form-data");
-    console.log(`[2] Request parsed – type: ${isMultipart ? "multipart" : "json"}`);
-
-    let prompt = "";
-    let imageBase64: string | undefined = undefined;
-    let imageSizeBytes = 0;
-
-    // [3] Parse request payload
     if (isMultipart) {
       const formData = await request.formData();
       prompt = (formData.get("prompt") as string) || "";
-      const file = formData.get("file") as File | null;
-      if (file) {
-        const buffer = await file.arrayBuffer();
-        const mimeType = file.type || "image/jpeg";
-        const base64String = Buffer.from(buffer).toString("base64");
-        imageBase64 = `data:${mimeType};base64,${base64String}`;
-        imageSizeBytes = Buffer.byteLength(base64String, "base64");
-      }
+      imageFile = (formData.get("file") as File | null) ?? null;
     } else {
-      const body = await request.json();
+      const body = await request.json().catch(() => ({}));
       prompt = body.prompt || "";
       imageBase64 = body.image || undefined;
-      if (imageBase64) {
-        const [, base64Part] = imageBase64.split(",");
-        if (base64Part) imageSizeBytes = Buffer.byteLength(base64Part, "base64");
-      }
     }
 
-    // Basic validation
-    if (!prompt && !imageBase64) {
-      console.warn("[4] Missing input data");
+    const hasImage = Boolean(imageFile || imageBase64);
+    const imageSizeBytes = imageFile ? imageFile.size : imageBase64 ? Math.floor((imageBase64.length * 3) / 4) : 0;
+    if (process.env.NODE_ENV === "development") {
+      console.log("[AI Import] Request", {
+        promptLength: prompt.length,
+        imageExists: hasImage,
+        imageSizeBytes,
+      });
+    }
+
+    if (!prompt && !hasImage) {
       return NextResponse.json({ success: false, error: "Thiếu dữ liệu đầu vào." }, { status: 400 });
     }
 
-    // Log diagnostics before calling AI
-    const payloadType = imageBase64 ? "multimodal" : "text";
-    const promptLength = prompt.length;
-    const requestBodySize = Buffer.byteLength(JSON.stringify({ prompt, image: imageBase64 }), "utf8");
-    console.log(`[3] Prompt built – length: ${promptLength}`);
-    console.log(`[4] Payload built – type: ${payloadType}, image exists: ${!!imageBase64}, image size (bytes): ${imageSizeBytes}`);
-    console.log(`[5] Model: ${AI_MODEL}, Endpoint: ${process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"}/responses`);
-    console.log(`[6] Request body size (including Base64): ${requestBodySize} bytes`);
+    if (hasImage) {
+      const extractedText = await extractTextFromImageInput(imageFile, imageBase64);
 
-    // Call the AI client
-    const result = await importVocabulary(prompt, imageBase64, request.signal);
-    console.log("[7] Response received");
-    console.log("[8] Validation passed");
+      const result = await importVocabulary(extractedText, undefined, request.signal);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[AI Import] Total request", Math.round(performance.now() - requestStart), "ms");
+      }
+      return NextResponse.json({ success: true, data: result });
+    }
+
+    const result = await importVocabulary(prompt, undefined, request.signal);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[AI Import] Total request", Math.round(performance.now() - requestStart), "ms");
+    }
     return NextResponse.json({ success: true, data: result });
   } catch (error: unknown) {
-    // Capture full stack trace
-    const errMessage = error instanceof Error ? error.message : String(error);
-    const errStack = error instanceof Error ? error.stack : undefined;
-    console.error("AI Import Route Error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Không thể tạo danh sách từ vựng. Vui lòng thử lại.",
-        details: errMessage,
-        stack: process.env.NODE_ENV === "development" ? errStack : undefined,
-      },
-      { status: 500 }
+      { success: false, error: getFriendlyImportError(error) },
+      { status: getStatusCode(error) }
     );
   }
+}
+
+function getStatusCode(error: unknown): number {
+  if (error instanceof AIValidationError) return 422;
+  if (error instanceof AIAbortError) return 408;
+  if (error instanceof AINetworkError) return 503;
+  if (error instanceof AIResponseError) return 502;
+  return 500;
+}
+
+function getFriendlyImportError(error: unknown): string {
+  if (error instanceof AIValidationError) return "AI trả về dữ liệu không hợp lệ. Vui lòng thử lại.";
+  if (error instanceof AIAbortError) return "Yêu cầu bị gián đoạn hoặc quá thời gian. Vui lòng thử lại.";
+  if (error instanceof AINetworkError) return "Không thể kết nối tới AI. Vui lòng kiểm tra mạng và thử lại.";
+  if (error instanceof AIResponseError) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("không thể nhận dạng văn bản trong ảnh")) return "Không thể nhận dạng văn bản trong ảnh.";
+    if (msg.includes("rate limit")) return "Hệ thống AI đang bận. Vui lòng thử lại sau ít phút.";
+    if (msg.includes("quota")) return "Hạn mức AI đã hết. Vui lòng thử lại sau.";
+    if (msg.includes("json")) return "AI trả về định dạng không hợp lệ. Vui lòng thử lại.";
+    return "Không thể tạo danh sách từ vựng. Vui lòng thử lại.";
+  }
+  return "Không thể tạo danh sách từ vựng. Vui lòng thử lại.";
 }

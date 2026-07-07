@@ -1,7 +1,6 @@
-// src/components/features/vocabulary/AIImportDialog.tsx
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { Sparkles, UploadCloud, X, FileImage, ClipboardList } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -28,8 +27,11 @@ const SUGGESTIONS = [
   "Phrasal Verbs",
   "Idioms",
   "B2 Level Vocabulary",
-  "C1 Writing Task 2"
+  "C1 Writing Task 2",
 ];
+
+const VALID_IMAGE_TYPES = new Set(["image/png", "image/jpg", "image/jpeg", "image/webp"]);
+const MAX_IMAGE_DIMENSION = 1600;
 
 export function AIImportDialog({ onImport, existingWords, isPending }: AIImportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,31 +40,45 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
-
-  const [isPendingImport, startImportTransition] = useTransition();
   const [importedItems, setImportedItems] = useState<AIVocabItem[] | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isPendingImport, startImportTransition] = useTransition();
 
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const handleSuggestionClick = (suggestion: string) => {
     setChatPrompt(`Cho tôi từ vựng về chủ đề: ${suggestion}`);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const validTypes = ["image/png", "image/jpg", "image/jpeg", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Chỉ chấp nhận các định dạng ảnh: PNG, JPG, JPEG, WEBP.");
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const showInvalidImageMessage = () => {
+    toast.error("Chỉ chấp nhận ảnh PNG, JPG, JPEG, WEBP.");
+  };
+
+  const handleFileSelection = async (file: File) => {
+    if (!VALID_IMAGE_TYPES.has(file.type)) {
+      showInvalidImageMessage();
+      return;
     }
+
+    setImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      void handleFileSelection(file);
+    }
+    e.target.value = "";
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -79,28 +95,51 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      const validTypes = ["image/png", "image/jpg", "image/jpeg", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("Chỉ chấp nhận các định dạng ảnh: PNG, JPG, JPEG, WEBP.");
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      void handleFileSelection(file);
     }
   };
 
   const handleRemoveImage = () => {
     setImageFile(null);
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImagePreview(null);
   };
 
+  const resizeImageIfNeeded = async (file: File): Promise<string> => {
+    const imageBitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(imageBitmap.width, imageBitmap.height));
+    const width = Math.max(1, Math.round(imageBitmap.width * scale));
+    const height = Math.max(1, Math.round(imageBitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Không thể xử lý ảnh.");
+    }
+
+    ctx.drawImage(imageBitmap, 0, 0, width, height);
+    const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+    const quality = mimeType === "image/png" ? undefined : 0.88;
+    return canvas.toDataURL(mimeType, quality);
+  };
+
+  const parseImportResponse = async (res: Response) => {
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại.");
+    }
+    return data;
+  };
+
   const handleGenerate = () => {
+    if (isProcessing || isPendingImport) return;
+
     if (activeTab === "chat" && !chatPrompt.trim()) {
       toast.error("Vui lòng nhập mô tả chủ đề từ vựng cần tạo.");
       return;
@@ -110,37 +149,43 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
       return;
     }
 
+    setIsProcessing(true);
     startImportTransition(async () => {
       try {
-        let responseData;
+        let responseData: { success?: boolean; data?: AIVocabItem[]; error?: string };
+
         if (activeTab === "chat") {
           const res = await fetch("/api/ai/import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: chatPrompt }),
+            body: JSON.stringify({ prompt: chatPrompt.trim() }),
           });
-          responseData = await res.json();
+          responseData = await parseImportResponse(res);
         } else {
-          const formData = new FormData();
-          formData.append("prompt", "Trích xuất từ vựng từ hình ảnh.");
-          formData.append("file", imageFile!);
-
+          const image = await resizeImageIfNeeded(imageFile!);
           const res = await fetch("/api/ai/import", {
             method: "POST",
-            body: formData,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: "Trích xuất và chuẩn hoá từ vựng từ hình ảnh.",
+              image,
+            }),
           });
-          responseData = await res.json();
+          responseData = await parseImportResponse(res);
         }
 
-        if (responseData.success) {
+        if (responseData.success && Array.isArray(responseData.data) && responseData.data.length > 0) {
           setImportedItems(responseData.data);
           toast.success("AI đã tạo và chuẩn hóa từ vựng thành công!");
-        } else {
-          toast.error(responseData.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại.");
+          return;
         }
+
+        toast.error(responseData.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại.");
       } catch (err) {
         console.error(err);
-        toast.error("Lỗi kết nối máy chủ. Vui lòng thử lại.");
+        toast.error(err instanceof Error ? err.message : "Lỗi kết nối máy chủ. Vui lòng thử lại.");
+      } finally {
+        setIsProcessing(false);
       }
     });
   };
@@ -158,9 +203,16 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
     </Button>
   );
 
+  const resetAndClose = () => {
+    setIsOpen(false);
+    setImportedItems(null);
+    setChatPrompt("");
+    handleRemoveImage();
+  };
+
   const mainContent = (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-      {isPendingImport ? (
+      {isProcessing || isPendingImport ? (
         <div className="flex-1 flex flex-col items-center justify-center space-y-6 py-12 select-none">
           <div className="relative flex items-center justify-center">
             <div className="animate-ping absolute inline-flex h-12 w-12 rounded-full bg-blue-400 opacity-25"></div>
@@ -171,10 +223,9 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
           <div className="text-center space-y-2">
             <h3 className="text-sm font-bold text-foreground">AI đang xử lý từ vựng của bạn...</h3>
             <p className="text-xs text-muted-foreground max-w-xs">
-              Quá trình này bao gồm trích xuất từ vựng và tự động chuẩn hóa (chuyển về nguyên mẫu, sửa lỗi chính tả).
+              Quá trình này bao gồm trích xuất, chuẩn hoá và lọc trùng tự động.
             </p>
           </div>
-          {/* Skeleton Cards loader simulation */}
           <div className="w-full max-w-lg space-y-3 px-6 opacity-60">
             {[1, 2, 3].map((i) => (
               <div key={i} className="p-4 border border-dashed border-border rounded-xl bg-card/50 flex flex-col gap-2">
@@ -191,11 +242,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
           existingWords={existingWords}
           onImport={(finalItems) => {
             onImport(finalItems);
-            setIsOpen(false);
-            setImportedItems(null);
-            setChatPrompt("");
-            setImageFile(null);
-            setImagePreview(null);
+            resetAndClose();
           }}
           onCancel={() => setImportedItems(null)}
         />
@@ -221,6 +268,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
                   onChange={(e) => setChatPrompt(e.target.value)}
                   placeholder="Ví dụ: Cho tôi từ vựng IELTS về chủ đề Environment..."
                   className="w-full min-h-[120px] p-3 text-xs bg-muted/30 hover:bg-muted/50 focus:bg-background rounded-xl border border-border/60 text-foreground placeholder:text-muted-foreground/45 transition-all focus:ring-1 focus:ring-primary/20 focus:outline-none resize-none"
+                  disabled={isProcessing}
                 />
               </div>
 
@@ -232,7 +280,8 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
                       key={suggestion}
                       type="button"
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-muted/50 hover:bg-primary/5 hover:text-primary transition-all duration-200 cursor-pointer border border-border/20 text-muted-foreground"
+                      disabled={isProcessing}
+                      className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-muted/50 hover:bg-primary/5 hover:text-primary transition-all duration-200 cursor-pointer border border-border/20 text-muted-foreground disabled:opacity-50"
                     >
                       {suggestion}
                     </button>
@@ -253,13 +302,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
                   }`}
                   onClick={() => document.getElementById("file-upload")?.click()}
                 >
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                  />
+                  <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                   <UploadCloud className="h-10 w-10 text-muted-foreground/60 mb-2" />
                   <p className="text-xs font-bold text-foreground">Kéo thả ảnh vào đây hoặc bấm để chọn</p>
                   <p className="text-[10px] text-muted-foreground mt-1">Hỗ trợ PNG, JPG, JPEG, WEBP</p>
@@ -267,11 +310,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 border border-border/60 bg-muted/10 rounded-2xl relative min-h-[220px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="max-h-[200px] max-w-full rounded-lg object-contain shadow-sm"
-                  />
+                  <img src={imagePreview} alt="Preview" className="max-h-[200px] max-w-full rounded-lg object-contain shadow-sm" />
                   <div className="absolute top-2 right-2 flex items-center gap-1.5">
                     <Button
                       type="button"
@@ -279,6 +318,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
                       size="icon-xs"
                       onClick={handleRemoveImage}
                       className="bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer h-7 w-7"
+                      disabled={isProcessing}
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
@@ -292,15 +332,17 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setIsOpen(false)}
+              onClick={resetAndClose}
               className="rounded-xl h-9 text-xs font-semibold px-4 cursor-pointer text-muted-foreground hover:text-foreground"
+              disabled={isProcessing}
             >
               Hủy
             </Button>
             <Button
               type="button"
               onClick={handleGenerate}
-              className="rounded-xl h-9 text-xs font-bold px-5 bg-blue-600 hover:bg-blue-500 text-white shadow-xs cursor-pointer active:scale-98 transition-all flex items-center gap-1.5"
+              disabled={isProcessing}
+              className="rounded-xl h-9 text-xs font-bold px-5 bg-blue-600 hover:bg-blue-500 text-white shadow-xs cursor-pointer active:scale-98 transition-all flex items-center gap-1.5 disabled:opacity-60"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Tạo từ vựng

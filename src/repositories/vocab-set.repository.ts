@@ -80,6 +80,20 @@ export const VocabSetRepository = {
     return data;
   }),
 
+  getPublicVocabSetById: cache(async (id: string): Promise<VocabSetRow | null> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("vocab_sets")
+      .select("*")
+      .eq("id", id)
+      .eq("visibility", "public")
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }),
+
   getRecentVocabSets: cache(async (userId: string, limit = 4): Promise<VocabSetRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -161,5 +175,9 @@ export const VocabSetRepository = {
       .eq("user_id", userId);
 
     if (error) throw error;
+  },
+
+  async getSharedVocabSetById(id: string): Promise<VocabSetRow | null> {
+    return this.getPublicVocabSetById(id);
   },
 };

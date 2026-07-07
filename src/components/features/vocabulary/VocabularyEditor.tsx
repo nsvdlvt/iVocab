@@ -163,7 +163,9 @@ export function VocabularyEditor({
       ipa?: string;
       partOfSpeech?: string;
       example?: string;
-      synonyms?: string;
+      exampleSentence?: string;
+      synonyms?: string[] | string;
+      topic?: string;
     }>
   ) => {
     const importedItems = newCards.map((card, idx) => ({
@@ -172,8 +174,8 @@ export function VocabularyEditor({
       meaning: card.meaning,
       ipa: card.ipa || "",
       partOfSpeech: card.partOfSpeech || "",
-      example: card.example || "",
-      synonyms: card.synonyms || "",
+      example: card.exampleSentence || card.example || "",
+      synonyms: Array.isArray(card.synonyms) ? card.synonyms.join(", ") : card.synonyms || "",
       antonyms: "",
       note: "",
       example_translation: "",

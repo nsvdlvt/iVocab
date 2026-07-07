@@ -13,7 +13,9 @@ interface ImportedCard {
   ipa?: string;
   partOfSpeech?: string;
   example?: string;
-  synonyms?: string;
+  exampleSentence?: string;
+  synonyms?: string[] | string;
+  topic?: string;
 }
 
 interface VocabularyToolbarProps {
@@ -92,4 +94,3 @@ export function VocabularyToolbar({
     </div>
   );
 }
-

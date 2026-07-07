@@ -17,16 +17,17 @@ interface StudyMode {
 
 interface StudyModesProps {
   setId: string;
+  basePath?: string;
 }
 
-export function StudyModes({ setId }: StudyModesProps) {
+export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps) {
   const modes: StudyMode[] = [
     {
       id: "flashcard",
       title: "Flashcard",
       description: "Học bằng thẻ ghi nhớ.",
       icon: Layers,
-      href: `/vocabulary/${setId}/flashcard`,
+      href: `${basePath}/${setId}/flashcard`,
       disabled: false,
     },
     {
@@ -34,7 +35,7 @@ export function StudyModes({ setId }: StudyModesProps) {
       title: "Learn",
       description: "Học theo tiến độ.",
       icon: BookOpen,
-      href: `/vocabulary/${setId}/learn`,
+      href: `${basePath}/${setId}/learn`,
       disabled: false,
     },
     {
@@ -42,7 +43,7 @@ export function StudyModes({ setId }: StudyModesProps) {
       title: "Dictation",
       description: "Luyện nghe chính tả.",
       icon: Headphones,
-      href: `/vocabulary/${setId}/dictation`,
+      href: `${basePath}/${setId}/dictation`,
       disabled: false,
     },
     {
@@ -50,7 +51,7 @@ export function StudyModes({ setId }: StudyModesProps) {
       title: "Sentence Practice",
       description: "Luyện đặt câu với từ vựng.",
       icon: PenSquare,
-      href: `/vocabulary/${setId}/sentence`,
+      href: `${basePath}/${setId}/sentence`,
       disabled: false,
     },
     {

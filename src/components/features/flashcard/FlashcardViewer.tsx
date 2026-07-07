@@ -25,9 +25,10 @@ interface FlashcardViewerProps {
   initialWords: VocabularyRow[];
   setInfo: { id: string; title: string };
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export function FlashcardViewer({ initialWords, setInfo, onBack }: FlashcardViewerProps) {
+export function FlashcardViewer({ initialWords, setInfo, onBack, readOnly = false }: FlashcardViewerProps) {
   const router = useRouter();
 
   // Core words state
@@ -306,6 +307,7 @@ export function FlashcardViewer({ initialWords, setInfo, onBack }: FlashcardView
       <EmptyFlashcard
         onBack={onBack}
         onAddWords={() => router.push(`/vocabulary/${setInfo.id}/edit`)}
+        readOnly={readOnly}
       />
     );
   }

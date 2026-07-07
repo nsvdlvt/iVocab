@@ -8,6 +8,7 @@ import { generateVocabSetId } from "@/lib/id/generate-vocab-set-id";
 import { getRandomVocabularySetColor } from "@/constants/vocab-set";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { performance } from "perf_hooks";
 
 const vocabularyFormItemSchema = z.object({
   word: z.string().min(1, "Từ vựng không được để trống"),
@@ -108,6 +109,7 @@ export async function createVocabularySet(
   // 3. Insert vocabulary items if provided
   if (validatedWords.length > 0) {
     try {
+      const mappingStart = performance.now();
       const dbItems = validatedWords.map((item) => ({
         set_id: generatedId,
         owner_id: userId,
@@ -122,8 +124,18 @@ export async function createVocabularySet(
         note: item.note || null,
         source: "manual" as const,
       }));
+      const mappingMs = performance.now() - mappingStart;
 
+      const saveStart = performance.now();
       await VocabularyRepository.bulkInsert(dbItems);
+      const saveMs = performance.now() - saveStart;
+      if (process.env.NODE_ENV === "development") {
+        console.log("[AI Import] Database save", {
+          mappingMs: Math.round(mappingMs),
+          saveMs: Math.round(saveMs),
+          rows: dbItems.length,
+        });
+      }
     } catch (error) {
       const err = error as Error;
       return {

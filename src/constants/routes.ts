@@ -6,6 +6,7 @@ export const ROUTES = {
   RESET_PASSWORD: "/reset-password",
   VOCABULARY: "/vocabulary",
   VOCABULARY_DETAIL: (setId: string) => `/vocabulary/${setId}`,
+  SHARE_VOCABULARY_DETAIL: (setId: string) => `/share/${setId}`,
   REVIEW: "/review",
   QUIZ: "/quiz",
   AI: "/ai",
@@ -13,4 +14,5 @@ export const ROUTES = {
   SETTINGS: "/settings",
 } as const;
 
-export type AppRoutes = typeof ROUTES[keyof Omit<typeof ROUTES, 'VOCABULARY_DETAIL'>] | string;
+export type AppRoutes =
+  typeof ROUTES[keyof Omit<typeof ROUTES, "VOCABULARY_DETAIL" | "SHARE_VOCABULARY_DETAIL">] | string;
