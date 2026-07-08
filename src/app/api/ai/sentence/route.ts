@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { evaluateWriting } from "@/lib/ai/sentence-practice";
 import { createClient } from "@/lib/supabase/server";
 import { SentenceHistoryRepository } from "@/repositories/sentence-history.repository";
+import { ReviewRepository } from "@/repositories/review.repository";
+import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
 
 function extractScore(explanation: string | undefined, categoryName: string): number {
   if (!explanation) return 10;
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     console.log("Sentence API: [2] Request body parsed successfully:", JSON.stringify(body));
-    const { word, sentence, options, setId, vocabId } = body;
+    const { word, sentence, options, setId, vocabId, reviewSessionId } = body;
     
     if (!word || !sentence || !setId || !vocabId) {
       console.warn("Sentence API: Validation failed - missing parameters");
@@ -80,6 +82,21 @@ export async function POST(request: Request) {
       feedback_json: result,
       feedback_language: "Vietnamese",
     });
+
+    await ReviewRepository.processResult({
+      userId: user.id,
+      vocabularyId: vocabId,
+      mode: "sentence-practice",
+      answerResult: result.usedTargetWord ? "correct" : "wrong",
+    });
+
+    if (reviewSessionId) {
+      const session = ReviewSessionStore.markCompleted(reviewSessionId, vocabId);
+      if (session && ReviewSessionStore.isComplete(session)) {
+        ReviewSessionStore.delete(reviewSessionId);
+        return NextResponse.json({ ...result, completed: true });
+      }
+    }
 
     console.log("Sentence API: [5] Saved history to database successfully.");
 

@@ -55,6 +55,7 @@ export interface SentenceViewerProps {
   setInfo: { id: string; title: string };
   onBack: () => void;
   readOnly?: boolean;
+  reviewSessionId?: string;
 }
 
 interface SentenceHistoryItem {
@@ -77,7 +78,7 @@ interface SentenceHistoryItem {
   };
 }
 
-export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false }: SentenceViewerProps) {
+export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false, reviewSessionId }: SentenceViewerProps) {
   const [words, setWords] = useState(initialWords);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [evaluating, setEvaluating] = useState(false);
@@ -202,6 +203,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
             },
             setId: setInfo.id,
             vocabId: currentWord.id,
+            reviewSessionId,
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -214,6 +216,9 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
         const data = await response.json();
         if (data && typeof data.usedTargetWord === "boolean") {
           setFeedback(data);
+          if (reviewSessionId && data.completed) {
+            onBack();
+          }
 
           // Update word stats in client state immediately!
           if (data.usedTargetWord) {
@@ -244,7 +249,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
         setEvaluating(false);
       }
     },
-    [currentWord, currentIdx, setInfo.id]
+    [currentWord, currentIdx, setInfo.id, reviewSessionId, onBack]
   );
 
   const jumpToWord = useCallback(

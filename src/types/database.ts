@@ -205,7 +205,7 @@ export interface Database {
           ease_factor: number | null;
           interval: number | null;
           repetitions: number | null;
-          next_review: string;
+          next_review: string | null;
           last_review: string | null;
           last_grade: string | null;
           status: string | null;
@@ -219,7 +219,7 @@ export interface Database {
           ease_factor?: number | null;
           interval?: number | null;
           repetitions?: number | null;
-          next_review?: string;
+          next_review?: string | null;
           last_review?: string | null;
           last_grade?: string | null;
           status?: string | null;
@@ -233,7 +233,7 @@ export interface Database {
           ease_factor?: number | null;
           interval?: number | null;
           repetitions?: number | null;
-          next_review?: string;
+          next_review?: string | null;
           last_review?: string | null;
           last_grade?: string | null;
           status?: string | null;

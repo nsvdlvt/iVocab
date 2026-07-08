@@ -77,7 +77,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
+              <SelectItem value="all">Tất cả</SelectItem>
               <SelectItem value="private">Riêng tư</SelectItem>
               <SelectItem value="unlisted">Không công khai</SelectItem>
               <SelectItem value="public">Công khai</SelectItem>
@@ -93,10 +93,10 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
               <SelectValue placeholder="Sắp xếp" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="updated_at_desc">Mới cập nhật</SelectItem>
-              <SelectItem value="updated_at_asc">Cũ cập nhật</SelectItem>
-              <SelectItem value="title_asc">Tên bộ từ (A-Z)</SelectItem>
-              <SelectItem value="title_desc">Tên bộ từ (Z-A)</SelectItem>
+              <SelectItem value="updated_at_desc">Mới nhất</SelectItem>
+              <SelectItem value="updated_at_asc">Cũ nhất</SelectItem>
+              <SelectItem value="title_asc">Tên bộ từ A-Z</SelectItem>
+              <SelectItem value="title_desc">Tên bộ từ Z-A</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -35,6 +35,7 @@ interface LearnViewerProps {
   initialWords: VocabularyRow[];
   setInfo: { id: string; title: string };
   onBack: () => void;
+  reviewSessionId?: string;
 }
 
 const getStorageKey = (setId: string) => `ivocab_learn_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
@@ -51,7 +52,7 @@ interface SerializedSession {
   timestamp: number;
 }
 
-export function LearnViewer({ initialWords, setInfo, onBack }: LearnViewerProps) {
+export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: LearnViewerProps) {
   const router = useRouter();
 
   // Active configurations
@@ -285,9 +286,47 @@ export function LearnViewer({ initialWords, setInfo, onBack }: LearnViewerProps)
     setWordStates(updated);
     setCurrentQuestion(null);
 
+    void fetch("/api/srs/result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vocabularyId: currentQuestion.id,
+        mode: "learn",
+        answerResult: isSuccessful ? "correct" : "wrong",
+        reviewSessionId,
+      }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        console.error("SRS save failed (learn)", await response.text());
+        return;
+      }
+      if (reviewSessionId) {
+        const data = (await response.json()) as { completed?: boolean };
+        if (data.completed) {
+          router.replace(`/review/session/${reviewSessionId}/complete`);
+        }
+      }
+    }).catch((error) => {
+      console.error("SRS save request failed (learn)", error);
+    });
+
     // Immediate save trigger
     saveSessionState(updated, recentConfigs, recentAskedIds, totalQuestions + 1, correctCount + (isSuccessful ? 1 : 0), wrongCount + (isSuccessful ? 0 : 1), elapsedTime, settings);
-  }, [currentQuestion, answerState, wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings, saveSessionState]);
+  }, [
+    currentQuestion,
+    answerState,
+    wordStates,
+    recentConfigs,
+    recentAskedIds,
+    totalQuestions,
+    correctCount,
+    wrongCount,
+    elapsedTime,
+    settings,
+    saveSessionState,
+    reviewSessionId,
+    router,
+  ]);
 
   // Re-run session initialization
   const handleRestart = () => {

@@ -5,38 +5,51 @@ import { buttonVariants } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
 import { ROUTES } from "@/constants/routes";
+import { UpcomingReviewSummary } from "@/repositories/review.repository";
+import { UpcomingReviewsForecast } from "../review/UpcomingReviewsForecast";
 
 interface TodayReviewProps {
-  reviewCount: number;
+  dueToday: number;
+  masteredWords: number;
+  learningWords: number;
+  forecast: UpcomingReviewSummary;
 }
 
-export function TodayReview({ reviewCount }: TodayReviewProps) {
+export function TodayReview({ dueToday, masteredWords, learningWords, forecast }: TodayReviewProps) {
   return (
-    <SectionCard className="flex flex-col h-full justify-between">
+    <SectionCard className="flex flex-col h-full justify-between space-y-4">
       <div>
-        <SectionHeader
-          title="Ôn tập hôm nay"
-          description="Củng cố các từ vựng cũ"
-        />
-        <div className="my-5 flex items-baseline gap-2">
-          <span className="text-4xl font-extrabold text-primary">{reviewCount}</span>
-          <span className="text-sm font-medium text-muted-foreground">từ cần ôn tập</span>
+        <SectionHeader title="Ôn tập hôm nay" description="Dữ liệu lấy từ SRS hiện có" />
+        <div className="my-5 grid grid-cols-3 gap-3">
+          <div className="rounded-xl border bg-muted/20 px-3 py-4">
+            <div className="text-3xl font-extrabold text-primary">{dueToday}</div>
+            <div className="text-xs text-muted-foreground">Cần ôn</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 px-3 py-4">
+            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{masteredWords}</div>
+            <div className="text-xs text-muted-foreground">Thuộc</div>
+          </div>
+          <div className="rounded-xl border bg-muted/20 px-3 py-4">
+            <div className="text-3xl font-extrabold text-orange-600 dark:text-orange-400">{learningWords}</div>
+            <div className="text-xs text-muted-foreground">Đang học</div>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-          {reviewCount > 0
-            ? "Hệ thống tự động đề xuất các từ vựng cần ôn lại giúp tối ưu hóa khả năng ghi nhớ dài hạn của bạn."
-            : "Bạn chưa có từ vựng cần ôn tập hôm nay. Hãy tiếp tục học thêm từ mới!"}
+        <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+          {dueToday > 0
+            ? "Bấm Bắt đầu ôn để làm các từ đang đến hạn ngay bây giờ."
+            : "🎉 Tuyệt vời! Bạn đã hoàn thành hết các bài ôn đã lên lịch hôm nay."}
         </p>
+        <UpcomingReviewsForecast forecast={forecast} />
       </div>
       <Link
         href={ROUTES.REVIEW}
         className={buttonVariants({
-          variant: reviewCount > 0 ? "default" : "outline",
+          variant: dueToday > 0 ? "default" : "outline",
           className: "w-full rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center justify-center h-10",
         })}
       >
         <GraduationCap className="h-4 w-4" />
-        {reviewCount > 0 ? "Bắt đầu ôn tập" : "Xem trang ôn tập"}
+        {dueToday > 0 ? "Bắt đầu ôn" : "Mở trang ôn"}
       </Link>
     </SectionCard>
   );

@@ -10,6 +10,7 @@ import { StudyModes } from "@/components/features/vocabulary/StudyModes";
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
+import { ReviewRepository } from "@/repositories/review.repository";
 import { ROUTES } from "@/constants/routes";
 
 interface PageProps {
@@ -26,6 +27,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
     VocabSetRepository.getVocabSetById(setId, user.id),
     VocabularyRepository.getBySetId(setId, user.id),
   ]);
+  const wordsWithReview = await ReviewRepository.getBySetId(user.id, setId);
 
   if (!set || set.deleted_at) {
     notFound();
@@ -87,7 +89,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
           Danh sách từ vựng ({words.length} từ)
         </h2>
         {words.length > 0 ? (
-          <WordTable words={words} />
+          <WordTable words={wordsWithReview} />
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-14 border border-dashed rounded-2xl bg-muted/5 gap-3">
             <div className="rounded-full bg-muted/60 p-3">

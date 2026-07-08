@@ -17,24 +17,4 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     href: ROUTES.REVIEW,
     iconName: "GraduationCap",
   },
-  {
-    title: "Quiz",
-    href: ROUTES.QUIZ,
-    iconName: "Gamepad2",
-  },
-  {
-    title: "AI",
-    href: ROUTES.AI,
-    iconName: "Bot",
-  },
-  {
-    title: "Thống kê",
-    href: ROUTES.STATISTICS,
-    iconName: "BarChart3",
-  },
-  {
-    title: "Cài đặt",
-    href: ROUTES.SETTINGS,
-    iconName: "Settings",
-  },
 ];

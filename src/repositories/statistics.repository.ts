@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
+import { ReviewRepository } from "./review.repository";
 
 type UserStatisticsRow = Database["public"]["Tables"]["user_statistics"]["Row"];
 
@@ -7,6 +8,8 @@ export interface DashboardStats {
   totalSets: number;
   totalWords: number;
   learnedWords: number;
+  masteredWords: number;
+  learningWords: number;
   todayReviewCount: number;
   streak: number;
   dailyGoal: number;
@@ -22,9 +25,10 @@ export const StatisticsRepository = {
   /** Returns combined statistics for the dashboard header cards. */
   async getDashboardStats(userId: string): Promise<DashboardStats> {
     const supabase = await createClient();
+    const srsSummary = await ReviewRepository.getSummary(userId);
 
     // 1. user_statistics row (may not exist yet)
-    const { data: userStats } = await supabase
+    await supabase
       .from("user_statistics")
       .select("*")
       .eq("user_id", userId)
@@ -51,19 +55,13 @@ export const StatisticsRepository = {
       .eq("owner_id", userId)
       .is("deleted_at", null);
 
-    // 5. reviews due today
-    const now = new Date().toISOString();
-    const { count: reviewCount } = await supabase
-      .from("reviews")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .lte("next_review", now);
-
     return {
       totalSets: setsCount ?? 0,
       totalWords: wordsCount ?? 0,
-      learnedWords: userStats?.learned_words ?? 0,
-      todayReviewCount: reviewCount ?? 0,
+      learnedWords: srsSummary.learningWords,
+      masteredWords: srsSummary.masteredWords,
+      learningWords: srsSummary.learningWords,
+      todayReviewCount: srsSummary.dueToday,
       streak: profile?.streak ?? 0,
       dailyGoal: profile?.daily_goal ?? 20,
     };
