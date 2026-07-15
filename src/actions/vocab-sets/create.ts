@@ -39,7 +39,6 @@ export async function createVocabularySet(
   const profile = await requireUser();
   const userId = profile.id;
 
-  // 1. Validate Vocabulary Set metadata
   const validatedFields = vocabSetSchema.safeParse(values);
   if (!validatedFields.success) {
     return {
@@ -48,7 +47,6 @@ export async function createVocabularySet(
     };
   }
 
-  // 2. Validate Vocabulary Items if provided
   let validatedWords: Array<z.infer<typeof vocabularyFormItemSchema>> = [];
   if (words && words.length > 0) {
     const validatedWordsResult = z.array(vocabularyFormItemSchema).safeParse(words);
@@ -63,7 +61,6 @@ export async function createVocabularySet(
 
   const { title, description, source_language, target_language, visibility } = validatedFields.data;
 
-  // Automatically assign BookOpen as default icon & random color
   const finalColor = getRandomVocabularySetColor();
   const finalIcon = "BookOpen";
 
@@ -74,7 +71,7 @@ export async function createVocabularySet(
   let generatedId = "";
 
   while (attempts < maxAttempts && !success) {
-    attempts++;
+    attempts += 1;
     generatedId = generateVocabSetId();
     try {
       await VocabSetRepository.createVocabSet(generatedId, userId, {
@@ -106,15 +103,14 @@ export async function createVocabularySet(
     };
   }
 
-  // 3. Insert vocabulary items if provided
   if (validatedWords.length > 0) {
     try {
       const mappingStart = performance.now();
       const dbItems = validatedWords.map((item) => ({
         set_id: generatedId,
         owner_id: userId,
-        word: item.word,
-        meaning: item.meaning,
+        word: item.word.trim(),
+        meaning: item.meaning.trim(),
         ipa: item.ipa || null,
         part_of_speech: item.partOfSpeech || null,
         example: item.example || null,

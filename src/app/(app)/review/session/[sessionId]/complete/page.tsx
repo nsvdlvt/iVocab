@@ -3,7 +3,6 @@ import Link from "next/link";
 import { PartyPopper } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { requireReviewSession } from "@/lib/review-session/review-session-access";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
 
 interface PageProps {
@@ -12,10 +11,7 @@ interface PageProps {
 
 export default async function ReviewSessionCompletePage({ params }: PageProps) {
   const { sessionId } = await params;
-  const session = ReviewSessionStore.get(sessionId) ?? requireReviewSession(sessionId);
-  if (session) {
-    ReviewSessionStore.delete(sessionId);
-  }
+  ReviewSessionStore.delete(sessionId);
 
   return (
     <PageContainer className="py-10">
@@ -26,19 +22,19 @@ export default async function ReviewSessionCompletePage({ params }: PageProps) {
           </div>
         </div>
         <div>
-          <h1 className="text-3xl font-black text-foreground">Review Complete</h1>
+          <h1 className="text-3xl font-black text-foreground">Hoàn thành phiên học!</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            You reviewed all scheduled words.
+            Bạn đã hoàn thành tất cả các mục từ của vòng này.
           </p>
         </div>
         <Link
-          href="/review"
+          href="/"
           className={buttonVariants({
             variant: "default",
             className: "rounded-xl px-5",
           })}
         >
-          Return to Review
+          Về trang chủ
         </Link>
       </div>
     </PageContainer>

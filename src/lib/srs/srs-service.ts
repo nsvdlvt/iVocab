@@ -35,7 +35,7 @@ const LEARNING_THRESHOLDS: Record<0 | 1, number> = {
   1: 1,
 };
 
-const INITIAL_REVIEW_INTERVAL_DAYS = 3;
+const INITIAL_REVIEW_INTERVAL_DAYS = 1;
 
 function addDays(base: Date, days: number) {
   return new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
@@ -95,7 +95,7 @@ export const SrsService = {
     const now = params.now ?? new Date();
 
     if (params.level === 2) {
-      return { nextReviewAt: addDays(now, 5).toISOString(), intervalDays: 5 };
+      return { nextReviewAt: addDays(now, 3).toISOString(), intervalDays: 3 };
     }
 
     if (params.level === 3) {

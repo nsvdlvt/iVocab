@@ -15,7 +15,7 @@ import { EmptyFlashcard } from "../flashcard/EmptyFlashcard";
 
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { QuestionGenerator } from "@/lib/learning/question-generator";
-import { checkAnswer } from "@/lib/learning/answer-checker";
+import { checkEnglishAnswer, checkVietnameseAnswer } from "@/lib/learning/answer-checker";
 import { AdaptiveEngine, LearningState as LearnWordState, RecentQuestionConfig } from "@/lib/learning/adaptive-engine";
 import { SESSION_CONFIG } from "@/lib/learning/config";
 import { useSpeak } from "@/hooks/use-speak";
@@ -39,6 +39,7 @@ interface LearnViewerProps {
 }
 
 const getStorageKey = (setId: string) => `ivocab_learn_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
+const getSettingsStorageKey = (setId: string) => `ivocab_learn_settings_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
 
 interface SerializedSession {
   wordStates: LearnWordState[];
@@ -54,16 +55,50 @@ interface SerializedSession {
 
 export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: LearnViewerProps) {
   const router = useRouter();
+  const settingsKey = getSettingsStorageKey(setInfo.id);
 
   // Active configurations
-  const [settings, setSettings] = useState<LearnSettings>({
-    directionEnVi: true,
-    directionViEn: true,
-    typeMcq: true,
-    typeInput: true,
-    onlyLearning: false,
-    orderRandom: true,
-    autoContinue: true,
+  const [settings, setSettings] = useState<LearnSettings>(() => {
+    if (typeof window === "undefined") {
+      return {
+        directionEnVi: true,
+        directionViEn: true,
+        typeMcq: true,
+        typeInput: true,
+        onlyLearning: false,
+        orderRandom: true,
+        autoContinue: true,
+      };
+    }
+
+    const stored = window.localStorage.getItem(settingsKey);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Partial<LearnSettings>;
+        return {
+          directionEnVi: parsed.directionEnVi ?? true,
+          directionViEn: parsed.directionViEn ?? true,
+          typeMcq: parsed.typeMcq ?? true,
+          typeInput: parsed.typeInput ?? true,
+          onlyLearning: parsed.onlyLearning ?? false,
+          orderRandom: parsed.orderRandom ?? true,
+          autoContinue: parsed.autoContinue ?? true,
+        };
+      } catch (error) {
+        console.warn("Failed to restore learn settings", error);
+        window.localStorage.removeItem(settingsKey);
+      }
+    }
+
+    return {
+      directionEnVi: true,
+      directionViEn: true,
+      typeMcq: true,
+      typeInput: true,
+      onlyLearning: false,
+      orderRandom: true,
+      autoContinue: true,
+    };
   });
 
   const [settingsOpened, setSettingsOpened] = useState(false);
@@ -107,6 +142,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (isFinished) return;
     startedAt.current = Date.now() - elapsedTime * 1000;
     timerRef.current = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - startedAt.current) / 1000));
@@ -165,12 +201,13 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   // Debounce saver hook
   useEffect(() => {
     if (isFinished) return;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
     const handler = setTimeout(() => {
       saveSessionState(wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings);
     }, 1500);
 
     return () => clearTimeout(handler);
-  }, [wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings, isFinished, saveSessionState]);
+  }, [wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings, isFinished, saveSessionState, settingsKey]);
 
   // Priority queue selecting algorithm
   const selectNextWord = useCallback(
@@ -250,12 +287,12 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const handleCheckAnswer = useCallback((answerText: string) => {
     if (!currentQuestion || answerState !== "unanswered") return;
 
-    const result = checkAnswer(
-      answerText,
+    const result =
       currentQuestion.direction === "en-vi"
-        ? [currentQuestion.word.meaning]
-        : [currentQuestion.word.word]
-    );
+        ? checkVietnameseAnswer(answerText, currentQuestion.word.meaning, {
+            synonyms: currentQuestion.word.synonyms ?? undefined,
+          })
+        : checkEnglishAnswer(answerText, currentQuestion.word.word);
 
     setAnswerState(result);
   }, [currentQuestion, answerState]);
@@ -540,6 +577,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
         settings={settings}
         onSaveSettings={(nextSettings) => {
           setSettings(nextSettings);
+          localStorage.setItem(settingsKey, JSON.stringify(nextSettings));
           // Restart queue logic after configurations change to enforce random/original structures
           const list = [...wordStates];
           if (nextSettings.orderRandom) {

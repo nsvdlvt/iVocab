@@ -13,33 +13,42 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          role: "user" | "admin";
           display_name: string | null;
           avatar_url: string | null;
           level: string | null;
           streak: number | null;
+          longest_streak: number | null;
           daily_goal: number | null;
+          last_activity_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
           email: string;
+          role?: "user" | "admin";
           display_name?: string | null;
           avatar_url?: string | null;
           level?: string | null;
           streak?: number | null;
+          longest_streak?: number | null;
           daily_goal?: number | null;
+          last_activity_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
+          role?: "user" | "admin";
           display_name?: string | null;
           avatar_url?: string | null;
           level?: string | null;
           streak?: number | null;
+          longest_streak?: number | null;
           daily_goal?: number | null;
+          last_activity_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -265,6 +274,11 @@ export interface Database {
           ended_at: string | null;
           studied_words: number | null;
           remembered_words: number | null;
+          study_seconds: number | null;
+          reviews_completed: number | null;
+          quizzes_completed: number | null;
+          dictations_completed: number | null;
+          sentences_completed: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -275,6 +289,11 @@ export interface Database {
           ended_at?: string | null;
           studied_words?: number | null;
           remembered_words?: number | null;
+          study_seconds?: number | null;
+          reviews_completed?: number | null;
+          quizzes_completed?: number | null;
+          dictations_completed?: number | null;
+          sentences_completed?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -285,6 +304,11 @@ export interface Database {
           ended_at?: string | null;
           studied_words?: number | null;
           remembered_words?: number | null;
+          study_seconds?: number | null;
+          reviews_completed?: number | null;
+          quizzes_completed?: number | null;
+          dictations_completed?: number | null;
+          sentences_completed?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -476,10 +500,18 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      record_learning_progress: {
+        Args: {
+          p_user_id: string;
+          p_count: number;
+          p_duration_seconds: number;
+          p_source: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
-      [_ in never]: never;
+      user_role_enum: "user" | "admin";
     };
     CompositeTypes: {
       [_ in never]: never;

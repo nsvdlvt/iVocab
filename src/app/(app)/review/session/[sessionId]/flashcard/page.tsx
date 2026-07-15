@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { FlashcardViewer } from "@/components/features/flashcard/FlashcardViewer";
+import { ReviewFlashcardSession } from "@/components/features/review/ReviewFlashcardSession";
 import { requireReviewSession } from "@/lib/review-session/review-session-access";
 
 interface PageProps {
@@ -15,14 +15,11 @@ export default async function ReviewSessionFlashcardPage({ params }: PageProps) 
 
   return (
     <PageContainer className="py-6 sm:py-8">
-      <FlashcardViewer
-        initialWords={session.words}
+      <ReviewFlashcardSession
+        words={session.words}
         setInfo={{ id: session.id, title: session.title }}
-        onBack={async () => {
-          "use server";
-          const { redirect } = await import("next/navigation");
-          redirect(`/review/session/${sessionId}`);
-        }}
+        onBackHref={`/review/session/${sessionId}`}
+        reviewSessionId={sessionId}
       />
     </PageContainer>
   );

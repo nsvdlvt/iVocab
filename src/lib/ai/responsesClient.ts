@@ -65,73 +65,100 @@ export async function request<T = unknown>(
     });
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(new Error("TimeoutError")), 90000);
+  const maxAttempts = 3;
+  let lastError: unknown = null;
 
-    if (abortSignal) {
-      abortSignal.addEventListener("abort", () => {
-        clearTimeout(timeoutId);
-        controller.abort(abortSignal.reason);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(new Error("TimeoutError")), 90000);
+
+      if (abortSignal) {
+        abortSignal.addEventListener("abort", () => {
+          clearTimeout(timeoutId);
+          controller.abort(abortSignal.reason);
+        });
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: bodyJson,
+        signal: controller.signal,
       });
-    }
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: bodyJson,
-      signal: controller.signal,
-    });
+      clearTimeout(timeoutId);
 
-    clearTimeout(timeoutId);
+      if (process.env.NODE_ENV === "development") {
+        const headerEntries = Array.from(response.headers.entries());
+        const responseBody = await response.clone().text();
+        console.log("[responsesClient] HTTP response", {
+          attempt,
+          status: response.status,
+          headers: headerEntries,
+          body: responseBody,
+        });
+      }
 
-    if (process.env.NODE_ENV === "development") {
-      const headerEntries = Array.from(response.headers.entries());
-      const responseBody = await response.clone().text();
-      console.log("[responsesClient] HTTP response", {
-        status: response.status,
-        headers: headerEntries,
-        body: responseBody,
-      });
-    }
+      if (!response.ok) {
+        const txt = await response.text();
+        const error = new AIResponseError(`Responses API error ${response.status}: ${txt}`);
+        if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
+          lastError = error;
+          await delay(backoffMs(attempt));
+          continue;
+        }
+        throw error;
+      }
 
-    if (!response.ok) {
       const txt = await response.text();
-      throw new AIResponseError(`Responses API error ${response.status}: ${txt}`);
+      const data = JSON.parse(txt);
+      let content: unknown = data;
+      if (data && typeof data === "object") {
+        const wrapper = data as {
+          output?: Array<{ content?: Array<{ text?: string }> }>;
+          content?: string;
+          output_text?: string;
+        };
+        const first = wrapper.output?.[0];
+        const txtNode = first?.content?.[0]?.text;
+        if (typeof txtNode === "string") content = txtNode;
+        else if (typeof wrapper.output_text === "string") content = wrapper.output_text;
+        else if (typeof wrapper.content === "string") content = wrapper.content;
+      }
+      return content as T;
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
+        throw new AIAbortError("Request aborted or timed out");
+      }
+      if (err instanceof TypeError) {
+        throw new AINetworkError(`Network failure: ${err.message}`);
+      }
+      if (err instanceof AIResponseError || err instanceof AINetworkError || err instanceof AIAbortError) {
+        lastError = err;
+        if (err instanceof AIAbortError || err instanceof AINetworkError) {
+          throw err;
+        }
+        if (attempt < maxAttempts && isRetryableMessage(err.message)) {
+          await delay(backoffMs(attempt));
+          continue;
+        }
+        throw err;
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      lastError = new AIResponseError(`Unexpected error during request: ${msg}`);
+      if (attempt < maxAttempts) {
+        await delay(backoffMs(attempt));
+        continue;
+      }
+      throw lastError;
     }
-
-    const txt = await response.text();
-    const data = JSON.parse(txt);
-    let content: unknown = data;
-    if (data && typeof data === "object") {
-      const wrapper = data as {
-        output?: Array<{ content?: Array<{ text?: string }> }>;
-        content?: string;
-        output_text?: string;
-      };
-      const first = wrapper.output?.[0];
-      const txtNode = first?.content?.[0]?.text;
-      if (typeof txtNode === "string") content = txtNode;
-      else if (typeof wrapper.output_text === "string") content = wrapper.output_text;
-      else if (typeof wrapper.content === "string") content = wrapper.content;
-    }
-    return content as T;
-  } catch (err: unknown) {
-    if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
-      throw new AIAbortError("Request aborted or timed out");
-    }
-    if (err instanceof TypeError) {
-      throw new AINetworkError(`Network failure: ${err.message}`);
-    }
-    if (err instanceof AIResponseError || err instanceof AINetworkError || err instanceof AIAbortError) {
-      throw err;
-    }
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new AIResponseError(`Unexpected error during request: ${msg}`);
   }
+
+  throw (lastError as Error) ?? new AIResponseError("Request failed after multiple attempts");
 }
 
 function getCallerFile(): string {
@@ -141,4 +168,21 @@ function getCallerFile(): string {
     if (line.includes("import-vocabulary.ts")) return "import-vocabulary.ts";
   }
   return "unknown";
+}
+
+function isRetryableResponseStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504;
+}
+
+function isRetryableMessage(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("upstream_error");
+}
+
+function backoffMs(attempt: number): number {
+  return 300 * Math.pow(2, attempt - 1);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

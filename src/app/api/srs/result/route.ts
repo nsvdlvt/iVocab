@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ReviewRepository } from "@/repositories/review.repository";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
+import { LearningProgressService, LearningSource } from "@/lib/statistics/learning-progress.service";
 
 export async function POST(request: Request) {
   try {
@@ -25,6 +26,15 @@ export async function POST(request: Request) {
       mode,
       answerResult,
     });
+
+    let source: LearningSource = "learn";
+    if (mode === "review") source = "review";
+    if (mode === "dictation") source = "dictation";
+    if (mode === "sentence-practice") source = "sentence";
+    if (mode === "flashcard") source = "learn";
+    
+    // We pass 1 as count. Duration could be tracked if sent from client, currently 0.
+    await LearningProgressService.recordActivity(user.id, 1, 0, source);
 
     if (mode === "review" && reviewSessionId) {
       const session = ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);

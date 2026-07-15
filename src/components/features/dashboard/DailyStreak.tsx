@@ -2,20 +2,25 @@ import React from "react";
 import { Flame } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { DailyActivity } from "@/repositories/statistics.repository";
 
 interface DailyStreakProps {
   streak: number;
+  weeklyActivity: DailyActivity[];
 }
 
 const WEEK_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
-export function DailyStreak({ streak }: DailyStreakProps) {
-  // Highlight the last N days of the week based on the real streak (max 7)
-  const activeDays = Math.min(streak, 7);
-  const weekDays = WEEK_LABELS.map((label, idx) => ({
-    label,
-    active: idx < activeDays,
-  }));
+export function DailyStreak({ streak, weeklyActivity }: DailyStreakProps) {
+  // Use actual weekly activity data
+  const weekDays = WEEK_LABELS.map((label, idx) => {
+    const dayData = weeklyActivity?.[idx];
+    const active = dayData ? dayData.studiedWords > 0 || dayData.reviewedWords > 0 || dayData.completed : false;
+    return {
+      label,
+      active,
+    };
+  });
 
   return (
     <SectionCard className="flex flex-col h-full justify-between">

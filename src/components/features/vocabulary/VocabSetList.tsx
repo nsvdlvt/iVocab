@@ -122,9 +122,9 @@ export function VocabSetList({ sets, onEdit, onDelete, onRestore }: VocabSetList
                           <Copy className="h-3.5 w-3.5" />
                           Nhân bản
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(set, false)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
+                        <DropdownMenuItem onClick={() => onDelete(set, true)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
                           <Trash2 className="h-3.5 w-3.5" />
-                          Xóa bộ học
+                          Xóa vĩnh viễn
                         </DropdownMenuItem>
                       </>
                     ) : (

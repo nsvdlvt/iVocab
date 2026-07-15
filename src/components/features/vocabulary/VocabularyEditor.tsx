@@ -12,6 +12,7 @@ import { VocabularyInfoCard } from "./VocabularyInfoCard";
 import { VocabularyCard } from "./VocabularyCard";
 import { ROUTES } from "@/constants/routes";
 import { AnimatePresence } from "framer-motion";
+import { normalizeVocabularyWord } from "@/lib/validation/vocabulary-duplicates";
 
 interface VocabularyItem {
   id: string;
@@ -43,21 +44,16 @@ export function VocabularyEditor({
 }: VocabularyEditorProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
-
   const isEditMode = !!initialSetId;
 
-  // Form states
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [visibility, setVisibility] = useState<"private" | "public" | "unlisted">(initialVisibility);
-
-  // Error States
   const [errors, setErrors] = useState<{
     title?: string;
     items?: Record<string, { word?: string; meaning?: string }>;
   }>({});
 
-  // Dynamic Vocabulary List States (Initial with 3 empty items if Create, or initial list if Edit)
   const [items, setItems] = useState<VocabularyItem[]>(
     initialItems.length > 0
       ? initialItems
@@ -130,11 +126,8 @@ export function VocabularyEditor({
   };
 
   const handleChangeField = (id: string, field: keyof VocabularyItem, value: string) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
 
-    // Clear validation error dynamically on change
     if (errors.items && errors.items[id]) {
       const cardErr = errors.items[id];
       if (field === "word" && cardErr.word && value.trim()) {
@@ -155,7 +148,6 @@ export function VocabularyEditor({
     }
   };
 
-  // Callback to append quick imported cards
   const handleImportCards = (
     newCards: Array<{
       word: string;
@@ -183,10 +175,7 @@ export function VocabularyEditor({
 
     setItems((prev) => {
       const onlyHasInitialEmpty = prev.every((item) => !item.word.trim() && !item.meaning.trim());
-      if (onlyHasInitialEmpty) {
-        return importedItems;
-      }
-      return [...prev, ...importedItems];
+      return onlyHasInitialEmpty ? importedItems : [...prev, ...importedItems];
     });
   };
 
@@ -227,38 +216,51 @@ export function VocabularyEditor({
       return;
     }
 
+    const vocabSetData = {
+      title: title.trim(),
+      description: description.trim(),
+      source_language: "en",
+      target_language: "vi",
+      visibility,
+      color: "",
+      icon: "",
+    };
+
+    const mappedWords = filledItems.map((item) => ({
+      id:
+        item.id.startsWith("vocab-init-") || item.id.startsWith("vocab-import-") || item.id.startsWith("vocab-")
+          ? undefined
+          : item.id,
+      word: item.word.trim(),
+      meaning: item.meaning.trim(),
+      ipa: item.ipa.trim() || undefined,
+      partOfSpeech: item.partOfSpeech.trim() || undefined,
+      example: item.example.trim() || undefined,
+      synonyms: item.synonyms.trim() || undefined,
+      antonyms: item.antonyms.trim() || undefined,
+      note: item.note.trim() || undefined,
+      example_translation: item.example_translation.trim() || undefined,
+    }));
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[VocabularyEditor] save payload", {
+        setId: initialSetId ?? null,
+        mode: isEditMode ? "update" : "create",
+        vocabSetData,
+        words: mappedWords.map((item) => ({
+          id: item.id ?? null,
+          word: item.word,
+          normalizedWord: normalizeVocabularyWord(item.word),
+          meaning: item.meaning,
+        })),
+      });
+    }
+
     setIsPending(true);
     try {
-      const vocabSetData = {
-        title: title.trim(),
-        description: description.trim(),
-        source_language: "en",
-        target_language: "vi",
-        visibility,
-        color: "",
-        icon: "",
-      };
-
-      const mappedWords = filledItems.map((item) => ({
-        // Keep ID for updates in Edit Mode, exclude placeholder generated IDs in Create Mode
-        id: item.id.startsWith("vocab-init-") || item.id.startsWith("vocab-import-") || item.id.startsWith("vocab-") ? undefined : item.id,
-        word: item.word.trim(),
-        meaning: item.meaning.trim(),
-        ipa: item.ipa.trim() || undefined,
-        partOfSpeech: item.partOfSpeech.trim() || undefined,
-        example: item.example.trim() || undefined,
-        synonyms: item.synonyms.trim() || undefined,
-        antonyms: item.antonyms.trim() || undefined,
-        note: item.note.trim() || undefined,
-        example_translation: item.example_translation.trim() || undefined,
-      }));
-
-      let res;
-      if (isEditMode && initialSetId) {
-        res = await updateVocabularySetWithWords(initialSetId, vocabSetData, mappedWords);
-      } else {
-        res = await createVocabularySet(vocabSetData, mappedWords);
-      }
+      const res = isEditMode && initialSetId
+        ? await updateVocabularySetWithWords(initialSetId, vocabSetData, mappedWords)
+        : await createVocabularySet(vocabSetData, mappedWords);
 
       if (res.success) {
         const targetSetId = initialSetId || (res as { setId?: string }).setId || "";
@@ -277,18 +279,16 @@ export function VocabularyEditor({
 
   return (
     <div className="space-y-6 pb-24">
-      {/* HEADER TOOLBAR */}
       <VocabularyToolbar
         visibility={visibility}
         onChangeVisibility={setVisibility}
         isPending={isPending}
         onCreateClick={handleSave}
         onImportCards={handleImportCards}
-        existingWords={items.map(item => ({ word: item.word, meaning: item.meaning }))}
+        existingWords={items.map((item) => ({ word: item.word, meaning: item.meaning }))}
       />
 
       <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
-        {/* INFO SECTION */}
         <VocabularyInfoCard
           title={title}
           onChangeTitle={(val) => {
@@ -303,7 +303,6 @@ export function VocabularyEditor({
           error={errors.title}
         />
 
-        {/* LIST SECTION */}
         <div className="space-y-4">
           <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground/60 tracking-wider select-none uppercase">
             <span>Danh sách từ vựng ({items.length})</span>
@@ -326,7 +325,6 @@ export function VocabularyEditor({
             </AnimatePresence>
           </div>
 
-          {/* ADD WORD ROW ACTION BUTTON */}
           <div className="flex justify-center pt-3">
             <Button
               type="button"

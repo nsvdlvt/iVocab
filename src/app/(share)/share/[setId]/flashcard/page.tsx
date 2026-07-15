@@ -1,6 +1,6 @@
 import React from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { FlashcardViewer } from "@/components/features/flashcard/FlashcardViewer";
+import { FlashcardStudy } from "@/components/features/flashcard/FlashcardStudy";
 import { PrivateShareNotice } from "@/components/features/vocabulary/PrivateShareNotice";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
@@ -23,15 +23,11 @@ export default async function SharedFlashcardPage({ params }: PageProps) {
 
   return (
     <PageContainer className="py-6 sm:py-8">
-      <FlashcardViewer
+      <FlashcardStudy
         initialWords={words}
         setInfo={{ id: set.id, title: set.title }}
         readOnly
-        onBack={async () => {
-          "use server";
-          const { redirect } = await import("next/navigation");
-          redirect(`/share/${setId}`);
-        }}
+        onBackHref={`/share/${setId}`}
       />
     </PageContainer>
   );

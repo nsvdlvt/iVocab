@@ -38,8 +38,8 @@ export const ReviewSessionStore = {
     const now = new Date();
     const session: ReviewSession = {
       id: randomUUID(),
-      title: "Today's Review",
-      description: "Words scheduled for review today",
+      title: "Ôn tập hôm nay",
+      description: "Các từ được lên lịch để ôn hôm nay",
       words,
       createdAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + REVIEW_SESSION_TTL_MS).toISOString(),

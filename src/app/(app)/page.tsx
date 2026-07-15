@@ -30,8 +30,8 @@ export default async function DashboardPage() {
 
       {/* Key stats row: Streak, Progress, and Today's Review */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <DailyStreak streak={stats.streak} />
-        <LearningProgress learnedToday={stats.learnedWords} dailyGoal={stats.dailyGoal} />
+        <DailyStreak streak={stats.streak} weeklyActivity={stats.weeklyActivity} />
+        <LearningProgress progress={stats.dailyProgress} />
       </div>
 
       <UpcomingReviewsForecast forecast={reviewForecast} />

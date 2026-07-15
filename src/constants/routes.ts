@@ -9,6 +9,7 @@ export const ROUTES = {
   SHARE_VOCABULARY_DETAIL: (setId: string) => `/share/${setId}`,
   REVIEW: "/review",
   QUIZ: "/quiz",
+  AI_QUIZ: (setId: string, basePath = "/vocabulary") => `${basePath}/${setId}/ai-quiz`,
   AI: "/ai",
   STATISTICS: "/statistics",
   SETTINGS: "/settings",

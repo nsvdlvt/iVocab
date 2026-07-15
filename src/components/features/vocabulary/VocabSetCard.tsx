@@ -152,9 +152,9 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
                       <Share2 className="h-3.5 w-3.5" />
                       Chia sẻ
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete(set, false)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
+                    <DropdownMenuItem onClick={() => onDelete(set, true)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
                       <Trash2 className="h-3.5 w-3.5" />
-                      Xóa bộ học
+                      Xóa vĩnh viễn
                     </DropdownMenuItem>
                   </>
                 ) : (

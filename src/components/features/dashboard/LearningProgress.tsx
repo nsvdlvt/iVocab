@@ -2,15 +2,17 @@ import React from "react";
 import { Progress } from "@/components/ui/progress";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { DailyProgress } from "@/repositories/statistics.repository";
 
 interface LearningProgressProps {
-  learnedToday: number;
-  dailyGoal: number;
+  progress: DailyProgress;
 }
 
-export function LearningProgress({ learnedToday, dailyGoal }: LearningProgressProps) {
-  const goal = dailyGoal > 0 ? dailyGoal : 20;
-  const progressPercent = Math.min(Math.round((learnedToday / goal) * 100), 100);
+export function LearningProgress({ progress }: LearningProgressProps) {
+  const goal = progress.goal > 0 ? progress.goal : 20;
+  const totalActivity = progress.studiedWords + progress.reviewedWords; // Or use total logic from backend
+  // For simplicity, we just use the progressPercent calculated by the backend
+  const progressPercent = progress.progressPercent;
 
   return (
     <SectionCard className="flex flex-col h-full justify-between">
@@ -21,8 +23,8 @@ export function LearningProgress({ learnedToday, dailyGoal }: LearningProgressPr
         />
         <div className="my-5 flex items-baseline justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-extrabold text-primary">{learnedToday}</span>
-            <span className="text-sm text-muted-foreground">/ {goal} từ mới</span>
+            <span className="text-3xl font-extrabold text-primary">{totalActivity}</span>
+            <span className="text-sm text-muted-foreground">/ {goal} hoạt động</span>
           </div>
           <span className="text-sm font-semibold text-primary">{progressPercent}%</span>
         </div>
@@ -31,9 +33,9 @@ export function LearningProgress({ learnedToday, dailyGoal }: LearningProgressPr
       <p className="text-xs text-muted-foreground leading-relaxed mt-2">
         {progressPercent >= 100
           ? "Chúc mừng! Bạn đã hoàn thành xuất sắc mục tiêu học tập hôm nay. Cùng giữ vững phong độ nhé!"
-          : learnedToday === 0
+          : totalActivity === 0
           ? "Hãy bắt đầu học hôm nay để đạt mục tiêu của bạn!"
-          : `Bạn còn cách mục tiêu ${goal - learnedToday} từ mới nữa. Hãy dành thêm ít phút nhé!`}
+          : `Bạn còn cách mục tiêu ${goal - totalActivity} hoạt động nữa. Hãy dành thêm ít phút nhé!`}
       </p>
     </SectionCard>
   );

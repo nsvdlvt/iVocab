@@ -17,7 +17,7 @@ import { EmptyFlashcard } from "../study/../flashcard/EmptyFlashcard";
 
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { QuestionGenerator } from "@/lib/learning/question-generator";
-import { checkAnswer } from "@/lib/learning/answer-checker";
+import { checkEnglishAnswer, checkVietnameseAnswer } from "@/lib/learning/answer-checker";
 import { AdaptiveEngine, LearningState as LearnWordState, RecentQuestionConfig } from "@/lib/learning/adaptive-engine";
 import { SESSION_CONFIG } from "@/lib/learning/config";
 import { useSpeak } from "@/hooks/use-speak";
@@ -41,6 +41,7 @@ interface DictationViewerProps {
 }
 
 const getStorageKey = (setId: string) => `ivocab_dictation_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
+const getSettingsStorageKey = (setId: string) => `ivocab_dictation_settings_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
 
 interface SerializedSession {
   wordStates: LearnWordState[];
@@ -56,15 +57,47 @@ interface SerializedSession {
 
 export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId }: DictationViewerProps) {
   const router = useRouter();
+  const settingsKey = getSettingsStorageKey(setInfo.id);
 
   // Active configurations
-  const [settings, setSettings] = useState<DictationSettings>({
-    enableWord: true,
-    enableSentence: false,
-    audioSpeed: 1.0,
-    autoReplayOnWrong: true,
-    autoContinue: true,
-    ignoreCase: true,
+  const [settings, setSettings] = useState<DictationSettings>(() => {
+    if (typeof window === "undefined") {
+      return {
+        enableWord: true,
+        enableSentence: false,
+        audioSpeed: 1.0,
+        autoReplayOnWrong: true,
+        autoContinue: true,
+        ignoreCase: true,
+      };
+    }
+
+    const stored = window.localStorage.getItem(settingsKey);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as Partial<DictationSettings>;
+        return {
+          enableWord: parsed.enableWord ?? true,
+          enableSentence: parsed.enableSentence ?? false,
+          audioSpeed: parsed.audioSpeed ?? 1.0,
+          autoReplayOnWrong: parsed.autoReplayOnWrong ?? true,
+          autoContinue: parsed.autoContinue ?? true,
+          ignoreCase: parsed.ignoreCase ?? true,
+        };
+      } catch (error) {
+        console.warn("Failed to restore dictation settings", error);
+        window.localStorage.removeItem(settingsKey);
+      }
+    }
+
+    return {
+      enableWord: true,
+      enableSentence: false,
+      audioSpeed: 1.0,
+      autoReplayOnWrong: true,
+      autoContinue: true,
+      ignoreCase: true,
+    };
   });
 
   const [settingsOpened, setSettingsOpened] = useState(false);
@@ -106,6 +139,7 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (isFinished) return;
     startedAt.current = Date.now() - elapsedTime * 1000;
     timerRef.current = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - startedAt.current) / 1000));
@@ -163,12 +197,13 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
   // Debounce saver hook
   useEffect(() => {
     if (isFinished) return;
+    localStorage.setItem(settingsKey, JSON.stringify(settings));
     const handler = setTimeout(() => {
       saveSessionState(wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings);
     }, 1500);
 
     return () => clearTimeout(handler);
-  }, [wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings, isFinished, saveSessionState]);
+  }, [wordStates, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, settings, isFinished, saveSessionState, settingsKey]);
 
   // Priority queue selecting algorithm
   const selectNextWord = useCallback(
@@ -289,14 +324,12 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
   const handleCheckAnswer = useCallback((answerText: string) => {
     if (!currentQuestion || answerState !== "unanswered") return;
 
-    // Standard checking logic collapse spaces and trims
-    const cleanAnswer = settings.ignoreCase ? answerText.toLowerCase().trim() : answerText.trim();
-    const cleanTarget = settings.ignoreCase ? currentQuestion.correctAnswer.toLowerCase().trim() : currentQuestion.correctAnswer.trim();
-
-    const result = checkAnswer(
-      cleanAnswer,
-      [cleanTarget]
-    );
+    const result =
+      currentQuestion.type === "sentence-dictation" || currentQuestion.type === "word-dictation"
+        ? checkEnglishAnswer(answerText, currentQuestion.correctAnswer)
+        : checkVietnameseAnswer(answerText, currentQuestion.correctAnswer, {
+            synonyms: currentQuestion.word.synonyms ?? undefined,
+          });
 
     setAnswerState(result);
 
@@ -304,7 +337,7 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
     if (settings.autoReplayOnWrong && result === "wrong") {
       setTimeout(() => speakCurrentText(), 600);
     }
-  }, [currentQuestion, answerState, settings.ignoreCase, settings.autoReplayOnWrong, speakCurrentText]);
+  }, [currentQuestion, answerState, settings.autoReplayOnWrong, speakCurrentText]);
 
   const handleSkip = useCallback(() => {
     if (!currentQuestion || answerState !== "unanswered") return;
@@ -582,6 +615,7 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
         settings={settings}
         onSaveSettings={(nextSettings) => {
           setSettings(nextSettings);
+          localStorage.setItem(settingsKey, JSON.stringify(nextSettings));
           // Auto restart current question if study mode has shifted
           setCurrentQuestion(null);
         }}

@@ -11,8 +11,8 @@ import { performance } from "perf_hooks";
 
 const vocabularyFormItemSchema = z.object({
   id: z.string().optional(),
-  word: z.string().min(1, "Tá»« vá»±ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
-  meaning: z.string().min(1, "NghÄ©a khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  word: z.string().min(1, "Từ vựng không được để trống"),
+  meaning: z.string().min(1, "Nghĩa không được để trống"),
   ipa: z.string().optional().or(z.literal("")),
   partOfSpeech: z.string().optional().or(z.literal("")),
   example: z.string().optional().or(z.literal("")),
@@ -45,7 +45,7 @@ export async function updateVocabularySetWithWords(
   if (!existingSet) {
     return {
       success: false,
-      error: "KhÃ´ng tÃ¬m tháº¥y bá»™ tá»« vá»±ng hoáº·c báº¡n khÃ´ng cÃ³ quyá»n chá»‰nh sá»­a.",
+      error: "Không tìm thấy bộ từ vựng hoặc bạn không có quyền chỉnh sửa.",
     };
   }
 
@@ -53,7 +53,7 @@ export async function updateVocabularySetWithWords(
   if (!validatedFields.success) {
     return {
       success: false,
-      error: "Dá»¯ liá»‡u bá»™ tá»« vá»±ng khÃ´ng há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra láº¡i.",
+      error: "Dữ liệu bộ từ vựng không hợp lệ. Vui lòng kiểm tra lại.",
     };
   }
 
@@ -61,7 +61,7 @@ export async function updateVocabularySetWithWords(
   if (!validatedWordsResult.success) {
     return {
       success: false,
-      error: "Dá»¯ liá»‡u danh sÃ¡ch tá»« vá»±ng khÃ´ng há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra láº¡i.",
+      error: "Dữ liệu danh sách từ vựng không hợp lệ. Vui lòng kiểm tra lại.",
     };
   }
 
@@ -137,18 +137,25 @@ export async function updateVocabularySetWithWords(
     }
 
     if (process.env.NODE_ENV === "development") {
-      console.log("[AI Import] Database save", {
+      console.log("[VocabularyEditor] update payload", {
+        setId,
         queryMs: Math.round(queryMs),
         mappingMs: Math.round(mappingMs),
         saveMs: Math.round(saveMs),
-        rows: toInsert.length,
+        updateRows: validatedWords.filter((item) => item.id && existingDbIds.has(item.id)).length,
+        insertRows: toInsert.length,
+        words: validatedWords.map((item) => ({
+          id: item.id ?? null,
+          word: item.word.trim(),
+          meaning: item.meaning.trim(),
+        })),
       });
     }
   } catch (error) {
     const err = error as Error;
     return {
       success: false,
-      error: `Chá»‰nh sá»­a tháº¥t báº¡i: ${err.message}`,
+      error: `Chỉnh sửa thất bại: ${err.message}`,
     };
   }
 

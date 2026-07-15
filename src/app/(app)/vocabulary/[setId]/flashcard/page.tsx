@@ -2,9 +2,9 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
-import { VocabularyRepository } from "@/repositories/vocabulary.repository";
+import { ReviewRepository } from "@/repositories/review.repository";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { FlashcardViewer } from "@/components/features/flashcard/FlashcardViewer";
+import { FlashcardStudy } from "@/components/features/flashcard/FlashcardStudy";
 
 
 interface PageProps {
@@ -19,7 +19,7 @@ export default async function FlashcardPage({ params }: PageProps) {
 
   const [set, words] = await Promise.all([
     VocabSetRepository.getVocabSetById(setId, user.id),
-    VocabularyRepository.getWordsForStudy(setId, user.id),
+    ReviewRepository.getBySetId(user.id, setId),
   ]);
 
   if (!set || set.deleted_at) {
@@ -28,15 +28,10 @@ export default async function FlashcardPage({ params }: PageProps) {
 
   return (
     <PageContainer className="py-6 sm:py-8">
-      <FlashcardViewer
+      <FlashcardStudy
         initialWords={words}
         setInfo={{ id: set.id, title: set.title }}
-        onBack={async () => {
-          "use server";
-          // Redirecting via Next navigation inside server actions context 
-          const { redirect } = await import("next/navigation");
-          redirect(`/vocabulary/${setId}`);
-        }}
+        onBackHref={`/vocabulary/${setId}`}
       />
     </PageContainer>
   );

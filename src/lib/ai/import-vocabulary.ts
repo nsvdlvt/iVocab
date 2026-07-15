@@ -1,9 +1,9 @@
-import { request as responsesRequest } from "@/lib/ai/responsesClient";
 import { z } from "zod";
 import { LRUCache } from "@/lib/utils/lruCache";
 import { AIValidationError, AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
 import { buildImportPrompt } from "@/lib/ai/prompts/import-vocabulary";
 import { performance } from "perf_hooks";
+import { extractJsonPayload, requestTextResponse } from "@/lib/ai/json-response";
 
 export const importVocabItemSchema = z.object({
   word: z.string().min(1),
@@ -70,27 +70,12 @@ function standardizeList(raw: unknown): unknown {
     });
 }
 
-function extractJsonPayload(rawText: string): unknown {
-  const cleaned = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf("[");
-    const end = cleaned.lastIndexOf("]");
-    if (start !== -1 && end !== -1 && end > start) {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    }
-    throw new AIResponseError("Pháº£n há»“i AI khÃ´ng pháº£i JSON há»£p lá»‡.");
-  }
-}
-
 async function singleRequest(prompt: string, signal?: AbortSignal): Promise<AIVocabItem[]> {
   const requestStart = performance.now();
-  const response = await responsesRequest<{ content?: string }>({ input: prompt }, signal);
+  const rawText = await requestTextResponse(prompt, signal);
   const aiRequestMs = performance.now() - requestStart;
 
   const parsingStart = performance.now();
-  const rawText = typeof response === "string" ? response : response.content ?? JSON.stringify(response);
   const parsed = extractJsonPayload(rawText);
   const parsingMs = performance.now() - parsingStart;
 
@@ -132,7 +117,7 @@ export async function importVocabulary(input: string, imageFileBase64?: string, 
     if (err instanceof AIAbortError || err instanceof AINetworkError || err instanceof AIValidationError || err instanceof AIResponseError) {
       throw err;
     }
-    throw new AIResponseError("KhÃ´ng thá»ƒ táº¡o danh sÃ¡ch tá»« vá»±ng. Vui lÃ²ng thá»­ láº¡i.");
+    throw new AIResponseError("KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ¡o danh sÃƒÂ¡ch tÃ¡Â»Â« vÃ¡Â»Â±ng. Vui lÃƒÂ²ng thÃ¡Â»Â­ lÃ¡ÂºÂ¡i.");
   });
 
   importCache.set(cacheKey, result);
@@ -145,5 +130,5 @@ export async function importVocabulary(input: string, imageFileBase64?: string, 
 
 export async function enrichVocabulary(...args: unknown[]): Promise<never> {
   void args;
-  throw new AIResponseError("KhÃ´ng há»— trá»£ lÃ m giÃ u dá»¯ liá»‡u trong cháº¿ Ä‘á»™ rÃºt gá»n nÃ y.");
+  throw new AIResponseError("KhÃƒÂ´ng hÃ¡Â»â€” trÃ¡Â»Â£ lÃƒÂ m giÃƒÂ u dÃ¡Â»Â¯ liÃ¡Â»â€¡u trong chÃ¡ÂºÂ¿ Ã„â€˜Ã¡Â»â„¢ rÃƒÂºt gÃ¡Â»Ân nÃƒÂ y.");
 }

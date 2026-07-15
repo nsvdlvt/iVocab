@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
 import { UpcomingReviewForecastDay, buildUpcomingReviewForecast } from "@/lib/srs/upcoming-reviews";
+import { getDueReviewCutoff } from "@/lib/srs/due-reviews";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
@@ -12,6 +13,30 @@ function throwDbError(error: unknown): never {
     throw new Error(String((error as { message?: unknown }).message ?? "Database error"));
   }
   throw new Error("Database error");
+}
+
+async function getActiveVocabularyIds(userId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+
+  const { data: sets, error: setError } = await supabase
+    .from("vocab_sets")
+    .select("id")
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+
+  if (setError) throwDbError(setError);
+
+  const activeSetIds = new Set((sets ?? []).map((row) => row.id));
+
+  const { data: vocabRows, error: joinError } = await supabase
+    .from("vocabularies")
+    .select("id,set_id")
+    .eq("owner_id", userId)
+    .is("deleted_at", null);
+
+  if (joinError) throwDbError(joinError);
+
+  return new Set((vocabRows ?? []).filter((row) => activeSetIds.has(row.set_id)).map((row) => row.id));
 }
 
 export interface ReviewItem {
@@ -34,34 +59,32 @@ export interface UpcomingReviewSummary {
 
 export const ReviewRepository = {
   /**
-   * Returns all due review items for a user where next_review <= now().
+   * Returns all due review items for a user where next_review is due today or earlier.
    * Joins the review row with the associated vocabulary row.
    */
   async getDueReviews(userId: string): Promise<ReviewItem[]> {
     const supabase = await createClient();
-    const now = new Date().toISOString();
+    const now = new Date();
+    const cutoff = getDueReviewCutoff(now).toISOString();
+    const activeVocabularyIds = await getActiveVocabularyIds(userId);
 
     const { data, error } = await supabase
       .from("reviews")
-      .select(`
-        *,
-        vocabulary:vocabularies(*)
-      `)
+      .select(`*, vocabulary:vocabularies(*)`)
       .eq("user_id", userId)
-      .lte("next_review", now)
+      .lt("next_review", cutoff)
       .in("status", ["lv2", "lv3", "lv4", "lv5"])
       .order("next_review", { ascending: true });
 
     if (error) throwDbError(error);
     if (!data) return [];
 
-    // Filter out any rows where the vocabulary was soft-deleted
     return data
       .filter(
         (row): row is typeof row & { vocabulary: VocabularyRow } =>
-          row.vocabulary !== null &&
+          !!row.vocabulary &&
           !Array.isArray(row.vocabulary) &&
-          (row.vocabulary as VocabularyRow).deleted_at === null
+          activeVocabularyIds.has(row.vocabulary.id)
       )
       .map((row) => ({
         review: {
@@ -82,53 +105,51 @@ export const ReviewRepository = {
       }));
   },
 
-  /** Count of due review items for today (for dashboard). */
-  async countDueToday(userId: string): Promise<number> {
+  async getDueReviewsBySetId(userId: string, setId: string): Promise<ReviewItem[]> {
+    const items = await this.getDueReviews(userId);
+    return items.filter((item) => item.vocabulary.set_id === setId);
+  },
+
+  /** Count of due review items for today and earlier (for dashboard). */
+  async countDueReviews(userId: string): Promise<number> {
     const supabase = await createClient();
-    const now = new Date().toISOString();
+    const now = new Date();
+    const cutoff = getDueReviewCutoff(now).toISOString();
+    const activeVocabularyIds = await getActiveVocabularyIds(userId);
 
     const { data, error } = await supabase
       .from("reviews")
-      .select(`
-        id,
-        vocabulary:vocabularies(deleted_at)
-      `)
+      .select("vocabulary_id")
       .eq("user_id", userId)
-      .lte("next_review", now)
+      .lt("next_review", cutoff)
       .in("status", ["lv2", "lv3", "lv4", "lv5"]);
 
     if (error) throwDbError(error);
-    return (data ?? []).filter(
-      (row) =>
-        row.vocabulary !== null &&
-        !Array.isArray(row.vocabulary) &&
-        row.vocabulary.deleted_at === null
-    ).length;
+    return (data ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length;
   },
 
   async getSummary(userId: string): Promise<SrsSummary> {
     const supabase = await createClient();
-    const now = new Date().toISOString();
+    const now = new Date();
+    const cutoff = getDueReviewCutoff(now).toISOString();
+    const activeVocabularyIds = await getActiveVocabularyIds(userId);
 
-    const [{ data: dueRows, error: dueError }, { count: masteredWords, error: masteredError }, { count: learningWords, error: learningError }] =
+    const [{ data: dueRows, error: dueError }, { data: masteredRows, error: masteredError }, { data: learningRows, error: learningError }] =
       await Promise.all([
         supabase
           .from("reviews")
-          .select(`
-            id,
-            vocabulary:vocabularies(deleted_at)
-          `)
+          .select("vocabulary_id")
           .eq("user_id", userId)
-          .lte("next_review", now)
+          .lt("next_review", cutoff)
           .in("status", ["lv2", "lv3", "lv4", "lv5"]),
         supabase
           .from("reviews")
-          .select("id", { count: "exact", head: true })
+          .select("vocabulary_id")
           .eq("user_id", userId)
           .eq("status", "lv5"),
         supabase
           .from("reviews")
-          .select("id", { count: "exact", head: true })
+          .select("vocabulary_id")
           .eq("user_id", userId)
           .in("status", ["lv0", "lv1"]),
       ]);
@@ -138,14 +159,9 @@ export const ReviewRepository = {
     if (learningError) throwDbError(learningError);
 
     return {
-      dueToday: (dueRows ?? []).filter(
-        (row) =>
-          row.vocabulary !== null &&
-          !Array.isArray(row.vocabulary) &&
-          row.vocabulary.deleted_at === null
-      ).length,
-      masteredWords: masteredWords ?? 0,
-      learningWords: learningWords ?? 0,
+      dueToday: (dueRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
+      masteredWords: (masteredRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
+      learningWords: (learningRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
     };
   },
 
@@ -156,14 +172,11 @@ export const ReviewRepository = {
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + days);
+    const activeVocabularyIds = await getActiveVocabularyIds(userId);
 
     const { data, error } = await supabase
       .from("reviews")
-      .select(`
-        next_review,
-        status,
-        vocabulary:vocabularies(deleted_at)
-      `)
+      .select("next_review,status,vocabulary_id")
       .eq("user_id", userId)
       .gte("next_review", start.toISOString())
       .lt("next_review", end.toISOString())
@@ -171,12 +184,7 @@ export const ReviewRepository = {
 
     if (error) throwDbError(error);
 
-    const filteredRows = (data ?? []).filter(
-      (row) =>
-        row.vocabulary !== null &&
-        !Array.isArray(row.vocabulary) &&
-        row.vocabulary.deleted_at === null
-    );
+    const filteredRows = (data ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id));
 
     const daysData = buildUpcomingReviewForecast(filteredRows, days, now);
     const total = daysData.reduce((sum, day) => sum + day.count, 0);

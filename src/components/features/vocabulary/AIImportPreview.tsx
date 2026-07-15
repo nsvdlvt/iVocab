@@ -16,7 +16,7 @@ interface AIImportPreviewProps {
   onCancel: () => void;
 }
 
-export function AIImportPreview({ items, existingWords, onImport, onCancel }: AIImportPreviewProps) {
+export function AIImportPreview({ items, onImport, onCancel }: AIImportPreviewProps) {
   const [vocabList, setVocabList] = useState<AIVocabItem[]>(items);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(items.map((_, idx) => idx)));
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,30 +24,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
   const [editingField, setEditingField] = useState<keyof AIVocabItem | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const normalizeWord = (word: string) => word.trim().toLowerCase().normalize("NFC");
-
-  const normalizedExisting = useMemo(() => new Set(existingWords.map((w) => normalizeWord(w.word))), [existingWords]);
-
-  const duplicateState = useMemo(() => {
-    const seen = new Set<string>();
-    return vocabList.map((item) => {
-      const key = normalizeWord(item.word);
-      const isExistingDuplicate = normalizedExisting.has(key);
-      const isBatchDuplicate = seen.has(key);
-      seen.add(key);
-      return {
-        isDuplicate: isExistingDuplicate || isBatchDuplicate,
-        isExistingDuplicate,
-      };
-    });
-  }, [vocabList, normalizedExisting]);
-
   const stats = useMemo(() => {
     const total = vocabList.length;
     const selected = selectedIds.size;
-    const duplicates = duplicateState.filter((item) => item.isDuplicate).length;
-    return { total, selected, duplicates, newWords: total - duplicates };
-  }, [vocabList.length, selectedIds, duplicateState]);
+    return { total, selected, newWords: total };
+  }, [vocabList.length, selectedIds]);
 
   const handleCheckboxToggle = (index: number) => {
     setSelectedIds((prev) => {
@@ -128,14 +109,14 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
           <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{stats.newWords}</p>
         </div>
         <div className="text-center py-1">
-          <p className="text-muted-foreground text-[10px]">TỪ TRÙNG LẶP</p>
-          <p className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-0.5">{stats.duplicates}</p>
-        </div>
-        <div className="text-center py-1">
           <p className="text-muted-foreground text-[10px]">ĐÃ CHỌN / BỎ CHỌN</p>
           <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">
             {stats.selected} / <span className="text-muted-foreground">{stats.total - stats.selected}</span>
           </p>
+        </div>
+        <div className="text-center py-1">
+          <p className="text-muted-foreground text-[10px]">HIỂN THỊ</p>
+          <p className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-0.5">{filteredAndSortedList.length}</p>
         </div>
       </div>
 
@@ -172,7 +153,6 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
           </div>
         ) : (
           filteredAndSortedList.map(({ item, originalIndex }) => {
-            const isDuplicate = duplicateState[originalIndex]?.isDuplicate;
             const isChecked = selectedIds.has(originalIndex);
 
             return (
@@ -189,7 +169,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                     <div className="flex flex-wrap items-center gap-1.5">
                       {editingIndex === originalIndex && editingField === "word" ? (
                         <div className="flex items-center gap-1">
-                          <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 w-32" />
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 w-32"
+                          />
                           <button type="button" onClick={() => handleInlineEditSave(originalIndex, "word")} className="p-1 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -197,12 +181,6 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                       ) : (
                         <span className="font-bold text-foreground text-sm cursor-pointer hover:underline" onClick={() => handleInlineEditStart(originalIndex, "word", item.word)}>
                           {item.word}
-                        </span>
-                      )}
-
-                      {isDuplicate && (
-                        <span className="text-[9px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 select-none">
-                          {duplicateState[originalIndex]?.isExistingDuplicate ? "Đã tồn tại" : "Trùng trong lô"}
                         </span>
                       )}
                     </div>
@@ -223,7 +201,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                       <span className="text-[10px] text-muted-foreground/60 block uppercase font-bold tracking-wider mb-0.5">Từ loại</span>
                       {editingIndex === originalIndex && editingField === "partOfSpeech" ? (
                         <div className="flex items-center gap-1">
-                          <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-32" />
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-32"
+                          />
                           <button type="button" onClick={() => handleInlineEditSave(originalIndex, "partOfSpeech")} className="p-1 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -239,7 +221,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                       <span className="text-[10px] text-muted-foreground/60 block uppercase font-bold tracking-wider mb-0.5">Nghĩa tiếng Việt</span>
                       {editingIndex === originalIndex && editingField === "meaning" ? (
                         <div className="flex items-center gap-1 w-full">
-                          <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-full" />
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-full"
+                          />
                           <button type="button" onClick={() => handleInlineEditSave(originalIndex, "meaning")} className="p-1 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -257,7 +243,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                       <span className="text-[10px] text-muted-foreground/60 block uppercase font-bold tracking-wider mb-0.5">Câu ví dụ (EN)</span>
                       {editingIndex === originalIndex && editingField === "exampleSentence" ? (
                         <div className="flex items-center gap-1 w-full">
-                          <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-full" />
+                          <input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="h-7 px-2 text-xs bg-background border border-border rounded-lg focus:outline-none w-full"
+                          />
                           <button type="button" onClick={() => handleInlineEditSave(originalIndex, "exampleSentence")} className="p-1 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -276,7 +266,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                     <span className="text-[9px] text-muted-foreground/50 block font-extrabold uppercase mb-0.5">Phiên âm</span>
                     {editingIndex === originalIndex && editingField === "ipa" ? (
                       <div className="flex items-center gap-1">
-                        <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-6 px-2 text-[11px] bg-background border border-border rounded-lg focus:outline-none w-full" />
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="h-6 px-2 text-[11px] bg-background border border-border rounded-lg focus:outline-none w-full"
+                        />
                         <button type="button" onClick={() => handleInlineEditSave(originalIndex, "ipa")} className="p-0.5 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                           <Check className="h-3.5 w-3.5" />
                         </button>
@@ -292,7 +286,11 @@ export function AIImportPreview({ items, existingWords, onImport, onCancel }: AI
                     <span className="text-[9px] text-muted-foreground/50 block font-extrabold uppercase mb-0.5">Đồng nghĩa</span>
                     {editingIndex === originalIndex && editingField === "synonyms" ? (
                       <div className="flex items-center gap-1">
-                        <input value={editValue} onChange={(e) => setEditValue(e.target.value)} className="h-6 px-2 text-[11px] bg-background border border-border rounded-lg focus:outline-none w-full" />
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="h-6 px-2 text-[11px] bg-background border border-border rounded-lg focus:outline-none w-full"
+                        />
                         <button type="button" onClick={() => handleInlineEditSave(originalIndex, "synonyms")} className="p-0.5 text-emerald-600 rounded-lg hover:bg-emerald-500/5 cursor-pointer">
                           <Check className="h-3.5 w-3.5" />
                         </button>
