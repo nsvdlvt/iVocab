@@ -21,6 +21,7 @@ import { checkEnglishAnswer, checkVietnameseAnswer } from "@/lib/learning/answer
 import { AdaptiveEngine, LearningState as LearnWordState, RecentQuestionConfig } from "@/lib/learning/adaptive-engine";
 import { SESSION_CONFIG } from "@/lib/learning/config";
 import { useSpeak } from "@/hooks/use-speak";
+import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 
 import {
   Dialog,
@@ -471,6 +472,8 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
     if (minutes === 0) return `${secs} giây`;
     return `${minutes} phút ${secs} giây`;
   };
+
+  usePreserveScrollPosition(currentQuestion?.id ?? (isFinished ? "finished" : "ready"));
 
   // Empty state layouts
   if (initialWords.length === 0) {

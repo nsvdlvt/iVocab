@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { FlashcardDeck } from "./FlashcardDeck";
 import { FlashcardSettingsDialog, FlashcardSettingsState } from "./FlashcardSettingsDialog";
 import { FlashcardRow } from "./flashcard-utils";
+import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 
 interface FlashcardStudyProps {
   initialWords: FlashcardRow[];
@@ -69,6 +70,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
 
   const currentWord = deck[currentIndex] ?? null;
   const progress = deck.length > 0 ? Math.round(((currentIndex + 1) / deck.length) * 100) : 0;
+  usePreserveScrollPosition(currentWord?.id ?? (deck.length === 0 ? "empty" : `${currentIndex}`));
 
   React.useEffect(() => {
     const handleStorage = (event: StorageEvent) => {

@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { FlashcardDeck } from "../flashcard/FlashcardDeck";
 import { FlashcardRow } from "../flashcard/flashcard-utils";
+import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 import {
   advanceFlashcardReviewQueue,
   createFlashcardReviewQueue,
@@ -35,6 +36,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   const totalDue = queueState.knownCount + queueState.queue.length;
   const progress = totalDue > 0 ? Math.round((queueState.knownCount / totalDue) * 100) : 0;
   const finished = totalDue > 0 && queueState.queue.length === 0;
+  usePreserveScrollPosition(currentWord?.id ?? (finished ? "finished" : "ready"));
 
   React.useEffect(() => {
     return () => {

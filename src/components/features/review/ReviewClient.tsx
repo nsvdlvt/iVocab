@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FlashcardViewer } from "./FlashcardViewer";
 import { Database } from "@/types/database";
+import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -26,6 +27,7 @@ export function ReviewClient({ words, dueToday, masteredWords, learningWords }: 
   const total = words.length;
   const currentWord = words[currentIndex];
   const progressPercent = total > 0 ? Math.round((answered / total) * 100) : 0;
+  usePreserveScrollPosition(currentWord?.id ?? (completed ? "completed" : "ready"));
 
   const reviewLabel = useMemo(() => {
     if (total === 0) return "Không có bài ôn";
