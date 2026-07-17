@@ -86,7 +86,7 @@ export const VocabSetRepository = {
       .from("vocab_sets")
       .select("*")
       .eq("id", id)
-      .eq("visibility", "public")
+      .in("visibility", ["public", "unlisted"])
       .is("deleted_at", null)
       .maybeSingle();
 

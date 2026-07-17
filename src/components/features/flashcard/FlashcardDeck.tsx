@@ -77,7 +77,6 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
                 >
                   <Volume2 />
                 </Button>
-                <span>Press Enter or tap the card to reveal the meaning</span>
               </div>
             </div>
           </section>

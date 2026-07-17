@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Shuffle, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +24,60 @@ interface ReviewFlashcardSessionProps {
   reviewSessionId: string;
 }
 
+interface ReviewFlashcardShuffleState {
+  enabled: boolean;
+  orderIds: string[];
+}
+
+const SHUFFLE_STORAGE_VERSION = 1;
+
+function getShuffleStorageKey(reviewSessionId: string) {
+  return `ivocab_review_flashcard_shuffle_v${SHUFFLE_STORAGE_VERSION}_${reviewSessionId}`;
+}
+
+function shuffleWords(words: FlashcardRow[]) {
+  const next = [...words];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j]!, next[i]!];
+  }
+  return next;
+}
+
+function orderWordsByIds(words: FlashcardRow[], orderIds: string[]) {
+  const byId = new Map(words.map((word) => [word.id, word]));
+  return orderIds.map((id) => byId.get(id)).filter((word): word is FlashcardRow => Boolean(word));
+}
+
+function loadShuffleState(reviewSessionId: string, words: FlashcardRow[]) {
+  if (typeof window === "undefined") {
+    return { enabled: false, queue: words };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getShuffleStorageKey(reviewSessionId));
+    if (!raw) return { enabled: false, queue: words };
+
+    const parsed = JSON.parse(raw) as Partial<ReviewFlashcardShuffleState>;
+    const enabled = Boolean(parsed.enabled);
+    const queue = parsed.orderIds?.length ? orderWordsByIds(words, parsed.orderIds) : words;
+
+    return { enabled, queue: queue.length > 0 ? queue : words };
+  } catch {
+    return { enabled: false, queue: words };
+  }
+}
+
 export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessionId }: ReviewFlashcardSessionProps) {
   const router = useRouter();
-  const [queueState, setQueueState] = React.useState<FlashcardReviewQueueState>(() => createFlashcardReviewQueue(words));
+  const initialShuffleState = React.useMemo(() => loadShuffleState(reviewSessionId, words), [reviewSessionId, words]);
+  const [queueState, setQueueState] = React.useState<FlashcardReviewQueueState>(() => createFlashcardReviewQueue(initialShuffleState.queue));
+  const [shuffleEnabled, setShuffleEnabled] = React.useState<boolean>(() => initialShuffleState.enabled);
   const [flipped, setFlipped] = React.useState(false);
   const [activeAction, setActiveAction] = React.useState<FlashcardReviewAction | null>(null);
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const actionTimerRef = React.useRef<number | null>(null);
+  const knownIdsRef = React.useRef<Set<string>>(new Set());
 
   const currentWord = queueState.queue[0] ?? null;
   const totalDue = queueState.knownCount + queueState.queue.length;
@@ -44,6 +91,38 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     };
   }, []);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const nextState: ReviewFlashcardShuffleState = {
+      enabled: shuffleEnabled,
+      orderIds: queueState.queue.map((word) => word.id),
+    };
+    window.localStorage.setItem(getShuffleStorageKey(reviewSessionId), JSON.stringify(nextState));
+  }, [queueState.queue, reviewSessionId, shuffleEnabled, words]);
+
+  const applyShuffle = React.useCallback(
+    (enabled: boolean) => {
+      setShuffleEnabled(enabled);
+      setQueueState((prev) => {
+        const remaining = words.filter((word) => !knownIdsRef.current.has(word.id));
+        if (remaining.length === 0) return prev;
+
+        const currentId = prev.queue[0]?.id ?? null;
+        const current = currentId ? remaining.find((word) => word.id === currentId) ?? null : null;
+        const others = remaining.filter((word) => word.id !== currentId);
+        const orderedOthers = enabled ? shuffleWords(others) : others;
+        const nextQueue = current ? [current, ...orderedOthers] : orderedOthers;
+
+        return {
+          queue: nextQueue,
+          knownCount: prev.knownCount,
+        };
+      });
+    },
+    [words]
+  );
+
   const submitAction = React.useCallback((action: FlashcardReviewAction) => {
     if (!currentWord || activeAction || finished) return;
 
@@ -51,6 +130,10 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
 
     actionTimerRef.current = window.setTimeout(() => {
+      if (action === "known" && currentWord) {
+        knownIdsRef.current.add(currentWord.id);
+      }
+
       setQueueState((prev) => advanceFlashcardReviewQueue(prev, action));
       setFlipped(false);
       setActiveAction(null);
@@ -193,6 +276,15 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
         <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
           {queueState.knownCount} / {totalDue}
         </Badge>
+        <Button
+          variant={shuffleEnabled ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => applyShuffle(!shuffleEnabled)}
+          className="rounded-xl text-xs font-semibold"
+        >
+          <Shuffle className={`mr-1 h-3.5 w-3.5 transition-transform ${shuffleEnabled ? "rotate-12" : ""}`} />
+          Shuffle
+        </Button>
       </div>
 
       <div className="space-y-3">

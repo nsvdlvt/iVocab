@@ -20,6 +20,7 @@ interface FlashcardStudyProps {
 }
 
 const STORAGE_KEY = "ivocab_flashcard_settings_v1";
+const DECK_STORAGE_VERSION = 1;
 const DEFAULT_SETTINGS: FlashcardSettingsState = {
   shuffle: false,
   autoplay: false,
@@ -29,6 +30,11 @@ const DEFAULT_SETTINGS: FlashcardSettingsState = {
   showExamples: true,
 };
 
+interface FlashcardDeckState {
+  shuffle: boolean;
+  orderIds: string[];
+}
+
 function shuffleWords(words: FlashcardRow[]) {
   const next = [...words];
   for (let i = next.length - 1; i > 0; i -= 1) {
@@ -36,6 +42,10 @@ function shuffleWords(words: FlashcardRow[]) {
     [next[i], next[j]] = [next[j]!, next[i]!];
   }
   return next;
+}
+
+function getDeckStorageKey(setId: string) {
+  return `ivocab_flashcard_deck_v${DECK_STORAGE_VERSION}_${setId}`;
 }
 
 function loadSettings(): FlashcardSettingsState {
@@ -57,11 +67,36 @@ function loadSettings(): FlashcardSettingsState {
   }
 }
 
+function reorderWords(words: FlashcardRow[], orderIds: string[]) {
+  if (orderIds.length !== words.length) return null;
+
+  const byId = new Map(words.map((word) => [word.id, word]));
+  const ordered = orderIds.map((id) => byId.get(id)).filter((word): word is FlashcardRow => Boolean(word));
+  return ordered.length === words.length ? ordered : null;
+}
+
+function loadDeckState(setId: string, words: FlashcardRow[]) {
+  if (typeof window === "undefined") return { shuffle: false, deck: words };
+
+  try {
+    const raw = window.localStorage.getItem(getDeckStorageKey(setId));
+    if (!raw) return { shuffle: false, deck: words };
+
+    const parsed = JSON.parse(raw) as Partial<FlashcardDeckState>;
+    const shuffle = Boolean(parsed.shuffle);
+    const deck = shuffle ? reorderWords(words, parsed.orderIds ?? []) ?? shuffleWords(words) : words;
+    return { shuffle, deck };
+  } catch {
+    return { shuffle: false, deck: words };
+  }
+}
+
 export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = false }: FlashcardStudyProps) {
   const router = useRouter();
   const [settings, setSettings] = React.useState<FlashcardSettingsState>(() => loadSettings());
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-  const [deck, setDeck] = React.useState<FlashcardRow[]>(() => (loadSettings().shuffle ? shuffleWords(initialWords) : initialWords));
+  const initialDeckState = React.useMemo(() => loadDeckState(setInfo.id, initialWords), [initialWords, setInfo.id]);
+  const [deck, setDeck] = React.useState<FlashcardRow[]>(() => initialDeckState.deck);
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
 
@@ -116,13 +151,27 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
     setSettings(next);
   }, []);
 
+  const persistDeck = React.useCallback(
+    (shuffle: boolean, nextDeck: FlashcardRow[]) => {
+      if (typeof window === "undefined") return;
+      const payload: FlashcardDeckState = {
+        shuffle,
+        orderIds: nextDeck.map((word) => word.id),
+      };
+      window.localStorage.setItem(getDeckStorageKey(setInfo.id), JSON.stringify(payload));
+    },
+    [setInfo.id]
+  );
+
   const handleToggleShuffle = React.useCallback(() => {
     const next = { ...settings, shuffle: !settings.shuffle };
     persistSettings(next);
-    setDeck(next.shuffle ? shuffleWords(initialWords) : initialWords);
+    const nextDeck = next.shuffle ? shuffleWords(initialWords) : initialWords;
+    setDeck(nextDeck);
+    persistDeck(next.shuffle, nextDeck);
     setCurrentIndex(0);
     setFlipped(false);
-  }, [initialWords, persistSettings, settings]);
+  }, [initialWords, persistDeck, persistSettings, settings]);
 
   const handlePrevious = React.useCallback(() => {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
@@ -135,10 +184,12 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
   }, [deck.length]);
 
   const handleRestart = React.useCallback(() => {
-    setDeck(settings.shuffle ? shuffleWords(initialWords) : initialWords);
+    const nextDeck = settings.shuffle ? deck : initialWords;
+    setDeck(nextDeck);
+    persistDeck(settings.shuffle, nextDeck);
     setCurrentIndex(0);
     setFlipped(false);
-  }, [initialWords, settings.shuffle]);
+  }, [deck, initialWords, persistDeck, settings.shuffle]);
 
   const handleSpeak = React.useCallback(() => {
     if (!currentWord || !window.speechSynthesis) return;
@@ -329,7 +380,9 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         onSave={(next) => {
           persistSettings(next);
           if (next.shuffle !== settings.shuffle) {
-            setDeck(next.shuffle ? shuffleWords(initialWords) : initialWords);
+            const nextDeck = next.shuffle ? shuffleWords(initialWords) : initialWords;
+            setDeck(nextDeck);
+            persistDeck(next.shuffle, nextDeck);
             setCurrentIndex(0);
             setFlipped(false);
           }

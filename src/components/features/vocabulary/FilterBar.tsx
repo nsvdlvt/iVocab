@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, List, Search, Plus } from "lucide-react";
 
@@ -19,6 +19,21 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
   const currentVisibility = searchParams.get("visibility") || "all";
   const currentSort = searchParams.get("sort") || "updated_at_desc";
   const currentView = searchParams.get("view") || "grid";
+
+  const visibilityLabelMap: Record<string, string> = {
+    all: "Tất cả",
+    private: "Riêng tư",
+    unlisted: "Không công khai",
+    public: "Công khai",
+    deleted: "Đã xóa tạm thời",
+  };
+
+  const sortLabelMap: Record<string, string> = {
+    updated_at_desc: "Mới nhất",
+    updated_at_asc: "Cũ nhất",
+    title_asc: "Tên bộ từ A-Z",
+    title_desc: "Tên bộ từ Z-A",
+  };
 
   // State declaration
   const [searchVal, setSearchVal] = useState(currentSearch);
@@ -74,7 +89,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
         <div className="w-full sm:w-[160px] shrink-0">
           <Select defaultValue={currentVisibility} onValueChange={(val) => updateParams("visibility", val || "all")}>
             <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
-              <SelectValue placeholder="Trạng thái" />
+              {visibilityLabelMap[currentVisibility] ?? "Tất cả"}
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả</SelectItem>
@@ -90,7 +105,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
         <div className="w-full sm:w-[180px] shrink-0">
           <Select defaultValue={currentSort} onValueChange={(val) => updateParams("sort", val || "updated_at_desc")}>
             <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
-              <SelectValue placeholder="Sắp xếp" />
+              {sortLabelMap[currentSort] ?? "Mới nhất"}
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="updated_at_desc">Mới nhất</SelectItem>

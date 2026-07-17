@@ -67,10 +67,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const [preview, reviewItems] = await Promise.all([
-      ReviewRepository.getSetReviewPreview(user.id, vocabularySetId),
-      ReviewRepository.getDueReviewsBySetId(user.id, vocabularySetId),
-    ]);
+    const preview = await ReviewRepository.getSetReviewPreview(user.id, vocabularySetId);
 
     const response = {
       success: true,

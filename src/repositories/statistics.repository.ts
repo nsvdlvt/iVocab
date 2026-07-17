@@ -3,6 +3,7 @@ import { Database } from "@/types/database";
 import { ReviewRepository } from "./review.repository";
 import { StudySessionRepository } from "./study-session.repository";
 import { ProfileRepository } from "./profile.repository";
+import type { DashboardVocabularyStats } from "./review.repository";
 
 type UserStatisticsRow = Database["public"]["Tables"]["user_statistics"]["Row"];
 
@@ -34,6 +35,7 @@ export interface TodaySummary {
 export interface DashboardStats {
   totalSets: number;
   totalWords: number;
+  dashboardVocabularyStats: DashboardVocabularyStats;
   masteredWords: number;
   learningWords: number;
   todayReviewCount: number;
@@ -55,8 +57,9 @@ export const StatisticsRepository = {
     const supabase = await createClient();
     
     // Concurrently fetch necessary data
-    const [srsSummary, profile, setsCountResult, wordsCountResult] = await Promise.all([
+    const [summary, vocabularyStats, profile, setsCountResult, wordsCountResult] = await Promise.all([
       ReviewRepository.getSummary(userId),
+      ReviewRepository.getDashboardVocabularyStats(userId),
       ProfileRepository.getProfile(userId),
       supabase
         .from("vocab_sets")
@@ -140,9 +143,10 @@ export const StatisticsRepository = {
     return {
       totalSets: setsCountResult.count ?? 0,
       totalWords: wordsCountResult.count ?? 0,
-      masteredWords: srsSummary.masteredWords,
-      learningWords: srsSummary.learningWords,
-      todayReviewCount: srsSummary.dueToday,
+      dashboardVocabularyStats: vocabularyStats,
+      masteredWords: summary.masteredWords,
+      learningWords: summary.learningWords,
+      todayReviewCount: summary.dueToday,
       streak: profile?.streak ?? 0,
       dailyProgress,
       weeklyActivity,

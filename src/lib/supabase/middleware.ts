@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/forgot-password") ||
     path.startsWith("/reset-password");
 
-  const isPublicPage = path === "/" || isAuthPage;
+  const isPublicPage = path === "/" || path.startsWith("/share") || isAuthPage;
 
   if (!user && !isPublicPage) {
     url.pathname = "/login";

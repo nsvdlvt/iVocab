@@ -68,6 +68,43 @@ async function getSrsVocabularyRows(userId: string): Promise<VocabularyWithRevie
     })) as VocabularyWithReviewRow[];
 }
 
+function getReviewRow(row: VocabularyWithReviewRow): ReviewRow | null {
+  const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+  return review ?? null;
+}
+
+function summarizeDashboardVocabularyStats(rows: VocabularyWithReviewRow[], now = new Date()): DashboardVocabularyStats {
+  const forecast = summarizeSrsForecast(
+    rows.map((row) => {
+      const review = getReviewRow(row);
+      return { next_review: review?.next_review ?? null, status: review?.status ?? null };
+    }),
+    7,
+    now
+  );
+
+  let learnedWords = 0;
+  let masteredWords = 0;
+
+  for (const row of rows) {
+    const review = getReviewRow(row);
+    const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
+
+    if (level !== null && level >= 2 && level < 5) {
+      learnedWords += 1;
+    } else if (level === 5) {
+      masteredWords += 1;
+    }
+  }
+
+  return {
+    totalWords: rows.length,
+    learnedWords,
+    masteredWords,
+    dueWords: forecast.summary.today,
+  };
+}
+
 export interface ReviewItem {
   review: ReviewRow | null;
   vocabulary: VocabularyRow;
@@ -77,6 +114,13 @@ export interface SrsSummary {
   dueToday: number;
   masteredWords: number;
   learningWords: number;
+}
+
+export interface DashboardVocabularyStats {
+  totalWords: number;
+  learnedWords: number;
+  masteredWords: number;
+  dueWords: number;
 }
 
 export interface SetReviewPreviewSummary {
@@ -107,12 +151,12 @@ export const ReviewRepository = {
     const rows = await getSrsVocabularyRows(userId);
     const now = new Date();
     const todayRows = rows.filter((row) => {
-      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      const review = getReviewRow(row);
       return classifyForecastRow({ next_review: review?.next_review ?? null, status: review?.status ?? null }, now) === "today";
     });
 
     return todayRows.map((row) => {
-      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      const review = getReviewRow(row);
       return {
         review:
           review &&
@@ -159,7 +203,7 @@ export const ReviewRepository = {
     ]);
 
     for (const row of setRows) {
-      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      const review = getReviewRow(row);
       const nextReview = review?.next_review ? new Date(review.next_review) : null;
       const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
       const isNotLearned =
@@ -214,7 +258,7 @@ export const ReviewRepository = {
     const rows = await getSrsVocabularyRows(userId);
     const forecast = summarizeSrsForecast(
       rows.map((row) => {
-        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const review = getReviewRow(row);
         return { next_review: review?.next_review ?? null, status: review?.status ?? null };
       }),
       7,
@@ -227,7 +271,7 @@ export const ReviewRepository = {
     const rows = await getSrsVocabularyRows(userId);
     const forecast = summarizeSrsForecast(
       rows.map((row) => {
-        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const review = getReviewRow(row);
         return { next_review: review?.next_review ?? null, status: review?.status ?? null };
       }),
       7,
@@ -237,22 +281,27 @@ export const ReviewRepository = {
     return {
       dueToday: forecast.summary.today,
       masteredWords: rows.filter((row) => {
-        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const review = getReviewRow(row);
         return review?.status === "lv5" || review?.status === "mastered";
       }).length,
       learningWords: rows.filter((row) => {
-        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const review = getReviewRow(row);
         const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
         return review?.status === "new" || review?.status === "learning" || (level !== null && level < 2) || !review?.next_review;
       }).length,
     };
   },
 
+  async getDashboardVocabularyStats(userId: string): Promise<DashboardVocabularyStats> {
+    const rows = await getSrsVocabularyRows(userId);
+    return summarizeDashboardVocabularyStats(rows);
+  },
+
   async getUpcomingReviewForecast(userId: string, days = 7): Promise<UpcomingReviewSummary> {
     const rows = await getSrsVocabularyRows(userId);
     const forecast = summarizeSrsForecast(
       rows.map((row) => {
-        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const review = getReviewRow(row);
         return { next_review: review?.next_review ?? null, status: review?.status ?? null };
       }),
       days,

@@ -3,6 +3,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { WelcomeSection } from "@/components/features/dashboard/WelcomeSection";
 import { LearningProgress } from "@/components/features/dashboard/LearningProgress";
 import { DailyStreak } from "@/components/features/dashboard/DailyStreak";
+import { VocabularyStatisticsCard } from "@/components/features/dashboard/VocabularyStatisticsCard";
 import { RecentVocabularySets } from "@/components/features/dashboard/RecentVocabularySets";
 import { RecentActivity } from "@/components/features/dashboard/RecentActivity";
 import { UpcomingReviewsForecast } from "@/components/features/review/UpcomingReviewsForecast";
@@ -27,9 +28,16 @@ export function DashboardOverview({
     <PageContainer className="space-y-6 md:space-y-8">
       <WelcomeSection displayName={displayName} />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <DailyStreak streak={stats.streak} weeklyActivity={stats.weeklyActivity} />
-        <LearningProgress progress={stats.dailyProgress} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <DailyStreak streak={stats.streak} weeklyActivity={stats.weeklyActivity} />
+        </div>
+        <div className="lg:col-span-1">
+          <LearningProgress progress={stats.dailyProgress} />
+        </div>
+        <div className="lg:col-span-1">
+          <VocabularyStatisticsCard stats={stats.dashboardVocabularyStats} />
+        </div>
       </div>
 
       <UpcomingReviewsForecast forecast={reviewForecast} />

@@ -126,7 +126,7 @@ export function StartReviewDialog({
           <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
           <div className="relative space-y-4 p-4 sm:p-6">
             <DialogHeader className="space-y-2">
-              <DialogTitle className="text-2xl font-black tracking-tight sm:text-[1.7rem]">📚 Ôn tập bộ từ vựng</DialogTitle>
+              <DialogTitle className="text-2xl font-black tracking-tight sm:text-[1.7rem]">Ôn tập bộ từ vựng</DialogTitle>
               <DialogDescription className="max-w-xl text-sm text-muted-foreground">
                 Hiển thị tình trạng học tập của bộ từ này trước khi bắt đầu.
               </DialogDescription>

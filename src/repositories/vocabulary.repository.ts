@@ -24,13 +24,18 @@ export const VocabularyRepository = {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("vocabularies")
-      .select("*")
+      .select("*, vocab_sets!inner(visibility)")
       .eq("set_id", setId)
+      .in("vocab_sets.visibility", ["public", "unlisted"])
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map((row) => {
+      const { vocab_sets, ...rest } = row as VocabularyRow & { vocab_sets?: { visibility: string } };
+      void vocab_sets;
+      return rest as VocabularyRow;
+    });
   }),
 
   countByUser: cache(async (userId: string): Promise<number> => {

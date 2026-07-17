@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { StreakBadge } from "@/components/common/StreakBadge";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { ROUTES } from "@/constants/routes";
@@ -34,6 +35,7 @@ export function Navbar() {
 
         {/* Right side utilities */}
         <div className="flex items-center gap-2">
+          <StreakBadge />
           <ThemeToggle />
         </div>
       </div>
