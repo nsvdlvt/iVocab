@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
-import { UpcomingReviewForecastDay, buildUpcomingReviewForecast } from "@/lib/srs/upcoming-reviews";
-import { getDueReviewCutoff } from "@/lib/srs/due-reviews";
+import { UpcomingReviewForecastDay, classifyForecastRow, summarizeSrsForecast } from "@/lib/srs/upcoming-reviews";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
+type VocabularyWithReviewRow = Database["public"]["Tables"]["vocabularies"]["Row"] & {
+  review: ReviewRow | ReviewRow[] | null;
+};
 
 function throwDbError(error: unknown): never {
   if (error instanceof Error) throw error;
@@ -39,8 +41,35 @@ async function getActiveVocabularyIds(userId: string): Promise<Set<string>> {
   return new Set((vocabRows ?? []).filter((row) => activeSetIds.has(row.set_id)).map((row) => row.id));
 }
 
+async function getSrsVocabularyRows(userId: string): Promise<VocabularyWithReviewRow[]> {
+  const supabase = await createClient();
+  const activeVocabularyIds = await getActiveVocabularyIds(userId);
+  const { data, error } = await supabase
+    .from("vocabularies")
+    .select(`
+      *,
+      review:reviews(*)
+    `)
+    .eq("owner_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+
+  if (error) throwDbError(error);
+
+  return (data ?? [])
+    .filter((row) => activeVocabularyIds.has(row.id))
+    .map((row) => ({
+      ...row,
+      review: (() => {
+        const review = (row as unknown as { review?: ReviewRow | ReviewRow[] | null }).review;
+        if (Array.isArray(review)) return review[0] ?? null;
+        return review ?? null;
+      })(),
+    })) as VocabularyWithReviewRow[];
+}
+
 export interface ReviewItem {
-  review: ReviewRow;
+  review: ReviewRow | null;
   vocabulary: VocabularyRow;
 }
 
@@ -48,6 +77,18 @@ export interface SrsSummary {
   dueToday: number;
   masteredWords: number;
   learningWords: number;
+}
+
+export interface SetReviewPreviewSummary {
+  overdueCount: number;
+  dueTodayCount: number;
+  reviewNowCount: number;
+  dueSoonCount: number;
+  dueSoonDays: number;
+  notLearnedCount: number;
+  learnedCount: number;
+  totalCount: number;
+  levelDistribution: Array<{ level: "lv2" | "lv3" | "lv4" | "lv5"; count: number }>;
 }
 
 export interface UpcomingReviewSummary {
@@ -63,46 +104,35 @@ export const ReviewRepository = {
    * Joins the review row with the associated vocabulary row.
    */
   async getDueReviews(userId: string): Promise<ReviewItem[]> {
-    const supabase = await createClient();
+    const rows = await getSrsVocabularyRows(userId);
     const now = new Date();
-    const cutoff = getDueReviewCutoff(now).toISOString();
-    const activeVocabularyIds = await getActiveVocabularyIds(userId);
+    const todayRows = rows.filter((row) => {
+      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      return classifyForecastRow({ next_review: review?.next_review ?? null, status: review?.status ?? null }, now) === "today";
+    });
 
-    const { data, error } = await supabase
-      .from("reviews")
-      .select(`*, vocabulary:vocabularies(*)`)
-      .eq("user_id", userId)
-      .lt("next_review", cutoff)
-      .in("status", ["lv2", "lv3", "lv4", "lv5"])
-      .order("next_review", { ascending: true });
-
-    if (error) throwDbError(error);
-    if (!data) return [];
-
-    return data
-      .filter(
-        (row): row is typeof row & { vocabulary: VocabularyRow } =>
-          !!row.vocabulary &&
-          !Array.isArray(row.vocabulary) &&
-          activeVocabularyIds.has(row.vocabulary.id)
-      )
-      .map((row) => ({
-        review: {
-          id: row.id,
-          user_id: row.user_id,
-          vocabulary_id: row.vocabulary_id,
-          ease_factor: row.ease_factor,
-          interval: row.interval,
-          repetitions: row.repetitions,
-          next_review: row.next_review,
-          last_review: row.last_review,
-          last_grade: row.last_grade,
-          status: row.status,
-          created_at: row.created_at,
-          updated_at: row.updated_at,
-        },
-        vocabulary: row.vocabulary as VocabularyRow,
-      }));
+    return todayRows.map((row) => {
+      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      return {
+        review:
+          review &&
+          {
+            id: review.id,
+            user_id: review.user_id,
+            vocabulary_id: review.vocabulary_id,
+            ease_factor: review.ease_factor,
+            interval: review.interval,
+            repetitions: review.repetitions,
+            next_review: review.next_review,
+            last_review: review.last_review,
+            last_grade: review.last_grade,
+            status: review.status,
+            created_at: review.created_at,
+            updated_at: review.updated_at,
+          },
+        vocabulary: row,
+      };
+    });
   },
 
   async getDueReviewsBySetId(userId: string, setId: string): Promise<ReviewItem[]> {
@@ -110,85 +140,126 @@ export const ReviewRepository = {
     return items.filter((item) => item.vocabulary.set_id === setId);
   },
 
+  async getSetReviewPreview(userId: string, setId: string, days = 7): Promise<SetReviewPreviewSummary> {
+    const rows = await getSrsVocabularyRows(userId);
+    const now = new Date();
+    const setRows = rows.filter((row) => row.set_id === setId);
+
+    let overdueCount = 0;
+    let dueTodayCount = 0;
+    let reviewNowCount = 0;
+    let dueSoonCount = 0;
+    let notLearnedCount = 0;
+    let learnedCount = 0;
+    const levelDistribution = new Map<"lv2" | "lv3" | "lv4" | "lv5", number>([
+      ["lv2", 0],
+      ["lv3", 0],
+      ["lv4", 0],
+      ["lv5", 0],
+    ]);
+
+    for (const row of setRows) {
+      const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+      const nextReview = review?.next_review ? new Date(review.next_review) : null;
+      const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
+      const isNotLearned =
+        review?.status === "new" || review?.status === "learning" || review?.status == null || (level !== null && level < 2);
+      if (isNotLearned) {
+        notLearnedCount += 1;
+      } else {
+        learnedCount += 1;
+      }
+
+      if (level !== null && level >= 2) {
+        const key = `lv${Math.min(level, 5)}` as "lv2" | "lv3" | "lv4" | "lv5";
+        levelDistribution.set(key, (levelDistribution.get(key) ?? 0) + 1);
+      }
+
+      if (!nextReview || !review?.status || level === null || level < 2) {
+        continue;
+      }
+
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const dueDay = new Date(nextReview);
+      dueDay.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((dueDay.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+
+      if (diffDays < 0) {
+        overdueCount += 1;
+        reviewNowCount += 1;
+      } else if (diffDays === 0) {
+        dueTodayCount += 1;
+        reviewNowCount += 1;
+      } else if (diffDays > 0 && diffDays <= days) {
+        dueSoonCount += 1;
+      }
+    }
+
+    return {
+      overdueCount,
+      dueTodayCount,
+      reviewNowCount,
+      dueSoonCount,
+      dueSoonDays: days,
+      notLearnedCount,
+      learnedCount,
+      totalCount: setRows.length,
+      levelDistribution: Array.from(levelDistribution.entries()).map(([level, count]) => ({ level, count })),
+    };
+  },
+
   /** Count of due review items for today and earlier (for dashboard). */
   async countDueReviews(userId: string): Promise<number> {
-    const supabase = await createClient();
-    const now = new Date();
-    const cutoff = getDueReviewCutoff(now).toISOString();
-    const activeVocabularyIds = await getActiveVocabularyIds(userId);
-
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("vocabulary_id")
-      .eq("user_id", userId)
-      .lt("next_review", cutoff)
-      .in("status", ["lv2", "lv3", "lv4", "lv5"]);
-
-    if (error) throwDbError(error);
-    return (data ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length;
+    const rows = await getSrsVocabularyRows(userId);
+    const forecast = summarizeSrsForecast(
+      rows.map((row) => {
+        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        return { next_review: review?.next_review ?? null, status: review?.status ?? null };
+      }),
+      7,
+      new Date()
+    );
+    return forecast.summary.today;
   },
 
   async getSummary(userId: string): Promise<SrsSummary> {
-    const supabase = await createClient();
-    const now = new Date();
-    const cutoff = getDueReviewCutoff(now).toISOString();
-    const activeVocabularyIds = await getActiveVocabularyIds(userId);
-
-    const [{ data: dueRows, error: dueError }, { data: masteredRows, error: masteredError }, { data: learningRows, error: learningError }] =
-      await Promise.all([
-        supabase
-          .from("reviews")
-          .select("vocabulary_id")
-          .eq("user_id", userId)
-          .lt("next_review", cutoff)
-          .in("status", ["lv2", "lv3", "lv4", "lv5"]),
-        supabase
-          .from("reviews")
-          .select("vocabulary_id")
-          .eq("user_id", userId)
-          .eq("status", "lv5"),
-        supabase
-          .from("reviews")
-          .select("vocabulary_id")
-          .eq("user_id", userId)
-          .in("status", ["lv0", "lv1"]),
-      ]);
-
-    if (dueError) throwDbError(dueError);
-    if (masteredError) throwDbError(masteredError);
-    if (learningError) throwDbError(learningError);
+    const rows = await getSrsVocabularyRows(userId);
+    const forecast = summarizeSrsForecast(
+      rows.map((row) => {
+        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        return { next_review: review?.next_review ?? null, status: review?.status ?? null };
+      }),
+      7,
+      new Date()
+    );
 
     return {
-      dueToday: (dueRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
-      masteredWords: (masteredRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
-      learningWords: (learningRows ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id)).length,
+      dueToday: forecast.summary.today,
+      masteredWords: rows.filter((row) => {
+        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        return review?.status === "lv5" || review?.status === "mastered";
+      }).length,
+      learningWords: rows.filter((row) => {
+        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
+        return review?.status === "new" || review?.status === "learning" || (level !== null && level < 2) || !review?.next_review;
+      }).length,
     };
   },
 
   async getUpcomingReviewForecast(userId: string, days = 7): Promise<UpcomingReviewSummary> {
-    const supabase = await createClient();
-    const now = new Date();
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + days);
-    const activeVocabularyIds = await getActiveVocabularyIds(userId);
-
-    const { data, error } = await supabase
-      .from("reviews")
-      .select("next_review,status,vocabulary_id")
-      .eq("user_id", userId)
-      .gte("next_review", start.toISOString())
-      .lt("next_review", end.toISOString())
-      .in("status", ["lv2", "lv3", "lv4"]);
-
-    if (error) throwDbError(error);
-
-    const filteredRows = (data ?? []).filter((row) => activeVocabularyIds.has(row.vocabulary_id));
-
-    const daysData = buildUpcomingReviewForecast(filteredRows, days, now);
-    const total = daysData.reduce((sum, day) => sum + day.count, 0);
-    const busiestDay = daysData.reduce<UpcomingReviewForecastDay | null>((winner, day) => {
+    const rows = await getSrsVocabularyRows(userId);
+    const forecast = summarizeSrsForecast(
+      rows.map((row) => {
+        const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
+        return { next_review: review?.next_review ?? null, status: review?.status ?? null };
+      }),
+      days,
+      new Date()
+    );
+    const total = forecast.buckets.reduce((sum, day) => sum + day.count, 0);
+    const busiestDay = forecast.buckets.reduce<UpcomingReviewForecastDay | null>((winner, day) => {
       if (!winner || day.count > winner.count) return day;
       return winner;
     }, null);
@@ -197,7 +268,7 @@ export const ReviewRepository = {
       total,
       busiestDay,
       averagePerDay: days > 0 ? Math.round((total / days) * 10) / 10 : 0,
-      days: daysData,
+      days: forecast.buckets,
     };
   },
 
@@ -214,7 +285,7 @@ export const ReviewRepository = {
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
-    if (error) throw error;
+    if (error) throwDbError(error);
 
     return (data ?? []).map((row) => ({
       ...row,
@@ -293,11 +364,11 @@ export const ReviewRepository = {
 
     if (!nextState.shouldPersist) return;
 
-    const payload = SrsService.toReviewUpdate(nextState.state, now);
+    const updatePayload = SrsService.toReviewUpdate(nextState.state, now);
     if (existing?.id) {
       const { error } = await supabase
         .from("reviews")
-        .update(payload)
+        .update(updatePayload)
         .eq("id", existing.id);
       if (error) throwDbError(error);
       return;
@@ -306,7 +377,7 @@ export const ReviewRepository = {
     const { error } = await supabase.from("reviews").insert({
       user_id: params.userId,
       vocabulary_id: params.vocabularyId,
-      ...payload,
+      ...updatePayload,
     });
     if (error) throwDbError(error);
   },

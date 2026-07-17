@@ -91,9 +91,9 @@ export async function POST(request: Request) {
     });
 
     if (reviewSessionId) {
-      const session = ReviewSessionStore.markCompleted(reviewSessionId, vocabId);
+      const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabId);
       if (session && ReviewSessionStore.isComplete(session)) {
-        ReviewSessionStore.delete(reviewSessionId);
+        await ReviewSessionStore.delete(reviewSessionId);
         return NextResponse.json({ ...result, completed: true });
       }
     }

@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top brand logo */}
-        <Link href={ROUTES.HOME} className="w-fit select-none">
+        <Link href={ROUTES.LANDING} className="w-fit select-none">
           <BrandLogo
             className="gap-3"
             imageClassName="h-11 w-11 sm:h-12 sm:w-12"
@@ -49,7 +49,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         <div className="w-full max-w-md space-y-6">
           {/* Mobile Logo */}
           <div className="flex lg:hidden justify-center mb-6">
-            <Link href={ROUTES.HOME} className="flex items-center">
+            <Link href={ROUTES.LANDING} className="flex items-center">
               <BrandLogo
                 className="gap-3"
                 imageClassName="h-10 w-10"

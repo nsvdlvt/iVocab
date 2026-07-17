@@ -15,7 +15,7 @@ export default function NotFound() {
           Đường dẫn bạn truy cập không tồn tại hoặc đã được di chuyển sang một địa chỉ khác.
         </p>
       </div>
-      <Link href={ROUTES.HOME} className={buttonVariants({ variant: "default", className: "rounded-xl cursor-pointer shadow-sm" })}>
+      <Link href={ROUTES.LANDING} className={buttonVariants({ variant: "default", className: "rounded-xl cursor-pointer shadow-sm" })}>
         Quay lại Trang chủ
       </Link>
     </div>

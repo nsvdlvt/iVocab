@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Volume2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,31 +34,57 @@ export function StudyExplanation({
   const isCorrect = answerState === "correct";
   const isNearly = answerState === "near";
   const [countdown, setCountdown] = useState(2);
+  const continueRef = useRef(onContinue);
+  const countdownIntervalRef = useRef<number | null>(null);
+  const continueTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    continueRef.current = onContinue;
+  }, [onContinue]);
 
   // Auto transition layout
   useEffect(() => {
-    if (autoContinue && (isCorrect || isNearly)) {
-      const handleCountdownStart = setTimeout(() => {
-        setCountdown(2);
-      }, 0);
+    const resetCountdownHandle = window.setTimeout(() => {
+      setCountdown(2);
+    }, 0);
 
-      const interval = setInterval(() => {
+    const clearTimers = () => {
+      clearTimeout(resetCountdownHandle);
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      if (continueTimeoutRef.current) {
+        clearTimeout(continueTimeoutRef.current);
+        continueTimeoutRef.current = null;
+      }
+    };
+
+    clearTimers();
+
+    if (autoContinue && (isCorrect || isNearly)) {
+      countdownIntervalRef.current = window.setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
-            clearInterval(interval);
-            onContinue();
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
 
-      return () => {
-        clearTimeout(handleCountdownStart);
-        clearInterval(interval);
-      };
+      continueTimeoutRef.current = window.setTimeout(() => {
+        continueRef.current();
+      }, 2000);
+
+      return clearTimers;
     }
-  }, [autoContinue, isCorrect, isNearly, onContinue]);
+
+    return clearTimers;
+  }, [autoContinue, isCorrect, isNearly]);
 
   const speakTextWeb = (text: string) => {
     if (!window.speechSynthesis) return;

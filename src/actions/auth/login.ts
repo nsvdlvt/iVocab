@@ -31,5 +31,5 @@ export async function loginAction(values: LoginFormValues) {
     };
   }
 
-  redirect(ROUTES.VOCABULARY);
+  redirect(ROUTES.DASHBOARD);
 }

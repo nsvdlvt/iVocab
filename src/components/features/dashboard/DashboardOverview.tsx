@@ -5,30 +5,28 @@ import { LearningProgress } from "@/components/features/dashboard/LearningProgre
 import { DailyStreak } from "@/components/features/dashboard/DailyStreak";
 import { RecentVocabularySets } from "@/components/features/dashboard/RecentVocabularySets";
 import { RecentActivity } from "@/components/features/dashboard/RecentActivity";
-import { requireUser } from "@/lib/auth/require-user";
-import { StatisticsRepository } from "@/repositories/statistics.repository";
-import { VocabSetRepository } from "@/repositories/vocab-set.repository";
-import { ReviewRepository } from "@/repositories/review.repository";
 import { UpcomingReviewsForecast } from "@/components/features/review/UpcomingReviewsForecast";
+import { DashboardStats } from "@/repositories/statistics.repository";
+import { UpcomingReviewSummary } from "@/repositories/review.repository";
+import { Database } from "@/types/database";
 
-export const dynamic = "force-dynamic";
+interface DashboardOverviewProps {
+  displayName: string;
+  stats: DashboardStats;
+  reviewForecast: UpcomingReviewSummary;
+  recentSets: Database["public"]["Tables"]["vocab_sets"]["Row"][];
+}
 
-export default async function DashboardPage() {
-  const profile = await requireUser();
-  const userId = profile.id;
-
-  const [stats, recentSets, reviewForecast] = await Promise.all([
-    StatisticsRepository.getDashboardStats(userId),
-    VocabSetRepository.getRecentVocabSets(userId, 2),
-    ReviewRepository.getUpcomingReviewForecast(userId),
-  ]);
-
+export function DashboardOverview({
+  displayName,
+  stats,
+  reviewForecast,
+  recentSets,
+}: DashboardOverviewProps) {
   return (
     <PageContainer className="space-y-6 md:space-y-8">
-      {/* Welcome Message */}
-      <WelcomeSection displayName={profile.display_name ?? "Học viên"} />
+      <WelcomeSection displayName={displayName} />
 
-      {/* Key stats row: Streak, Progress, and Today's Review */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <DailyStreak streak={stats.streak} weeklyActivity={stats.weeklyActivity} />
         <LearningProgress progress={stats.dailyProgress} />
@@ -36,7 +34,6 @@ export default async function DashboardPage() {
 
       <UpcomingReviewsForecast forecast={reviewForecast} />
 
-      {/* Main sections: Recent Vocab Sets on the left, Activity Timeline on the right */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentVocabularySets sets={recentSets} />

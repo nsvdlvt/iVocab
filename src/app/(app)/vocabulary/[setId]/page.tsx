@@ -1,12 +1,13 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, GraduationCap, BookOpen } from "lucide-react";
+import { ChevronLeft, BookOpen } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { WordTable } from "@/components/features/vocabulary/WordTable";
 import { StudyModes } from "@/components/features/vocabulary/StudyModes";
+import { StartReviewDialog } from "@/components/features/review/StartReviewDialog";
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
@@ -59,16 +60,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
         Chỉnh sửa bộ thẻ
       </Link>
 
-      <Link
-        href={ROUTES.REVIEW}
-        className={buttonVariants({
-          variant: "default",
-          className: "rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center",
-        })}
-      >
-        <GraduationCap className="h-4 w-4" />
-        Bắt đầu ôn tập
-      </Link>
+      <StartReviewDialog vocabularySetId={setId} />
     </div>
   );
 

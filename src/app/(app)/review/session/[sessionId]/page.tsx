@@ -12,9 +12,11 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ReviewSessionPage({ params }: PageProps) {
   const { sessionId } = await params;
-  const session = requireReviewSession(sessionId);
+  const session = await requireReviewSession(sessionId);
 
   return (
     <PageContainer className="space-y-6">

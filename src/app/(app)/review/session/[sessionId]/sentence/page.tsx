@@ -8,9 +8,11 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ReviewSessionSentencePage({ params }: PageProps) {
   const { sessionId } = await params;
-  const session = requireReviewSession(sessionId);
+  const session = await requireReviewSession(sessionId);
   if (!session) notFound();
 
   const formattedWords = session.words.map((word) => ({

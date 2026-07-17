@@ -9,9 +9,11 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function ReviewSessionCompletePage({ params }: PageProps) {
   const { sessionId } = await params;
-  ReviewSessionStore.delete(sessionId);
+  await ReviewSessionStore.delete(sessionId);
 
   return (
     <PageContainer className="py-10">

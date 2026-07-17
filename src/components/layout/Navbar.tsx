@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SearchBar } from "@/components/common/SearchBar";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -28,14 +27,9 @@ export function Navbar() {
             <span className="sr-only">Mở menu</span>
           </Button>
 
-          <Link href={ROUTES.HOME} className="flex items-center">
+          <Link href={ROUTES.DASHBOARD} className="flex items-center">
             <BrandLogo className="gap-2" imageClassName="h-9 w-9 sm:h-10 sm:w-10" textClassName="scale-[0.9] origin-left" />
           </Link>
-        </div>
-
-        {/* Center Search Bar */}
-        <div className="hidden sm:flex flex-1 justify-center max-w-md mx-4">
-          <SearchBar />
         </div>
 
         {/* Right side utilities */}

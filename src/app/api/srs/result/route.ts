@@ -37,9 +37,9 @@ export async function POST(request: Request) {
     await LearningProgressService.recordActivity(user.id, 1, 0, source);
 
     if (mode === "review" && reviewSessionId) {
-      const session = ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);
+      const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);
       if (session && ReviewSessionStore.isComplete(session)) {
-        ReviewSessionStore.delete(reviewSessionId);
+        await ReviewSessionStore.delete(reviewSessionId);
         return NextResponse.json({ success: true, completed: true });
       }
     }

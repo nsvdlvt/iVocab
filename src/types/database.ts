@@ -495,6 +495,50 @@ export interface Database {
           }
         ];
       };
+      review_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          vocabulary_set_id: string | null;
+          title: string;
+          description: string;
+          words: Json;
+          completed_words: string[];
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          vocabulary_set_id?: string | null;
+          title: string;
+          description: string;
+          words: Json;
+          completed_words?: string[];
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          vocabulary_set_id?: string | null;
+          title?: string;
+          description?: string;
+          words?: Json;
+          completed_words?: string[];
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_sessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

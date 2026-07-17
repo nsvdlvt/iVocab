@@ -75,7 +75,7 @@ export function Sidebar() {
         <SheetContent side="left" className="p-0 w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
           <div className="flex h-16 items-center px-5 border-b border-sidebar-border">
             <SheetTitle className="sr-only">Vocabee</SheetTitle>
-            <Link href={ROUTES.HOME} className="flex items-center">
+            <Link href={ROUTES.DASHBOARD} className="flex items-center">
               <BrandLogo
                 className="gap-2"
                 imageClassName="h-9 w-9"

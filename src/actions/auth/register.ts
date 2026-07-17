@@ -48,7 +48,7 @@ export async function registerAction(values: RegisterFormValues) {
 
   if (signupResponse.data?.session) {
     console.log("✅ [registerAction] Session established immediately. Redirecting...");
-    redirect(ROUTES.VOCABULARY);
+    redirect(ROUTES.DASHBOARD);
   }
 
   return {

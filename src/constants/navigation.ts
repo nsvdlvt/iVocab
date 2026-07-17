@@ -4,7 +4,7 @@ import { ROUTES } from "./routes";
 export const NAVIGATION_ITEMS: NavigationItem[] = [
   {
     title: "Trang chủ",
-    href: ROUTES.HOME,
+    href: ROUTES.DASHBOARD,
     iconName: "Home",
   },
   {
