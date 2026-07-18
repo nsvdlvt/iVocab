@@ -525,33 +525,30 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
   return (
     <div className="w-full space-y-6 max-w-4xl mx-auto pb-10">
       {/* Header bar actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-4 gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 border-b pb-4">
+        <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setExitPromptOpen(true)}
-            className="h-9 w-9 rounded-xl hover:bg-muted/80 cursor-pointer shrink-0"
+            className="h-9 w-9 shrink-0 rounded-xl cursor-pointer hover:bg-muted/80"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-lg font-bold text-foreground truncate max-w-sm sm:max-w-md">
+          <div className="min-w-0">
+            <h1 className="max-w-sm truncate text-lg font-bold text-foreground sm:max-w-md">
               {setInfo.title}
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Luyện viết chính tả (Dictation)</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Luyện viết chính tả (Dictation)</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 shrink-0 bg-muted/30 px-3 py-1.5 rounded-xl border">
-            <span>Thời gian: {formatTime(elapsedTime)}</span>
-          </div>
           <Button
             variant="outline"
             size="icon"
             onClick={() => setSettingsOpened(true)}
-            className="h-9 w-9 rounded-xl cursor-pointer hover:bg-muted/80 shrink-0"
+            className="h-9 w-9 shrink-0 rounded-xl cursor-pointer hover:bg-muted/80"
             title="Cấu hình thiết lập chính tả"
           >
             <Settings className="h-4.5 w-4.5" />
@@ -692,3 +689,6 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
     </div>
   );
 }
+
+
+

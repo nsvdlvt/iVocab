@@ -53,6 +53,10 @@ export function AdminCommandPalette() {
               <Library className="mr-2 h-4 w-4" />
               <span>Vocabulary Sets</span>
             </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => router.push("/admin/community-vocabulary"))}>
+              <Library className="mr-2 h-4 w-4" />
+              <span>Community Vocabulary</span>
+            </CommandItem>
             <CommandItem onSelect={() => runCommand(() => router.push("/admin/ai"))}>
               <Bot className="mr-2 h-4 w-4" />
               <span>AI Center</span>

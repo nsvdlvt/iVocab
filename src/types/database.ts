@@ -206,6 +206,118 @@ export interface Database {
           }
         ];
       };
+      community_categories: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          icon: string | null;
+          color: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          description?: string | null;
+          icon?: string | null;
+          color?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      community_vocabulary_sets: {
+        Row: {
+          id: string;
+          vocabulary_set_id: string;
+          community_category_id: string;
+          title_snapshot: string;
+          description_snapshot: string | null;
+          cover_image: string | null;
+          difficulty: string;
+          estimated_minutes: number | null;
+          sort_order: number;
+          is_featured: boolean;
+          is_active: boolean;
+          published_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          vocabulary_set_id: string;
+          community_category_id: string;
+          title_snapshot: string;
+          description_snapshot?: string | null;
+          cover_image?: string | null;
+          difficulty?: string;
+          estimated_minutes?: number | null;
+          sort_order?: number;
+          is_featured?: boolean;
+          is_active?: boolean;
+          published_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          vocabulary_set_id?: string;
+          community_category_id?: string;
+          title_snapshot?: string;
+          description_snapshot?: string | null;
+          cover_image?: string | null;
+          difficulty?: string;
+          estimated_minutes?: number | null;
+          sort_order?: number;
+          is_featured?: boolean;
+          is_active?: boolean;
+          published_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "community_vocabulary_sets_vocabulary_set_id_fkey";
+            columns: ["vocabulary_set_id"];
+            isOneToOne: false;
+            referencedRelation: "vocab_sets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "community_vocabulary_sets_community_category_id_fkey";
+            columns: ["community_category_id"];
+            isOneToOne: false;
+            referencedRelation: "community_categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "community_vocabulary_sets_published_by_fkey";
+            columns: ["published_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       reviews: {
         Row: {
           id: string;

@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { BookOpen, GraduationCap, Medal, Clock3 } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
@@ -34,8 +35,10 @@ const STAT_ITEMS = [
     key: "dueWords",
     label: "Từ đến hạn",
     icon: Clock3,
-    iconClassName: "text-rose-600 dark:text-rose-400",
-    iconBgClassName: "bg-rose-500/10",
+    iconClassName: "text-rose-600 dark:text-rose-300",
+    iconBgClassName: "bg-rose-500/15",
+    cardClassName:
+      "border-rose-200/70 bg-rose-50/80 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:border-rose-400/30 dark:hover:bg-rose-500/15 transition-colors",
   },
 ] as const;
 
@@ -51,9 +54,18 @@ export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProp
         {STAT_ITEMS.map((item) => {
           const Icon = item.icon;
           const value = stats[item.key];
+          const isDueWords = item.key === "dueWords";
 
-          return (
-            <div key={item.key} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+          const cardContent = (
+            <div
+              className={[
+                "rounded-2xl border border-border/70 bg-muted/20 p-4",
+                "cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md",
+                isDueWords ? item.cardClassName : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <div className="flex items-center gap-3">
                 <div className={`rounded-xl p-2 ${item.iconBgClassName}`}>
                   <Icon className={`h-5 w-5 ${item.iconClassName}`} />
@@ -65,6 +77,16 @@ export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProp
               </div>
             </div>
           );
+
+          if (isDueWords) {
+            return (
+              <Link key={item.key} href="/review" aria-label="Đi tới trang ôn tập">
+                {cardContent}
+              </Link>
+            );
+          }
+
+          return <div key={item.key}>{cardContent}</div>;
         })}
       </div>
     </SectionCard>
