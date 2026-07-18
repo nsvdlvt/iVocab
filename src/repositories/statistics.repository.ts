@@ -4,6 +4,7 @@ import { ReviewRepository } from "./review.repository";
 import { StudySessionRepository } from "./study-session.repository";
 import { ProfileRepository } from "./profile.repository";
 import type { DashboardVocabularyStats } from "./review.repository";
+import { calculateCurrentStreak, getActiveStudyDaysMap } from "@/lib/streak";
 
 type UserStatisticsRow = Database["public"]["Tables"]["user_statistics"]["Row"];
 
@@ -87,6 +88,9 @@ export const StatisticsRepository = {
       startOfWeek.toISOString(), 
       endOfWeek.toISOString()
     );
+    const allSessions = await StudySessionRepository.getAllSessions(userId);
+    const activeStudyDays = getActiveStudyDaysMap(allSessions);
+    const streak = calculateCurrentStreak(allSessions, now);
 
     const weeklyActivity: DailyActivity[] = [];
     let todayStudiedWords = 0;
@@ -97,13 +101,14 @@ export const StatisticsRepository = {
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
+      const dayKey = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
       const session = sessions.find(s => new Date(s.started_at).toDateString() === d.toDateString());
       
       const studied = session?.studied_words ?? 0;
       const reviewed = session?.reviews_completed ?? 0;
       const studySeconds = session?.study_seconds ?? 0;
       const totalDailyActivity = studied + reviewed + (session?.quizzes_completed ?? 0) + (session?.dictations_completed ?? 0) + (session?.sentences_completed ?? 0);
-      const completed = totalDailyActivity >= dailyGoal;
+      const completed = activeStudyDays.has(dayKey) && totalDailyActivity >= dailyGoal;
       const progress = dailyGoal > 0 ? Math.min(Math.round((totalDailyActivity / dailyGoal) * 100), 100) : 0;
       
       weeklyActivity.push({
@@ -147,7 +152,7 @@ export const StatisticsRepository = {
       masteredWords: summary.masteredWords,
       learningWords: summary.learningWords,
       todayReviewCount: summary.dueToday,
-      streak: profile?.streak ?? 0,
+      streak,
       dailyProgress,
       weeklyActivity,
       todaySummary

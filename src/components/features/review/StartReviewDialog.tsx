@@ -140,16 +140,14 @@ export function StartReviewDialog({
             ) : stats ? (
               <div className="space-y-4">
                 <div className="rounded-3xl border border-border/60 bg-card/80 px-4 py-4 shadow-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1 pt-0.5">
+                  <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                    <div className="space-y-1">
                           <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Phiên ôn tập hôm nay</p>
                           <p className="text-4xl font-black tracking-tight">{stats.reviewNowCount} từ</p>
-                        </div>
-                      </div>
+                    </div>
 
-                      <div className="space-y-2 border-t border-border/60 pt-3">
+                    <div className="border-t border-border/60 pt-3">
+                      <div className="space-y-2">
                         <CompactStatRow icon={<CalendarClock className="h-3.5 w-3.5" />} label="Cần ôn tập" value={stats.reviewNowCount} tone="rose" />
                         <CompactStatRow icon={<Clock3 className="h-3.5 w-3.5" />} label="Sắp đến hạn" value={stats.dueSoonCount} tone="amber" />
                         <CompactStatRow icon={<BookOpenCheck className="h-3.5 w-3.5" />} label="Chưa học" value={stats.notLearnedCount} tone="emerald" />

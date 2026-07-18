@@ -44,9 +44,10 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
         {modes.map((mode) => {
           const Icon = mode.icon;
           const isAiQuiz = mode.id === "ai-quiz";
+          const isPremium = isAiQuiz || mode.id === "sentence";
           const CardContent = (
             <div className="flex flex-col justify-between h-full p-4 sm:p-5 relative">
-              {isAiQuiz && (
+              {isPremium && (
                 <div className="absolute top-3 right-3">
                   <Badge variant="secondary" className="bg-amber-500/10 text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-wide border-none px-1.5 py-0.5 rounded-md select-none shrink-0">
                     Premium
@@ -58,7 +59,7 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
                 <div
                   className={cn(
                     "p-2 sm:p-2.5 rounded-xl w-fit shrink-0",
-                    isAiQuiz
+                    isPremium
                       ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                   )}
@@ -76,7 +77,7 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
 
           const cardClass = cn(
             "rounded-xl sm:rounded-2xl border min-h-[110px] sm:min-h-[130px] flex flex-col justify-between transition-all duration-200",
-            isAiQuiz
+            isPremium
               ? "border-amber-500/20 bg-card shadow-xs hover:shadow-md hover:border-amber-500/30 hover:bg-amber-500/[0.01] cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
               : "border-border/90 bg-card shadow-xs hover:shadow-md hover:border-indigo-500/20 hover:bg-indigo-500/[0.01] cursor-pointer hover:-translate-y-0.5 active:translate-y-0"
           );

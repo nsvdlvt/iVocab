@@ -8,8 +8,10 @@ type StageLabel =
   | "getCurrentUser"
   | "createServerClient";
 
+let perfCounter = 0;
+
 export function perfStart(label: StageLabel, detail?: string) {
-  const key = detail ? `${label}:${detail}` : label;
+  const key = detail ? `${label}:${detail}` : `${label}#${++perfCounter}`;
   console.time(key);
   return key;
 }

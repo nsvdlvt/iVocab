@@ -39,6 +39,21 @@ export const StudySessionRepository = {
   },
 
   /**
+   * Retrieves all study sessions for a user.
+   */
+  async getAllSessions(userId: string): Promise<StudySessionRow[]> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("study_sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("started_at", { ascending: true });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  /**
    * Creates a new study session.
    */
   async createSession(session: Database["public"]["Tables"]["study_sessions"]["Insert"]): Promise<StudySessionRow> {
