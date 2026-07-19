@@ -24,15 +24,23 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
   const pos = getPartOfSpeechLabel(word.part_of_speech);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto">
+    <div className="relative mx-auto w-full max-w-5xl overflow-hidden">
       <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.18),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_38%)] blur-2xl pointer-events-none" />
 
       <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_28px_70px_rgba(15,23,42,0.12)]">
         <motion.div
-          className="relative h-[min(68vh,34rem)] min-h-[24rem] w-full"
+          className="relative h-[min(68vh,34rem)] min-h-[24rem] w-full overflow-hidden"
           style={{ transformStyle: "preserve-3d" }}
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.9 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.1}
+          dragMomentum={false}
+          onDragEnd={(_, info) => {
+            if (Math.abs(info.offset.x) < 75) return;
+            if (info.offset.x > 0) onFlip();
+          }}
           onClick={onFlip}
         >
           <section className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7" style={{ backfaceVisibility: "hidden" }}>

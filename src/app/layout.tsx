@@ -53,10 +53,10 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} h-full overflow-x-hidden antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full overflow-x-hidden flex flex-col bg-background text-foreground">
         <Providers>{children}</Providers>
       </body>
     </html>

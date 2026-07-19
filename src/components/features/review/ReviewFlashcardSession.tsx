@@ -261,7 +261,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-10">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-x-hidden pb-24 sm:pb-10">
       <div className="flex flex-col gap-4 border-b border-border/50 pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.push(onBackHref)} className="mt-0.5 rounded-xl">
@@ -311,7 +311,8 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
             drag={activeAction ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
+            dragElastic={0.1}
+            dragMomentum={false}
             onDragEnd={(_, info) => {
               if (Math.abs(info.offset.x) < 75) return;
               if (info.offset.x > 0) submitAction("known");
@@ -339,24 +340,26 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
         </AnimatePresence>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 max-w-3xl mx-auto w-full">
-        <Button
-          variant="outline"
-          onClick={() => submitAction("not-yet")}
-          disabled={!!activeAction}
-          className="h-14 rounded-2xl border-rose-200 bg-rose-50/40 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300"
-        >
-          <X className="mr-2 h-5 w-5" />
-          Chưa thuộc
-        </Button>
-        <Button
-          onClick={() => submitAction("known")}
-          disabled={!!activeAction}
-          className="h-14 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
-        >
-          <Check className="mr-2 h-5 w-5" />
-          Đã thuộc
-        </Button>
+      <div className="sticky bottom-0 z-20 -mx-4 w-[calc(100%+2rem)] border-t border-border/70 bg-background/95 px-4 py-3 backdrop-blur-sm sm:static sm:mx-0 sm:w-full sm:max-w-3xl sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+        <div className="grid w-full grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            onClick={() => submitAction("not-yet")}
+            disabled={!!activeAction}
+            className="h-14 w-full rounded-2xl border-rose-200 bg-rose-50/40 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300"
+          >
+            <X className="mr-2 h-5 w-5" />
+            Chưa thuộc
+          </Button>
+          <Button
+            onClick={() => submitAction("known")}
+            disabled={!!activeAction}
+            className="h-14 w-full rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
+          >
+            <Check className="mr-2 h-5 w-5" />
+            Đã thuộc
+          </Button>
+        </div>
       </div>
 
       <div className="text-center text-xs text-muted-foreground">

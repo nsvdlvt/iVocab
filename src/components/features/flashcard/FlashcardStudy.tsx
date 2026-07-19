@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, Settings2, RotateCcw, Volume2, Speaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { FlashcardDeck } from "./FlashcardDeck";
 import { FlashcardSettingsDialog, FlashcardSettingsState } from "./FlashcardSettingsDialog";
 import { FlashcardRow } from "./flashcard-utils";
@@ -272,7 +271,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-10">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-x-hidden pb-10">
       <div className="flex flex-col gap-4 border-b border-border/50 pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.push(onBackHref)} className="mt-0.5 rounded-xl">
@@ -284,18 +283,20 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            {currentIndex + 1} / {deck.length}
-          </Badge>
+        <div className="flex items-center justify-end gap-2 self-end lg:self-auto">
           {readOnly && (
-            <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="rounded-full border border-border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               Read only
-            </Badge>
+            </div>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)} className="rounded-xl text-xs font-semibold">
-            <Settings2 className="mr-1 h-3.5 w-3.5" />
-            Settings
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Open flashcard settings"
+            className="h-9 w-9 rounded-xl"
+          >
+            <Settings2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -316,7 +317,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         transition={{ duration: 0.35 }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="pt-2"
+        className="overflow-hidden touch-pan-y pt-2"
       >
         <FlashcardDeck
           word={currentWord}
@@ -328,7 +329,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         />
       </motion.div>
 
-      <div className="flex flex-col items-center gap-3 rounded-3xl border border-border/70 bg-card/80 p-4 text-center shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <div className="flex flex-col items-center gap-3 rounded-3xl border border-border/70 bg-card/80 p-4 text-center shadow-sm backdrop-blur touch-pan-y sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
           <Button variant="outline" onClick={handlePrevious} disabled={currentIndex === 0} className="rounded-xl">
             <ChevronLeft className="mr-1 h-4 w-4" />

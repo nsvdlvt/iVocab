@@ -11,9 +11,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const timer = perfStart("route:app-layout");
   try {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex min-h-screen flex-col overflow-x-hidden">
         <Navbar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-x-hidden">
           <Sidebar />
           <main className="flex-1 min-w-0">{children}</main>
         </div>

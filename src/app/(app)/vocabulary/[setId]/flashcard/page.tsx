@@ -27,7 +27,7 @@ export default async function FlashcardPage({ params }: PageProps) {
   }
 
   return (
-    <PageContainer className="py-6 sm:py-8">
+    <PageContainer className="overflow-x-hidden py-6 sm:py-8">
       <FlashcardStudy
         initialWords={words}
         setInfo={{ id: set.id, title: set.title }}
