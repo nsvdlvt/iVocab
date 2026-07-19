@@ -30,7 +30,7 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
       <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_28px_70px_rgba(15,23,42,0.12)]">
         <motion.div
           className="relative h-[min(68vh,34rem)] min-h-[24rem] w-full overflow-hidden"
-          style={{ transformStyle: "preserve-3d" }}
+          style={{ transformStyle: "preserve-3d", perspective: "1200px", willChange: "transform" }}
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.9 }}
           drag="x"
@@ -43,7 +43,10 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
           }}
           onClick={onFlip}
         >
-          <section className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7" style={{ backfaceVisibility: "hidden" }}>
+          <section
+            className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "translateZ(0)" }}
+          >
             <div className="flex items-center justify-between gap-3">
               <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em]", getLevelBadgeClass(level))}>
                 Lv{level}
@@ -89,7 +92,14 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
             </div>
           </section>
 
-          <section className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+          <section
+            className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(180deg) translateZ(0)",
+            }}
+          >
             <div className="flex items-center justify-between gap-3">
               <Badge variant="outline" className={cn("rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em]", getLevelBadgeClass(level))}>
                 Lv{level}
