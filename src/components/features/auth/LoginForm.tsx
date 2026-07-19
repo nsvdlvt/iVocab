@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { loginSchema, type LoginFormValues } from "@/lib/validators/auth";
 import { loginAction } from "@/actions/auth/login";
 import { ROUTES } from "@/constants/routes";
+import { SocialAuthSection } from "./SocialAuthSection";
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -105,6 +106,8 @@ export function LoginForm() {
           Đăng nhập
         </Button>
       </form>
+
+      <SocialAuthSection />
 
       <div className="text-center text-sm text-muted-foreground">
         Chưa có tài khoản?{" "}

@@ -50,9 +50,18 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', 'Học viên mới'),
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      SPLIT_PART(COALESCE(NEW.email, ''), '@', 1),
+      'Học viên mới'
+    ),
     NEW.raw_user_meta_data->>'avatar_url'
-  );
+  )
+  ON CONFLICT (id) DO UPDATE
+    SET email = EXCLUDED.email,
+        display_name = EXCLUDED.display_name,
+        avatar_url = COALESCE(EXCLUDED.avatar_url, public.profiles.avatar_url);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

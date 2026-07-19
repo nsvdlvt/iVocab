@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { registerSchema, type RegisterFormValues } from "@/lib/validators/auth";
 import { registerAction } from "@/actions/auth/register";
 import { ROUTES } from "@/constants/routes";
+import { SocialAuthSection } from "./SocialAuthSection";
 
 export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -137,6 +138,8 @@ export function RegisterForm() {
           Đăng ký
         </Button>
       </form>
+
+      <SocialAuthSection />
 
       <div className="text-center text-sm text-muted-foreground">
         Đã có tài khoản?{" "}
