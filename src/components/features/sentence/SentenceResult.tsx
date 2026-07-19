@@ -21,6 +21,7 @@ import { toast } from "sonner";
 
 export interface SentenceResultProps {
   feedback: SentenceFeedback;
+  userSentence: string;
   explainMore: string | null;
   generateMore: string[] | null;
   explainMoreLoading: boolean;
@@ -103,6 +104,7 @@ function parseMistakeType(typeStr: string, confidence: number): ParsedMistake {
 
 export function SentenceResult({
   feedback,
+  userSentence,
   explainMore,
   generateMore,
   explainMoreLoading,
@@ -167,6 +169,7 @@ export function SentenceResult({
   };
 
   const parsedCategories = parseExplanation(feedback.explanation);
+  const hasUserSentence = userSentence.trim().length > 0;
 
   return (
     <motion.div
@@ -210,7 +213,7 @@ export function SentenceResult({
         </div>
 
         {/* General Assessment Feedback */}
-        <div className="flex-1 space-y-3 w-full">
+        <div className="flex-1 space-y-4 w-full">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-pulse" />
@@ -228,30 +231,57 @@ export function SentenceResult({
               </Button>
             )}
           </div>
-          <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-            {feedback.feedback}
-          </p>
 
-          {feedback.correctedSentence && (
-            <div className="bg-blue-500/[0.03] border border-blue-500/10 rounded-2xl p-4 space-y-2 mt-2 select-text relative">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                  Câu đề xuất cải tiến
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCopy(feedback.correctedSentence!)}
-                  className="h-6 w-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
+          <div className="space-y-4">
+            <section className="space-y-2">
+              <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Câu của bạn</span>
+              </h5>
+              <div className="rounded-2xl border border-border/60 bg-slate-50/80 dark:bg-blue-500/[0.04] p-4 shadow-sm">
+                {hasUserSentence ? (
+                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90">
+                    {userSentence}
+                  </p>
+                ) : (
+                  <p className="text-sm italic text-muted-foreground">
+                    Không có câu gốc để hiển thị.
+                  </p>
+                )}
               </div>
-              <p className="text-sm font-semibold text-foreground/90 leading-relaxed pr-6">
-                {feedback.correctedSentence}
+            </section>
+
+            <section className="space-y-2">
+              <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Đánh giá tổng quát</span>
+              </h5>
+              <p className="text-sm text-foreground/80 leading-relaxed font-medium whitespace-pre-wrap break-words">
+                {feedback.feedback}
               </p>
-            </div>
-          )}
+            </section>
+
+              {feedback.correctedSentence && (
+              <section className="space-y-2">
+                <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Câu đề xuất cải tiến</span>
+                </h5>
+                <div className="bg-blue-500/[0.03] border border-blue-500/10 rounded-2xl p-4 space-y-2 select-text relative">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground/90 leading-relaxed pr-6 whitespace-pre-wrap break-words">
+                      {feedback.correctedSentence}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopy(feedback.correctedSentence!)}
+                      className="h-6 w-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
       </div>
 

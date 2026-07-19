@@ -1,0 +1,61 @@
+{
+  "name": "Vocabee",
+  "short_name": "Vocabee",
+  "description": "Website học từ vựng tiếng Anh hiện đại phong cách Notion/Linear, tích hợp Flashcard, Quiz và trợ lý AI giúp nâng cao vốn từ vựng của bạn.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "shortcuts": [
+    {
+      "name": "Home",
+      "short_name": "Home",
+      "description": "Open the Vocabee home dashboard",
+      "url": "/dashboard",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Vocabulary",
+      "short_name": "Vocabulary",
+      "description": "Go to your vocabulary library",
+      "url": "/vocabulary",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "Review Today",
+      "short_name": "Review Today",
+      "description": "Start today's review session",
+      "url": "/review",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    },
+    {
+      "name": "AI Quiz",
+      "short_name": "AI Quiz",
+      "description": "Launch the AI quiz",
+      "url": "/quiz",
+      "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

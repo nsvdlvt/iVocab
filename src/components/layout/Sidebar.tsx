@@ -105,7 +105,7 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
       {/* 2. Desktop & Tablet Fixed Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] sticky top-16",
+          "hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] sticky top-0 self-start",
           isCollapsed ? "w-20" : "w-64"
         )}
       >

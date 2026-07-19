@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { siteConfig } from "@/constants/site";
@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),
+  manifest: "/manifest.webmanifest",
+  applicationName: siteConfig.name,
+  appleWebApp: {
+    capable: true,
+    title: siteConfig.name,
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     title: siteConfig.title,
     description: siteConfig.description,
@@ -41,8 +48,22 @@ export const metadata: Metadata = {
     images: [siteConfig.ogImage],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+  colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

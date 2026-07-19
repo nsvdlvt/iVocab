@@ -83,6 +83,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
   const [currentIdx, setCurrentIdx] = useState(0);
   const [evaluating, setEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<SentenceFeedback | null>(null);
+  const [submittedSentence, setSubmittedSentence] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,6 +182,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
       setEvaluating(true);
       setError(null);
       setFeedback(null);
+      setSubmittedSentence(sentence);
       setExplainMore(null);
       setGenerateMore(null);
 
@@ -642,7 +644,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                   <div className="space-y-2">
                     <h3 className="font-extrabold text-lg text-foreground">AI Đang phân tích câu viết của bạn...</h3>
                     <p className="text-sm text-muted-foreground max-w-sm">
-                      Hệ thống đang kiểm tra từ vựng, ngữ pháp, độ tự nhiên và phân tích lỗi chi tiết thông qua Responses API.
+                      Hệ thống đang kiểm tra từ vựng, ngữ pháp, độ tự nhiên và phân tích lỗi chi tiết của câu.
                     </p>
                   </div>
                 </motion.div>
@@ -688,9 +690,10 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                 </motion.div>
               ) : feedback ? (
                 /* Evaluated Feedback Results Panel */
-                <SentenceResult
+              <SentenceResult
                   key="feedback-results"
                   feedback={feedback}
+                  userSentence={submittedSentence}
                   explainMore={explainMore}
                   generateMore={generateMore}
                   explainMoreLoading={!!helperLoading["explain"]}
