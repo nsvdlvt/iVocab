@@ -11,8 +11,6 @@ interface PageProps {
   params: Promise<{ setId: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function SharedVocabSetDetailPage({ params }: PageProps) {
   const { setId } = await params;
   const [set, words, user] = await Promise.all([

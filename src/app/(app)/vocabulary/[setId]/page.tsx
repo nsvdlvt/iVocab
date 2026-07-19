@@ -19,7 +19,6 @@ interface PageProps {
 }
 
 export const dynamic = "force-dynamic";
-
 export default async function VocabSetDetailPage({ params }: PageProps) {
   const { setId } = await params;
   const user = await requireUser();

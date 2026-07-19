@@ -1,12 +1,10 @@
-"use client";
-
-import React from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ROUTES } from "@/constants/routes";
 import { BrandLogo } from "@/components/common/BrandLogo";
 
 interface AuthLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function AuthLayout({ children }: AuthLayoutProps) {

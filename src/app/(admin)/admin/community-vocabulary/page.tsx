@@ -2,8 +2,6 @@ import { CommunityVocabularyPage } from "@/components/admin/community-vocabulary
 import { requirePermission } from "@/lib/auth/admin";
 import { CommunityVocabularyRepository } from "@/repositories/admin/community-vocabulary.repository";
 
-export const dynamic = "force-dynamic";
-
 export default async function CommunityVocabularyAdminPage({
   searchParams,
 }: {

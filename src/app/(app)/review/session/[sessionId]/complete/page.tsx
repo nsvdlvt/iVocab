@@ -9,8 +9,6 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function ReviewSessionCompletePage({ params }: PageProps) {
   const { sessionId } = await params;
   await ReviewSessionStore.delete(sessionId);

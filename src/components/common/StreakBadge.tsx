@@ -6,16 +6,18 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { calculateCurrentStreak, getCalendarDayKey, getStudyDateKeys } from "@/lib/streak";
 import type { Database } from "@/types/database";
+import type { UserProfile } from "@/lib/auth/get-current-user";
 
 interface StreakBadgeProps {
   className?: string;
+  profile?: UserProfile | null;
 }
 
 type StudySessionRow = Database["public"]["Tables"]["study_sessions"]["Row"];
 
-export function StreakBadge({ className }: StreakBadgeProps) {
+export function StreakBadge({ className, profile }: StreakBadgeProps) {
   const [sessions, setSessions] = useState<StudySessionRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!profile);
   const [isHintOpen, setIsHintOpen] = useState(false);
   const supabase = createClient();
 
@@ -24,11 +26,9 @@ export function StreakBadge({ className }: StreakBadgeProps) {
 
     async function fetchSessions() {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const userId = profile?.id ?? (await supabase.auth.getUser()).data.user?.id;
 
-        if (!user) {
+        if (!userId) {
           if (mounted) setSessions([]);
           return;
         }
@@ -36,7 +36,7 @@ export function StreakBadge({ className }: StreakBadgeProps) {
         const { data, error } = await supabase
           .from("study_sessions")
           .select("started_at, studied_words, reviews_completed, quizzes_completed, dictations_completed, sentences_completed")
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .order("started_at", { ascending: true });
 
         if (!error && mounted) {
@@ -54,7 +54,7 @@ export function StreakBadge({ className }: StreakBadgeProps) {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, [profile, supabase]);
 
   const streak = calculateCurrentStreak(sessions);
   const studyDates = getStudyDateKeys(sessions);

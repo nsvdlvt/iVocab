@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { ROUTES } from "@/constants/routes";
+import type { UserProfile } from "@/lib/auth/get-current-user";
 
 const SidebarIcon = ({ name, className }: { name: string; className?: string }) => {
   const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[name];
@@ -19,7 +20,15 @@ const SidebarIcon = ({ name, className }: { name: string; className?: string }) 
   return <IconComponent className={className} />;
 };
 
-export function Sidebar() {
+interface SidebarProps {
+  profile?: UserProfile | null;
+}
+
+export function Sidebar({ profile }: SidebarProps) {
+  return <SidebarContent profile={profile} />;
+}
+
+function SidebarContent({ profile }: { profile?: UserProfile | null }) {
   const pathname = usePathname();
   const { isCollapsed, isMobileOpen, toggleCollapse, setMobileOpen } = useSidebar();
 
@@ -88,7 +97,7 @@ export function Sidebar() {
           
           {/* User profile dropdown in Mobile Drawer */}
           <div className="p-4 border-t border-sidebar-border bg-muted/10">
-            <UserMenu />
+            <UserMenu profile={profile} />
           </div>
         </SheetContent>
       </Sheet>
@@ -105,7 +114,7 @@ export function Sidebar() {
 
         {/* User profile dropdown at the bottom of the Desktop Sidebar */}
         <div className="p-3 border-t border-border bg-muted/10">
-          <UserMenu />
+          <UserMenu profile={profile} />
         </div>
 
         {/* Collapse toggle button at bottom - only visible on desktop screen size */}

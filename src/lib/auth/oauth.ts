@@ -1,7 +1,6 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { ROUTES } from "@/constants/routes";
 
 export type OAuthProvider = "google";
 
@@ -11,7 +10,7 @@ export async function signInWithOAuth(provider: OAuthProvider) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(ROUTES.DASHBOARD)}`,
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   });
 

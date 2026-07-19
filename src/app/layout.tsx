@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { siteConfig } from "@/constants/site";
 import { Providers } from "@/providers/Providers";
 import "./globals.css";
-import { perfEnd, perfStart } from "@/lib/perf";
 
 const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-sans",
@@ -45,25 +45,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
-  const timer = perfStart("route:root-layout");
-  try {
-    return (
-      <html
-        lang="vi"
-        className={`${beVietnamPro.variable} h-full antialiased`}
-        suppressHydrationWarning
-      >
-        <body className="min-h-full flex flex-col bg-background text-foreground">
-          <Providers>{children}</Providers>
-        </body>
-      </html>
-    );
-  } finally {
-    perfEnd(timer);
-  }
+  return (
+    <html
+      lang="vi"
+      className={`${beVietnamPro.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
 }

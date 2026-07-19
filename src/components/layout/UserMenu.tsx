@@ -14,11 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
 import { logoutAction } from "@/actions/auth/logout";
 import { Database } from "@/types/database";
+import type { UserProfile } from "@/lib/auth/get-current-user";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface UserMenuProps {
-  profile?: Profile | null;
+  profile?: UserProfile | null;
 }
 
 export function UserMenu({ profile: initialProfile }: UserMenuProps) {
@@ -29,11 +30,7 @@ export function UserMenu({ profile: initialProfile }: UserMenuProps) {
 
   useEffect(() => {
     if (initialProfile) {
-      const handle = setTimeout(() => {
-        setProfile(initialProfile);
-        setIsLoading(false);
-      }, 0);
-      return () => clearTimeout(handle);
+      return;
     }
 
     async function fetchProfile() {

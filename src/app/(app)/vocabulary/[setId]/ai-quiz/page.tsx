@@ -9,8 +9,6 @@ interface PageProps {
   params: Promise<{ setId: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function AiQuizPage({ params }: PageProps) {
   const { setId } = await params;
   const user = await requireUser();

@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { Fredoka } from "next/font/google";
 import { cn } from "@/lib/utils";

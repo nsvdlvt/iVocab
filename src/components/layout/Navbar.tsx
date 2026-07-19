@@ -9,8 +9,13 @@ import { StreakBadge } from "@/components/common/StreakBadge";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { ROUTES } from "@/constants/routes";
+import type { UserProfile } from "@/lib/auth/get-current-user";
 
-export function Navbar() {
+interface NavbarProps {
+  profile?: UserProfile | null;
+}
+
+export function Navbar({ profile }: NavbarProps) {
   const { toggleMobileOpen } = useSidebar();
 
   return (
@@ -35,7 +40,7 @@ export function Navbar() {
 
         {/* Right side utilities */}
         <div className="flex items-center gap-2">
-          <StreakBadge />
+          <StreakBadge profile={profile} />
           <ThemeToggle />
         </div>
       </div>

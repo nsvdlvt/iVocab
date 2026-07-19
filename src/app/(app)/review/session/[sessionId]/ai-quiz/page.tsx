@@ -10,8 +10,6 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function ReviewSessionAiQuizPage({ params }: PageProps) {
   const { sessionId } = await params;
   const session = await requireReviewSession(sessionId);

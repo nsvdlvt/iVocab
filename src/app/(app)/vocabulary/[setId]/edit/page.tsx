@@ -6,8 +6,6 @@ import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { VocabularyEditor } from "@/components/features/vocabulary/VocabularyEditor";
 
-export const dynamic = "force-dynamic";
-
 interface EditVocabularyPageProps {
   params: Promise<{
     setId: string;
