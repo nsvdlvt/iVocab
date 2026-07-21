@@ -36,7 +36,7 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
     if (href === "/") {
       return pathname === "/";
     }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   const renderNavLinks = (closeMobile?: boolean) => {
@@ -105,12 +105,14 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
       {/* 2. Desktop & Tablet Fixed Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] sticky top-0 self-start",
+          "hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 h-full sticky top-0 self-start",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
         {/* Navigation list */}
-        {renderNavLinks(false)}
+        <div className="flex min-h-0 flex-1 flex-col">
+          {renderNavLinks(false)}
+        </div>
 
         {/* User profile dropdown at the bottom of the Desktop Sidebar */}
         <div className="p-3 border-t border-border bg-muted/10">

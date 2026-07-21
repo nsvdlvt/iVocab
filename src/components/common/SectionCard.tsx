@@ -9,9 +9,10 @@ interface SectionCardProps {
   hoverable?: boolean;
 }
 
-export function SectionCard({ children, className = "", hoverable = false }: SectionCardProps) {
+export function SectionCard({ children, className = "", hoverable = false, ...props }: SectionCardProps & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
+      {...props}
       className={cn(
         "rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-sm transition-all duration-300",
         hoverable && "hover:shadow-md hover:border-border/80 hover:-translate-y-[2px] cursor-pointer",

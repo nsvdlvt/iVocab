@@ -22,19 +22,17 @@ export default async function ReviewSessionCompletePage({ params }: PageProps) {
           </div>
         </div>
         <div>
-          <h1 className="text-3xl font-black text-foreground">Hoàn thành phiên học!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Bạn đã hoàn thành tất cả các mục từ của vòng này.
-          </p>
+          <h1 className="text-3xl font-black text-foreground">Hoàn thành ôn tập</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Bạn đã hoàn thành tất cả các mục từ của vòng này.</p>
         </div>
         <Link
-          href="/"
+          href="/review"
           className={buttonVariants({
             variant: "default",
             className: "rounded-xl px-5",
           })}
         >
-          Về trang chủ
+          Quay lại trang ôn tập
         </Link>
       </div>
     </PageContainer>

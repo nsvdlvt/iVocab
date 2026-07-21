@@ -22,7 +22,7 @@ export function StartReviewButton() {
       return;
     }
 
-    router.push(`/review/session/${data.session.id}`);
+    router.push(`/review/session/${data.session.id}/learn`);
   };
 
   return (

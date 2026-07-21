@@ -21,9 +21,9 @@ describe("buildUpcomingReviewForecast", () => {
     );
 
     expect(forecast).toHaveLength(7);
-    expect(forecast[0]).toMatchObject({ label: "Hôm nay", count: 3, isToday: true });
-    expect(forecast[1]).toMatchObject({ label: "Ngày mai", count: 1, isTomorrow: true });
+    expect(forecast[0]).toMatchObject({ label: "Hôm nay", count: 2, isToday: true });
+    expect(forecast[1]).toMatchObject({ label: "Ngày mai", count: 2, isTomorrow: true });
     expect(forecast[2]).toMatchObject({ label: "+2 ngày", count: 0 });
-    expect(forecast[6]).toMatchObject({ label: "+6 ngày", count: 1 });
+    expect(forecast[6]).toMatchObject({ label: "+6 ngày", count: 0 });
   });
 });

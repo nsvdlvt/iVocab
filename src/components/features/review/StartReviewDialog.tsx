@@ -90,7 +90,7 @@ export function StartReviewDialog({
       }
 
       setOpen(false);
-      router.push(`/review/session/${data.session.id}`);
+      router.push(`/review/session/${data.session.id}/learn`);
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "Không thể tạo phiên ôn tập.");
     } finally {

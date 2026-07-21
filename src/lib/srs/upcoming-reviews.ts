@@ -1,6 +1,13 @@
 import { Database } from "@/types/database";
 
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
+const REVIEW_TIME_ZONE = "Asia/Ho_Chi_Minh";
+const REVIEW_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: REVIEW_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 export interface UpcomingReviewForecastDay {
   label: string;
@@ -21,10 +28,16 @@ export interface SrsForecastBucketSummary {
   future: number;
 }
 
-function startOfDay(value: Date) {
-  const next = new Date(value);
-  next.setHours(0, 0, 0, 0);
-  return next;
+function getReviewDayKey(value: Date) {
+  return REVIEW_DAY_FORMATTER.format(value);
+}
+
+function toUtcMidnight(dayKey: string) {
+  return new Date(`${dayKey}T00:00:00.000Z`);
+}
+
+function getUtcDayStart(value: Date) {
+  return toUtcMidnight(getReviewDayKey(value));
 }
 
 function addDays(base: Date, days: number) {
@@ -53,13 +66,15 @@ function isScheduledReview(status: string | null, nextReviewAt: string | null): 
 }
 
 export function classifyForecastRow(row: SrsForecastSourceRow, now = new Date()): "today" | { dayOffset: number } | null {
-  const base = startOfDay(now);
+  const baseDayKey = getReviewDayKey(now);
   const reviewDate = row.next_review ? new Date(row.next_review) : null;
 
   if (!isScheduledReview(row.status, row.next_review) || !reviewDate) return null;
 
-  const dayStart = startOfDay(reviewDate);
-  const diffDays = Math.floor((dayStart.getTime() - base.getTime()) / (24 * 60 * 60 * 1000));
+  const reviewDay = getReviewDayKey(reviewDate);
+  const diffDays = Math.floor(
+    (toUtcMidnight(reviewDay).getTime() - toUtcMidnight(baseDayKey).getTime()) / (24 * 60 * 60 * 1000)
+  );
 
   if (diffDays <= 0) return "today";
   return { dayOffset: diffDays };
@@ -69,11 +84,11 @@ export function summarizeSrsForecast(rows: SrsForecastSourceRow[], days = 7, now
   buckets: UpcomingReviewForecastDay[];
   summary: SrsForecastBucketSummary;
 } {
-  const base = startOfDay(now);
   const buckets = new Map<string, number>();
   let today = 0;
   let overdue = 0;
   let future = 0;
+  const baseDayStart = getUtcDayStart(now);
 
   for (const row of rows) {
     const classification = classifyForecastRow(row, now);
@@ -81,7 +96,7 @@ export function summarizeSrsForecast(rows: SrsForecastSourceRow[], days = 7, now
 
     if (classification === "today") {
       today += 1;
-      if (row.next_review && new Date(row.next_review).getTime() < base.getTime()) {
+      if (row.next_review && new Date(row.next_review).getTime() < baseDayStart.getTime()) {
         overdue += 1;
       }
       continue;
@@ -89,13 +104,13 @@ export function summarizeSrsForecast(rows: SrsForecastSourceRow[], days = 7, now
 
     if (classification.dayOffset >= days) continue;
     future += 1;
-    const day = addDays(base, classification.dayOffset);
+    const day = addDays(baseDayStart, classification.dayOffset);
     const key = dayKey(day);
     buckets.set(key, (buckets.get(key) ?? 0) + 1);
   }
 
   const bucketsArray = Array.from({ length: days }, (_, index) => {
-    const day = addDays(base, index);
+    const day = addDays(baseDayStart, index);
     const key = dayKey(day);
     return {
       label: index === 0 ? "Hôm nay" : index === 1 ? "Ngày mai" : `+${index} ngày`,

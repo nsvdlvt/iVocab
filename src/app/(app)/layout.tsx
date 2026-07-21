@@ -11,11 +11,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const timer = perfStart("route:app-layout");
   try {
     return (
-      <div className="flex min-h-screen flex-col overflow-x-hidden">
+      <div className="flex h-screen flex-col overflow-hidden">
         <Navbar />
-        <div className="flex flex-1 overflow-x-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 min-w-0">{children}</main>
+          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+            {children}
+          </main>
         </div>
       </div>
     );

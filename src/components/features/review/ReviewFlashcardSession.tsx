@@ -78,6 +78,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const actionTimerRef = React.useRef<number | null>(null);
   const knownIdsRef = React.useRef<Set<string>>(new Set());
+  const pendingSaveRef = React.useRef<Promise<void> | null>(null);
 
   const currentWord = queueState.queue[0] ?? null;
   const totalDue = queueState.knownCount + queueState.queue.length;
@@ -139,7 +140,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
       setActiveAction(null);
 
       if (action === "known") {
-        void fetch("/api/srs/result", {
+        pendingSaveRef.current = fetch("/api/srs/result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -148,21 +149,38 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             answerResult: "correct",
             reviewSessionId,
           }),
-        }).then(async (response) => {
-          if (!response.ok) {
-            console.error("SRS save failed (review flashcard)", await response.text());
-            return;
-          }
-          const data = (await response.json()) as { completed?: boolean };
-          if (data.completed) {
-            router.push(`/review/session/${reviewSessionId}/complete`);
-          }
-        }).catch((error) => {
-          console.error("SRS save request failed (review flashcard)", error);
-        });
+          keepalive: true,
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              console.error("SRS save failed (review flashcard)", await response.text());
+              return;
+            }
+            const data = (await response.json()) as { completed?: boolean };
+            if (data.completed) {
+              router.push(`/review/session/${reviewSessionId}/complete`);
+            }
+          })
+          .catch((error) => {
+            console.error("SRS save request failed (review flashcard)", error);
+          })
+          .finally(() => {
+            pendingSaveRef.current = null;
+          });
       }
     }, 180);
   }, [activeAction, currentWord, finished, reviewSessionId, router]);
+
+  const handleLeaveReview = React.useCallback(async () => {
+    if (pendingSaveRef.current) {
+      try {
+        await pendingSaveRef.current;
+      } catch {
+        // The save handler already logs errors; continue navigation.
+      }
+    }
+    router.push(onBackHref);
+  }, [onBackHref, router]);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -180,13 +198,13 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
         setFlipped((prev) => !prev);
       } else if (event.code === "Escape") {
         event.preventDefault();
-        router.push(onBackHref);
+        void handleLeaveReview();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onBackHref, router, submitAction]);
+  }, [handleLeaveReview, submitAction]);
 
   const handleTouchStart = (event: React.TouchEvent) => {
     const touch = event.changedTouches[0];
@@ -211,16 +229,16 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="flex items-center gap-3 border-b border-border/50 pb-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(onBackHref)} className="rounded-xl">
+          <Button variant="ghost" size="icon" onClick={() => void handleLeaveReview()} className="rounded-xl">
             <ArrowLeft />
           </Button>
           <div>
             <h1 className="text-lg font-bold text-foreground">{setInfo.title}</h1>
-            <p className="text-xs text-muted-foreground">No due cards available right now.</p>
+            <p className="text-xs text-muted-foreground">Hiện chưa có thẻ nào cần ôn.</p>
           </div>
         </div>
         <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">You are all caught up for this review session.</p>
+          <p className="text-sm text-muted-foreground">Bạn đã hoàn thành phiên ôn tập này.</p>
         </div>
       </div>
     );
@@ -236,24 +254,22 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             </div>
           </div>
           <div>
-            <h2 className="text-3xl font-black text-foreground">Review Complete</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You reviewed all due vocabulary successfully.
-            </p>
+            <h2 className="text-3xl font-black text-foreground">Hoàn thành ôn tập</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Bạn đã ôn xong toàn bộ từ cần ôn trong phiên này.</p>
           </div>
           <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
             <div className="rounded-2xl bg-emerald-500/10 p-4">
               <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{queueState.knownCount}</div>
-              <p className="text-xs text-muted-foreground">Known</p>
+              <p className="text-xs text-muted-foreground">Đã thuộc</p>
             </div>
             <div className="rounded-2xl bg-muted/30 p-4">
               <div className="text-2xl font-extrabold text-foreground">{totalDue}</div>
-              <p className="text-xs text-muted-foreground">Due cards</p>
+              <p className="text-xs text-muted-foreground">Thẻ cần ôn</p>
             </div>
           </div>
-          <Button onClick={() => router.refresh()} variant="outline" className="rounded-xl gap-2">
+          <Button onClick={() => void handleLeaveReview()} variant="outline" className="rounded-xl gap-2">
             <Sparkles className="h-4 w-4" />
-            Review again
+            Quay lại trang ôn tập
           </Button>
         </div>
       </div>
@@ -269,7 +285,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
           </Button>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">{setInfo.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">SRS review session with Known / Not Yet workflow.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Phiên ôn tập SRS với luồng Đã thuộc / Chưa thuộc.</p>
           </div>
         </div>
 
@@ -283,14 +299,16 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
           className="rounded-xl text-xs font-semibold"
         >
           <Shuffle className={`mr-1 h-3.5 w-3.5 transition-transform ${shuffleEnabled ? "rotate-12" : ""}`} />
-          Shuffle
+          Trộn thẻ
         </Button>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-          <span>Progress</span>
-          <span>{queueState.knownCount} / {totalDue}</span>
+          <span>Tiến độ</span>
+          <span>
+            {queueState.knownCount} / {totalDue}
+          </span>
         </div>
         <Progress value={progress} className="h-2 rounded-full" />
       </div>
@@ -363,7 +381,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
       </div>
 
       <div className="text-center text-xs text-muted-foreground">
-        Keyboard: <span className="font-semibold text-foreground">←</span> Chưa thuộc,{" "}
+        Phím tắt: <span className="font-semibold text-foreground">←</span> Chưa thuộc,{" "}
         <span className="font-semibold text-foreground">→</span> Đã thuộc,{" "}
         <span className="font-semibold text-foreground">Enter</span> Đã thuộc
       </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ReviewRepository } from "@/repositories/review.repository";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
@@ -35,6 +36,9 @@ export async function POST(request: Request) {
     
     // We pass 1 as count. Duration could be tracked if sent from client, currently 0.
     await LearningProgressService.recordActivity(user.id, 1, 0, source);
+
+    revalidatePath("/review");
+    revalidatePath("/dashboard");
 
     if (mode === "review" && reviewSessionId) {
       const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);

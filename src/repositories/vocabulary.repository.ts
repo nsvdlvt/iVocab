@@ -4,6 +4,12 @@ import { cache } from "react";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type VocabularyInsert = Database["public"]["Tables"]["vocabularies"]["Insert"];
+type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
+type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
+export type LibraryVocabularyRow = VocabularyRow & {
+  vocab_sets?: Pick<VocabSetRow, "id" | "title" | "color" | "deleted_at"> | null;
+  review?: ReviewRow | null;
+};
 
 export const VocabularyRepository = {
   getBySetId: cache(async (setId: string, ownerId: string): Promise<VocabularyRow[]> => {
@@ -107,4 +113,30 @@ export const VocabularyRepository = {
       .eq("owner_id", ownerId);
     if (error) throw error;
   },
+
+  getLibraryByUser: cache(async (userId: string): Promise<LibraryVocabularyRow[]> => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("vocabularies")
+      .select(`
+        *,
+        vocab_sets!inner(id, title, color, deleted_at),
+        review:reviews(*)
+      `)
+      .eq("owner_id", userId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row) => {
+      const typed = row as unknown as LibraryVocabularyRow;
+      const review = (row as LibraryVocabularyRow & { review?: ReviewRow | ReviewRow[] | null }).review;
+      return {
+        ...typed,
+        review: Array.isArray(review) ? review[0] ?? null : review ?? null,
+        vocab_sets: Array.isArray(typed.vocab_sets) ? typed.vocab_sets[0] ?? null : typed.vocab_sets ?? null,
+      };
+    });
+  }),
 };

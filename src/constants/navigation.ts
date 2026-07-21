@@ -13,6 +13,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     iconName: "BookOpen",
   },
   {
+    title: "Từ vựng",
+    href: ROUTES.VOCABULARY_MANAGEMENT,
+    iconName: "BookA",
+  },
+  {
     title: "Ôn tập",
     href: ROUTES.REVIEW,
     iconName: "GraduationCap",

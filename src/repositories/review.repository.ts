@@ -269,6 +269,24 @@ export const ReviewRepository = {
 
   async getSummary(userId: string): Promise<SrsSummary> {
     const rows = await getSrsVocabularyRows(userId);
+    const dueRows = rows.filter((row) => {
+      const review = getReviewRow(row);
+      return classifyForecastRow({ next_review: review?.next_review ?? null, status: review?.status ?? null }, new Date()) === "today";
+    });
+    console.log(
+      "[SRS DEBUG]",
+      "[ReviewRepository.getSummary dueRows]",
+      "dueRows.length=",
+      dueRows.length,
+      "dueRows=",
+      dueRows.map((row) => ({
+        vocabularyId: row.id,
+        reviewId: getReviewRow(row)?.id ?? null,
+        status: getReviewRow(row)?.status ?? null,
+        nextReview: getReviewRow(row)?.next_review ?? null,
+      }))
+    );
+
     const forecast = summarizeSrsForecast(
       rows.map((row) => {
         const review = getReviewRow(row);
@@ -415,19 +433,25 @@ export const ReviewRepository = {
 
     const updatePayload = SrsService.toReviewUpdate(nextState.state, now);
     if (existing?.id) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("reviews")
         .update(updatePayload)
-        .eq("id", existing.id);
+        .eq("id", existing.id)
+        .select("*")
+        .maybeSingle();
       if (error) throwDbError(error);
       return;
     }
 
-    const { error } = await supabase.from("reviews").insert({
-      user_id: params.userId,
-      vocabulary_id: params.vocabularyId,
-      ...updatePayload,
-    });
+    const { data: inserted, error } = await supabase
+      .from("reviews")
+      .insert({
+        user_id: params.userId,
+        vocabulary_id: params.vocabularyId,
+        ...updatePayload,
+      })
+      .select("*")
+      .maybeSingle();
     if (error) throwDbError(error);
   },
 };

@@ -1,9 +1,11 @@
 "use client";
 
 import React from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
+import { cn } from "@/lib/utils";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
@@ -56,6 +58,20 @@ function getLevelBadgeClass(level: string) {
 }
 
 export function WordTable({ words }: WordTableProps) {
+  const searchParams = useSearchParams();
+  const focusWord = searchParams.get("focusWord");
+  const [highlighted, setHighlighted] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!focusWord) return;
+    const el = document.getElementById(`word-${focusWord}`);
+    if (!el) return;
+    setHighlighted(focusWord);
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timeout = window.setTimeout(() => setHighlighted(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [focusWord]);
+
   const getPartOfSpeechLabel = (pos: string | null) => {
     if (!pos) return null;
     return PART_OF_SPEECH_LABELS[pos] ?? pos;
@@ -79,7 +95,14 @@ export function WordTable({ words }: WordTableProps) {
             const posLabel = getPartOfSpeechLabel(w.part_of_speech);
             const level = `lv${SrsService.getLevelFromReview(w.review ?? null)}`;
             return (
-              <tr key={w.id} className="hover:bg-muted/10 transition-all duration-200">
+              <tr
+                key={w.id}
+                id={`word-${w.id}`}
+                className={cn(
+                  "transition-all duration-200",
+                  highlighted === w.id ? "bg-yellow-100/70 ring-1 ring-yellow-300 shadow-[0_0_0_1px_rgba(250,204,21,0.2)]" : "hover:bg-muted/10"
+                )}
+              >
                 <td className="px-6 py-4">
                   <span className="font-bold text-foreground text-base">{w.word}</span>
                 </td>

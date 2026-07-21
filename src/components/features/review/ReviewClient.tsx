@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, RotateCw, PartyPopper, X, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { FlashcardViewer } from "./FlashcardViewer";
@@ -18,6 +19,7 @@ interface ReviewClientProps {
 }
 
 export function ReviewClient({ words, dueToday, masteredWords, learningWords }: ReviewClientProps) {
+  const router = useRouter();
   const [started, setStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -37,23 +39,27 @@ export function ReviewClient({ words, dueToday, masteredWords, learningWords }: 
   const handleGrade = async (knew: boolean) => {
     if (!currentWord) return;
 
-    void fetch("/api/srs/result", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        vocabularyId: currentWord.id,
-        mode: "review",
-        answerResult: knew ? "correct" : "wrong",
-      }),
-    }).then(async (response) => {
+    try {
+      const response = await fetch("/api/srs/result", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          vocabularyId: currentWord.id,
+          mode: "review",
+          answerResult: knew ? "correct" : "wrong",
+        }),
+      });
+
       if (!response.ok) {
         console.error("SRS save failed (review)", await response.text());
+      } else {
+        router.refresh();
       }
-    }).catch((error) => {
+    } catch (error) {
       console.error("SRS save request failed (review)", error);
-    });
+    }
 
     setAnswered((n) => n + 1);
     if (knew) setRemembered((n) => n + 1);
