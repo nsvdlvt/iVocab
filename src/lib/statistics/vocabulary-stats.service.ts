@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
-import { summarizeSrsForecast } from "@/lib/srs/upcoming-reviews";
+import { summarizeSrsForecast, type UpcomingReviewForecastDay } from "@/lib/srs/upcoming-reviews";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
@@ -19,7 +19,7 @@ export interface VocabularyStatsForecastDay {
 export interface VocabularyStatsForecast {
   total: number;
   averagePerDay: number;
-  busiestDay: { date: string; count: number; label: string } | null;
+  busiestDay: UpcomingReviewForecastDay | null;
   days: VocabularyStatsForecastDay[];
 }
 
@@ -170,9 +170,9 @@ export const VocabularyStatsService = {
       forecast: {
         total: forecast.buckets.reduce((sum, day) => sum + day.count, 0),
         averagePerDay: 7 > 0 ? Math.round((forecast.buckets.reduce((sum, day) => sum + day.count, 0) / 7) * 10) / 10 : 0,
-        busiestDay: forecast.buckets.reduce<{ date: string; count: number; label: string } | null>((winner, day) => {
+        busiestDay: forecast.buckets.reduce<UpcomingReviewForecastDay | null>((winner, day) => {
           if (!winner || day.count > winner.count) {
-            return { date: day.date, count: day.count, label: day.label };
+            return day;
           }
           return winner;
         }, null),
