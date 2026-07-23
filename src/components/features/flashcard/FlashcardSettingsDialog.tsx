@@ -3,15 +3,14 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
+
+export type FlashcardFrontMode = "term" | "definition";
+export type FlashcardFilterMode = "all" | "unlearned" | "starred";
 
 export interface FlashcardSettingsState {
-  shuffle: boolean;
-  autoplay: boolean;
   autoSpeak: boolean;
-  autoplaySeconds: number;
-  showIpa: boolean;
-  showExamples: boolean;
+  frontMode: FlashcardFrontMode;
+  filterMode: FlashcardFilterMode;
 }
 
 interface FlashcardSettingsDialogProps {
@@ -21,7 +20,44 @@ interface FlashcardSettingsDialogProps {
   onSave: (settings: FlashcardSettingsState) => void;
 }
 
-const AUTO_PLAY_OPTIONS = [3, 5, 8] as const;
+const FRONT_MODE_OPTIONS: Array<{
+  value: FlashcardFrontMode;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: "term",
+    title: "Mặt trước hiện thuật ngữ",
+    description: "Hiển thị từ vựng, IPA và từ loại ở mặt trước.",
+  },
+  {
+    value: "definition",
+    title: "Mặt trước hiện định nghĩa",
+    description: "Hiển thị nghĩa tiếng Việt ở mặt trước để tự nhớ lại thuật ngữ.",
+  },
+];
+
+const FILTER_MODE_OPTIONS: Array<{
+  value: FlashcardFilterMode;
+  title: string;
+  description: string;
+}> = [
+  {
+    value: "all",
+    title: "Tất cả từ",
+    description: "Hiển thị toàn bộ từ vựng trong bộ thẻ.",
+  },
+  {
+    value: "unlearned",
+    title: "Chỉ từ chưa thuộc",
+    description: "Ẩn các từ đã đạt mức thành thạo trong SRS.",
+  },
+  {
+    value: "starred",
+    title: "Chỉ từ đánh dấu sao",
+    description: "Chỉ học các từ đã được gắn sao.",
+  },
+];
 
 export function FlashcardSettingsDialog({ open, onOpenChange, settings, onSave }: FlashcardSettingsDialogProps) {
   const [local, setLocal] = React.useState<FlashcardSettingsState>(settings);
@@ -39,86 +75,73 @@ export function FlashcardSettingsDialog({ open, onOpenChange, settings, onSave }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl max-w-lg p-5 border shadow-xl bg-card">
+      <DialogContent className="max-w-lg rounded-3xl border bg-card p-5 shadow-xl">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-base font-extrabold text-foreground">Flashcard settings</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Tune the deck without changing the learning flow.
-          </DialogDescription>
+          <DialogDescription className="text-xs text-muted-foreground">Chỉ giữ lại các tuỳ chọn hiển thị và lọc từ vựng.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
+        <div className="space-y-5 py-2">
+          <section className="space-y-3">
             <div>
-              <p className="text-sm font-semibold text-foreground">Shuffle deck</p>
-              <p className="text-xs text-muted-foreground">Randomize the study order for this session.</p>
+              <p className="text-sm font-semibold text-foreground">Chế độ hiển thị</p>
+              <p className="text-xs text-muted-foreground">Chọn nội dung hiển thị ở mặt trước thẻ.</p>
             </div>
-            <Switch checked={local.shuffle} onChange={(checked) => setLocal((prev) => ({ ...prev, shuffle: checked }))} ariaLabel="Shuffle deck" />
-          </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Auto flip</p>
-              <p className="text-xs text-muted-foreground">Flip the active card after a short delay.</p>
-            </div>
-            <Switch checked={local.autoplay} onChange={(checked) => setLocal((prev) => ({ ...prev, autoplay: checked }))} ariaLabel="Auto flip cards" />
-          </div>
-
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Auto speak</p>
-              <p className="text-xs text-muted-foreground">Speak the current card automatically when it appears.</p>
-            </div>
-            <Switch checked={local.autoSpeak} onChange={(checked) => setLocal((prev) => ({ ...prev, autoSpeak: checked }))} ariaLabel="Auto speak cards" />
-          </div>
-
-          <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Auto flip delay</p>
-                <p className="text-xs text-muted-foreground">Choose when the card flips automatically.</p>
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-full border border-border bg-background p-1">
-                {AUTO_PLAY_OPTIONS.map((seconds) => (
+            <div className="space-y-2">
+              {FRONT_MODE_OPTIONS.map((option) => {
+                const active = local.frontMode === option.value;
+                return (
                   <button
-                    key={seconds}
+                    key={option.value}
                     type="button"
-                    onClick={() => setLocal((prev) => ({ ...prev, autoplaySeconds: seconds }))}
+                    onClick={() => setLocal((prev) => ({ ...prev, frontMode: option.value }))}
                     className={[
-                      "rounded-full px-3 py-1 text-xs font-semibold transition-all",
-                      local.autoplaySeconds === seconds ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                      "w-full rounded-2xl border px-4 py-3 text-left transition-all",
+                      active ? "border-primary bg-primary/5 shadow-sm" : "border-border/70 bg-muted/20 hover:bg-muted/35",
                     ].join(" ")}
                   >
-                    {seconds}s
+                    <p className="text-sm font-semibold text-foreground">{option.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          </div>
+          </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Show IPA</p>
-                <p className="text-xs text-muted-foreground">Keep pronunciation visible on the front.</p>
-              </div>
-              <Switch checked={local.showIpa} onChange={(checked) => setLocal((prev) => ({ ...prev, showIpa: checked }))} ariaLabel="Show IPA" />
+          <section className="space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Lọc từ vựng</p>
+              <p className="text-xs text-muted-foreground">Chọn nhóm từ muốn học trong bộ flashcard.</p>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Show examples</p>
-                <p className="text-xs text-muted-foreground">Reveal example sentences on the back.</p>
-              </div>
-              <Switch checked={local.showExamples} onChange={(checked) => setLocal((prev) => ({ ...prev, showExamples: checked }))} ariaLabel="Show examples" />
+
+            <div className="space-y-2">
+              {FILTER_MODE_OPTIONS.map((option) => {
+                const active = local.filterMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLocal((prev) => ({ ...prev, filterMode: option.value }))}
+                    className={[
+                      "w-full rounded-2xl border px-4 py-3 text-left transition-all",
+                      active ? "border-primary bg-primary/5 shadow-sm" : "border-border/70 bg-muted/20 hover:bg-muted/35",
+                    ].join(" ")}
+                  >
+                    <p className="text-sm font-semibold text-foreground">{option.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </section>
         </div>
 
-        <DialogFooter className="flex gap-2 pt-2 justify-end">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 text-xs font-medium cursor-pointer">
+        <DialogFooter className="flex justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-10 rounded-xl text-xs font-medium">
             Cancel
           </Button>
-          <Button onClick={handleSave} className="rounded-xl h-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer px-5">
+          <Button onClick={handleSave} className="h-10 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white hover:bg-indigo-500">
             Save settings
           </Button>
         </DialogFooter>

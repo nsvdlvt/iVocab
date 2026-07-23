@@ -118,6 +118,27 @@ export const SrsService = {
     const now = params.now ?? new Date();
     const currentLevel = params.currentState?.level ?? 0;
     const currentProgress = params.currentState?.progress ?? 0;
+    if (params.mode === "flashcard") {
+      const isCorrect = params.answerResult === "correct" || params.answerResult === "near";
+      const nextLevel = isCorrect ? Math.min(5, currentLevel + 1) as SrsLevel : Math.max(0, currentLevel - 1) as SrsLevel;
+      const nextState: SrsReviewState = {
+        level: nextLevel,
+        progress: 0,
+        ...(nextLevel >= 2
+          ? nextLevel === 2
+            ? this.scheduleInitialReview(now)
+            : this.scheduleNextReview({ level: nextLevel as 2 | 3 | 4, now })
+          : { nextReviewAt: null, intervalDays: null }),
+      };
+
+      return {
+        shouldPersist: true,
+        canContribute: true,
+        gainedLevel: nextLevel > currentLevel,
+        state: nextState,
+      };
+    }
+
     const due = this.canReviewWord({
       level: currentLevel,
       nextReviewAt: params.currentState?.nextReviewAt ?? null,
