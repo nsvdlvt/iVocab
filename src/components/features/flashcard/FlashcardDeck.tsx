@@ -24,12 +24,12 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
   const pos = getPartOfSpeechLabel(word.part_of_speech);
 
   return (
-    <div className="relative mx-auto w-full max-w-5xl overflow-hidden">
-      <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.18),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.12),_transparent_38%)] blur-2xl pointer-events-none" />
+    <div className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border/60 bg-background/95 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+      <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_top,_rgba(79,70,229,0.05),_transparent_42%),radial-gradient(circle_at_bottom_right,_rgba(16,185,129,0.04),_transparent_38%)] pointer-events-none" />
 
-      <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_28px_70px_rgba(15,23,42,0.12)]">
+      <div className="relative overflow-hidden rounded-[2rem]">
         <motion.div
-          className="relative h-[min(68vh,34rem)] min-h-[24rem] w-full overflow-hidden touch-pan-y"
+          className="relative h-[min(68vh,34rem)] min-h-[24rem] w-full overflow-hidden rounded-[2rem] touch-pan-y bg-background"
           style={{ willChange: "transform" }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
@@ -48,7 +48,7 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
             onClick={onFlip}
           >
             <section
-              className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7"
+              className="absolute inset-0 flex h-full w-full flex-col rounded-[2rem] p-5 sm:p-7"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
@@ -101,7 +101,7 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
             </section>
 
             <section
-              className="absolute inset-0 flex h-full w-full flex-col p-5 sm:p-7"
+              className="absolute inset-0 flex h-full w-full flex-col rounded-[2rem] p-5 sm:p-7"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
@@ -124,7 +124,7 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
               </div>
 
               <div className="grid flex-1 gap-4 overflow-hidden md:grid-cols-[1.4fr_0.9fr]">
-                <div className="rounded-3xl border border-border/70 bg-muted/20 p-4 sm:p-5">
+                <div className="rounded-3xl border border-border/60 bg-background/80 p-4 sm:p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Example</p>
                   {showExamples && word.example ? (
                     <div className="mt-3 space-y-3">
@@ -145,7 +145,7 @@ export function FlashcardDeck({ word, flipped, showIpa, showExamples, onFlip, on
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-3xl border border-border/70 bg-muted/20 p-4 sm:p-5">
+                  <div className="rounded-3xl border border-border/60 bg-background/80 p-4 sm:p-5">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Synonyms</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {word.synonyms?.length ? (

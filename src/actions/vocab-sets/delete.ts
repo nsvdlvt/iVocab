@@ -7,13 +7,10 @@ import { revalidatePath } from "next/cache";
 export async function deleteVocabularySet(id: string, isPermanent = false) {
   const profile = await requireUser();
   const userId = profile.id;
+  void isPermanent;
 
   try {
-    if (isPermanent) {
-      await VocabSetRepository.permanentDeleteVocabSet(id, userId);
-    } else {
-      await VocabSetRepository.softDeleteVocabSet(id, userId);
-    }
+    await VocabSetRepository.deleteVocabSetCascade(id, userId);
   } catch (error) {
     const err = error as Error;
     return {
@@ -23,5 +20,9 @@ export async function deleteVocabularySet(id: string, isPermanent = false) {
   }
 
   revalidatePath("/vocabulary");
+  revalidatePath("/vocabulary-management");
+  revalidatePath("/dashboard");
+  revalidatePath("/statistics");
+  revalidatePath("/review");
   return { success: true };
 }

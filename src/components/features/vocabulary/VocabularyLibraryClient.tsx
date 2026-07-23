@@ -6,10 +6,9 @@ import Link from "next/link";
 import {
   BookOpen,
   CircleCheckBig,
-  Clock,
+  GraduationCap,
   History,
   Search,
-  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,14 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatCard } from "@/components/common/StatCard";
 import { SectionCard } from "@/components/common/SectionCard";
 import { cn } from "@/lib/utils";
 import { SrsService } from "@/lib/srs/srs-service";
-import type { LibraryVocabularyRow } from "@/repositories/vocabulary.repository";
+import type { VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 import { EditVocabularyDialog, type EditableVocabulary } from "@/components/features/vocabulary/EditVocabularyDialog";
+import type { LibraryVocabularyRow } from "@/repositories/vocabulary.repository";
 
 type SortKey = "created_desc" | "created_asc" | "word_asc" | "word_desc" | "next_review_asc";
 type StatusFilter = "all" | "new" | "learning" | "due" | "overdue" | "mastered" | "archived";
@@ -32,6 +31,7 @@ type LevelFilter = "all" | "lv0" | "lv1" | "lv2" | "lv3" | "lv4" | "lv5";
 
 interface Props {
   words: LibraryVocabularyRow[];
+  stats: VocabularyStats;
 }
 
 const PAGE_SIZE = 20;
@@ -150,7 +150,7 @@ function friendlyNextReview(nextReview?: string | null) {
   return format(value, "d MMM");
 }
 
-export function VocabularyLibraryClient({ words }: Props) {
+export function VocabularyLibraryClient({ words, stats }: Props) {
   const router = useRouter();
   const [search, setSearch] = React.useState("");
   const [levelFilter, setLevelFilter] = React.useState<LevelFilter>("all");
@@ -193,10 +193,6 @@ export function VocabularyLibraryClient({ words }: Props) {
     return items;
   }, [search, levelFilter, statusFilter, sort, words]);
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [search, levelFilter, statusFilter, sort]);
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageWords = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -204,26 +200,11 @@ export function VocabularyLibraryClient({ words }: Props) {
   const endItem = Math.min(safePage * PAGE_SIZE, filtered.length);
   const hasFilters = search || levelFilter !== "all" || statusFilter !== "all" || sort !== "created_desc";
 
-  const stats = React.useMemo(() => {
-    let dueToday = 0;
-    let learning = 0;
-    let mastered = 0;
-
-    for (const row of words) {
-      const state = getReviewState(row);
-      if (state.statusKey === "due" || state.statusKey === "overdue") dueToday += 1;
-      if (state.statusKey === "learning" || state.statusKey === "new") learning += 1;
-      if (state.statusKey === "mastered") mastered += 1;
-    }
-
-    return { total: words.length, dueToday, learning, mastered };
-  }, [words]);
-
   const statsCards = [
-    { title: "Tổng số từ", value: stats.total, icon: BookOpen, iconClassName: "bg-primary/10 text-primary" },
-    { title: "Đang học", value: stats.learning, icon: Clock, iconClassName: "bg-amber-500/10 text-amber-600" },
+    { title: "Tổng số từ", value: stats.totalWords, icon: BookOpen, iconClassName: "bg-primary/10 text-primary" },
+    { title: "Đã thuộc", value: stats.learnedWords, icon: GraduationCap, iconClassName: "bg-emerald-500/10 text-emerald-600" },
     { title: "Cần ôn hôm nay", value: stats.dueToday, icon: History, iconClassName: "bg-red-500/10 text-red-600" },
-    { title: "Đã thành thạo", value: stats.mastered, icon: CircleCheckBig, iconClassName: "bg-emerald-500/10 text-emerald-600" },
+    { title: "Đã thành thạo", value: stats.masteredWords, icon: CircleCheckBig, iconClassName: "bg-amber-500/10 text-amber-600" },
   ] as const;
 
   const selectedEditable: EditableVocabulary | null = selected
@@ -267,10 +248,7 @@ export function VocabularyLibraryClient({ words }: Props) {
           </div>
 
           <div className="flex flex-1 flex-wrap items-center gap-2 xl:justify-center">
-            <Select
-              value={levelFilter}
-              onValueChange={(value) => setLevelFilter((value ?? "all") as LevelFilter)}
-            >
+            <Select value={levelFilter} onValueChange={(value) => setLevelFilter((value ?? "all") as LevelFilter)}>
               <SelectTrigger className="h-10 w-[160px] rounded-xl">
                 <span>{getLevelFilterLabel(levelFilter)}</span>
               </SelectTrigger>
@@ -284,10 +262,7 @@ export function VocabularyLibraryClient({ words }: Props) {
               </SelectContent>
             </Select>
 
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter((value ?? "all") as StatusFilter)}
-            >
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter((value ?? "all") as StatusFilter)}>
               <SelectTrigger className="h-10 w-[170px] rounded-xl">
                 <span>{getStatusFilterLabel(statusFilter)}</span>
               </SelectTrigger>
@@ -346,12 +321,18 @@ export function VocabularyLibraryClient({ words }: Props) {
                       <TableCell className="font-mono text-xs text-muted-foreground">{row.ipa ?? "-"}</TableCell>
                       <TableCell className="text-muted-foreground">{row.part_of_speech ?? "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-bold", getLevelClass(`lv${state.level}`))}>
+                        <Badge
+                          variant="outline"
+                          className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-bold", getLevelClass(`lv${state.level}`))}
+                        >
                           Lv{state.level}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold", statusMeta.className)}>
+                        <Badge
+                          variant="outline"
+                          className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-semibold", statusMeta.className)}
+                        >
                           {statusMeta.label}
                         </Badge>
                       </TableCell>
@@ -400,7 +381,7 @@ export function VocabularyLibraryClient({ words }: Props) {
                   {selected.vocab_sets?.title ? (
                     <Link
                       href={`/vocabulary/${selected.set_id}?focusWord=${selected.id}`}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {selected.vocab_sets.title}
                     </Link>

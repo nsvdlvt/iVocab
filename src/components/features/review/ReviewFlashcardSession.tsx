@@ -358,13 +358,13 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
         </AnimatePresence>
       )}
 
-      <div className="sticky bottom-0 z-20 -mx-4 w-[calc(100%+2rem)] border-t border-border/70 bg-background/95 px-4 py-3 backdrop-blur-sm sm:static sm:mx-0 sm:w-full sm:max-w-3xl sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
-        <div className="grid w-full grid-cols-2 gap-3">
+      <div className="sticky bottom-0 z-20 -mx-4 w-[calc(100%+2rem)] border-t border-border/70 bg-background/95 px-4 py-3 backdrop-blur-sm sm:static sm:mx-0 sm:w-full sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+        <div className="mx-auto flex w-full max-w-4xl gap-3">
           <Button
             variant="outline"
             onClick={() => submitAction("not-yet")}
             disabled={!!activeAction}
-            className="h-14 w-full rounded-2xl border-rose-200 bg-rose-50/40 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300"
+            className="h-14 flex-1 basis-0 rounded-2xl border-rose-200 bg-rose-50/40 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300"
           >
             <X className="mr-2 h-5 w-5" />
             Chưa thuộc
@@ -372,7 +372,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
           <Button
             onClick={() => submitAction("known")}
             disabled={!!activeAction}
-            className="h-14 w-full rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
+            className="h-14 flex-1 basis-0 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
           >
             <Check className="mr-2 h-5 w-5" />
             Đã thuộc

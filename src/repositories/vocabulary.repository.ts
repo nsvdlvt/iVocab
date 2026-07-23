@@ -11,6 +11,34 @@ export type LibraryVocabularyRow = VocabularyRow & {
   review?: ReviewRow | null;
 };
 
+const ACTIVE_VOCABULARY_SELECT = `
+  *,
+  vocab_sets!inner(id, title, color, deleted_at),
+  review:reviews(*)
+`;
+
+async function getActiveVocabularyRows(userId: string): Promise<LibraryVocabularyRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vocabularies")
+    .select(ACTIVE_VOCABULARY_SELECT)
+    .eq("owner_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const typed = row as unknown as LibraryVocabularyRow;
+    const review = (row as LibraryVocabularyRow & { review?: ReviewRow | ReviewRow[] | null }).review;
+    return {
+      ...typed,
+      review: Array.isArray(review) ? review[0] ?? null : review ?? null,
+      vocab_sets: Array.isArray(typed.vocab_sets) ? typed.vocab_sets[0] ?? null : typed.vocab_sets ?? null,
+    };
+  });
+}
+
 export const VocabularyRepository = {
   getBySetId: cache(async (setId: string, ownerId: string): Promise<VocabularyRow[]> => {
     const supabase = await createClient();
@@ -45,15 +73,7 @@ export const VocabularyRepository = {
   }),
 
   countByUser: cache(async (userId: string): Promise<number> => {
-    const supabase = await createClient();
-    const { count, error } = await supabase
-      .from("vocabularies")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", userId)
-      .is("deleted_at", null);
-
-    if (error) throw error;
-    return count ?? 0;
+    return (await getActiveVocabularyRows(userId)).length;
   }),
 
   /** Returns up to `limit` vocabulary rows owned by user (across all sets), used for quiz generation. */
@@ -115,28 +135,6 @@ export const VocabularyRepository = {
   },
 
   getLibraryByUser: cache(async (userId: string): Promise<LibraryVocabularyRow[]> => {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("vocabularies")
-      .select(`
-        *,
-        vocab_sets!inner(id, title, color, deleted_at),
-        review:reviews(*)
-      `)
-      .eq("owner_id", userId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    return (data ?? []).map((row) => {
-      const typed = row as unknown as LibraryVocabularyRow;
-      const review = (row as LibraryVocabularyRow & { review?: ReviewRow | ReviewRow[] | null }).review;
-      return {
-        ...typed,
-        review: Array.isArray(review) ? review[0] ?? null : review ?? null,
-        vocab_sets: Array.isArray(typed.vocab_sets) ? typed.vocab_sets[0] ?? null : typed.vocab_sets ?? null,
-      };
-    });
+    return getActiveVocabularyRows(userId);
   }),
 };

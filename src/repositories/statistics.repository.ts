@@ -3,8 +3,8 @@ import { Database } from "@/types/database";
 import { ReviewRepository } from "./review.repository";
 import { StudySessionRepository } from "./study-session.repository";
 import { ProfileRepository } from "./profile.repository";
-import type { DashboardVocabularyStats } from "./review.repository";
 import { calculateCurrentStreak, getActiveStudyDaysMap } from "@/lib/streak";
+import { VocabularyStatsService, type VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 
 type UserStatisticsRow = Database["public"]["Tables"]["user_statistics"]["Row"];
 
@@ -36,7 +36,7 @@ export interface TodaySummary {
 export interface DashboardStats {
   totalSets: number;
   totalWords: number;
-  dashboardVocabularyStats: DashboardVocabularyStats;
+  dashboardVocabularyStats: VocabularyStats;
   masteredWords: number;
   learningWords: number;
   todayReviewCount: number;
@@ -71,7 +71,7 @@ export const StatisticsRepository = {
         .from("vocabularies")
         .select("id", { count: "exact", head: true })
         .eq("owner_id", userId)
-        .is("deleted_at", null)
+        .is("deleted_at", null),
     ]);
 
     const dailyGoal = profile?.daily_goal ?? 20;
@@ -175,16 +175,13 @@ export const StatisticsRepository = {
       .eq("user_id", userId)
       .is("deleted_at", null);
 
-    const { count: wordsCount } = await supabase
-      .from("vocabularies")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", userId)
-      .is("deleted_at", null);
+    const vocabularyStats = await VocabularyStatsService.getUserVocabularyStats(userId);
+    const wordsCount = vocabularyStats.totalWords;
 
     return {
       stats: stats ?? null,
       totalSets: setsCount ?? 0,
-      totalWords: wordsCount ?? 0,
+      totalWords: wordsCount,
     };
   },
 };

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight, Shuffle, Settings2, RotateCcw, Volume2, Speaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -98,6 +98,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
   const [deck, setDeck] = React.useState<FlashcardRow[]>(() => initialDeckState.deck);
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
+  const [transitionDirection, setTransitionDirection] = React.useState<1 | -1>(1);
 
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const autoplayTimerRef = React.useRef<number | null>(null);
@@ -173,11 +174,13 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
   }, [initialWords, persistDeck, persistSettings, settings]);
 
   const handlePrevious = React.useCallback(() => {
+    setTransitionDirection(-1);
     setCurrentIndex((prev) => Math.max(0, prev - 1));
     setFlipped(false);
   }, []);
 
   const handleNext = React.useCallback(() => {
+    setTransitionDirection(1);
     setCurrentIndex((prev) => Math.min(deck.length - 1, prev + 1));
     setFlipped(false);
   }, [deck.length]);
@@ -319,14 +322,43 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         onTouchEnd={handleTouchEnd}
         className="overflow-hidden touch-pan-y pt-2"
       >
-        <FlashcardDeck
-          word={currentWord}
-          flipped={flipped}
-          showIpa={settings.showIpa}
-          showExamples={settings.showExamples}
-          onFlip={handleFlip}
-          onSpeak={handleSpeak}
-        />
+        <AnimatePresence mode="wait" initial={false}>
+          {currentWord && (
+            <motion.div
+              key={currentWord.id}
+              layout
+              initial={{
+                opacity: 0,
+                x: transitionDirection > 0 ? 28 : -28,
+                scale: 0.97,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                x: transitionDirection > 0 ? -18 : 18,
+                scale: 0.97,
+              }}
+              transition={{
+                duration: 0.26,
+                ease: "easeOut",
+              }}
+              className="will-change-transform"
+            >
+              <FlashcardDeck
+                word={currentWord}
+                flipped={flipped}
+                showIpa={settings.showIpa}
+                showExamples={settings.showExamples}
+                onFlip={handleFlip}
+                onSpeak={handleSpeak}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-border/70 bg-card/80 p-4 text-center shadow-sm backdrop-blur touch-pan-y sm:flex-row sm:items-center sm:justify-between sm:text-left">

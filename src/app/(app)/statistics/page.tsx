@@ -7,17 +7,22 @@ import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
 import { requireUser } from "@/lib/auth/require-user";
 import { StatisticsRepository } from "@/repositories/statistics.repository";
+import { VocabularyStatsService } from "@/lib/statistics/vocabulary-stats.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function StatisticsPage() {
   const profile = await requireUser();
-  const { stats, totalSets, totalWords } = await StatisticsRepository.getStatisticsPageData(profile.id);
+  const [{ stats, totalSets }, vocabularyStats] = await Promise.all([
+    StatisticsRepository.getStatisticsPageData(profile.id),
+    VocabularyStatsService.getUserVocabularyStats(profile.id),
+  ]);
 
   const learnedWords = stats?.learned_words ?? 0;
   const reviewCount = stats?.review_count ?? 0;
   const streak = profile.streak ?? 0;
   const studyTime = stats?.total_study_time ?? 0;
+  const totalWords = vocabularyStats.totalWords;
 
   const hasAnyData = totalWords > 0 || totalSets > 0;
 

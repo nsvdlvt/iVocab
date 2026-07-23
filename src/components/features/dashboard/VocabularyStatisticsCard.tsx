@@ -1,12 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import { BookOpen, GraduationCap, Medal, Clock3 } from "lucide-react";
+import { BookOpen, Clock3, GraduationCap, Medal } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
-import { DashboardVocabularyStats } from "@/repositories/review.repository";
+import type { VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 
 interface VocabularyStatisticsCardProps {
-  stats: DashboardVocabularyStats;
+  stats: VocabularyStats;
 }
 
 const STAT_ITEMS = [
@@ -32,19 +32,19 @@ const STAT_ITEMS = [
     iconBgClassName: "bg-amber-500/10",
   },
   {
-    key: "dueWords",
+    key: "dueToday",
     label: "Từ đến hạn",
     icon: Clock3,
     iconClassName: "text-rose-600 dark:text-rose-300",
     iconBgClassName: "bg-rose-500/15",
     cardClassName:
-      "border-rose-200/70 bg-rose-50/80 hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:border-rose-400/30 dark:hover:bg-rose-500/15 transition-colors",
+      "border-rose-200/70 bg-rose-50/80 transition-colors hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:border-rose-400/30 dark:hover:bg-rose-500/15",
   },
 ] as const;
 
 export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProps) {
   return (
-    <SectionCard className="h-full flex flex-col">
+    <SectionCard className="flex h-full flex-col">
       <SectionHeader
         title="Thống kê từ vựng"
         description="Tổng quan tiến độ học tập của bạn"
@@ -54,7 +54,7 @@ export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProp
         {STAT_ITEMS.map((item) => {
           const Icon = item.icon;
           const value = stats[item.key];
-          const isDueWords = item.key === "dueWords";
+          const isDueWords = item.key === "dueToday";
 
           const cardContent = (
             <div

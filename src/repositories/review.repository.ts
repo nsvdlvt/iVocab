@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
 import { UpcomingReviewForecastDay, classifyForecastRow, summarizeSrsForecast } from "@/lib/srs/upcoming-reviews";
+import { VocabularyStatsService, type VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
@@ -17,92 +18,14 @@ function throwDbError(error: unknown): never {
   throw new Error("Database error");
 }
 
-async function getActiveVocabularyIds(userId: string): Promise<Set<string>> {
-  const supabase = await createClient();
-
-  const { data: sets, error: setError } = await supabase
-    .from("vocab_sets")
-    .select("id")
-    .eq("user_id", userId)
-    .is("deleted_at", null);
-
-  if (setError) throwDbError(setError);
-
-  const activeSetIds = new Set((sets ?? []).map((row) => row.id));
-
-  const { data: vocabRows, error: joinError } = await supabase
-    .from("vocabularies")
-    .select("id,set_id")
-    .eq("owner_id", userId)
-    .is("deleted_at", null);
-
-  if (joinError) throwDbError(joinError);
-
-  return new Set((vocabRows ?? []).filter((row) => activeSetIds.has(row.set_id)).map((row) => row.id));
-}
-
 async function getSrsVocabularyRows(userId: string): Promise<VocabularyWithReviewRow[]> {
-  const supabase = await createClient();
-  const activeVocabularyIds = await getActiveVocabularyIds(userId);
-  const { data, error } = await supabase
-    .from("vocabularies")
-    .select(`
-      *,
-      review:reviews(*)
-    `)
-    .eq("owner_id", userId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
-
-  if (error) throwDbError(error);
-
-  return (data ?? [])
-    .filter((row) => activeVocabularyIds.has(row.id))
-    .map((row) => ({
-      ...row,
-      review: (() => {
-        const review = (row as unknown as { review?: ReviewRow | ReviewRow[] | null }).review;
-        if (Array.isArray(review)) return review[0] ?? null;
-        return review ?? null;
-      })(),
-    })) as VocabularyWithReviewRow[];
+  const stats = await VocabularyStatsService.getUserVocabularyStats(userId);
+  return stats.rows as VocabularyWithReviewRow[];
 }
 
 function getReviewRow(row: VocabularyWithReviewRow): ReviewRow | null {
   const review = Array.isArray(row.review) ? row.review[0] ?? null : row.review;
   return review ?? null;
-}
-
-function summarizeDashboardVocabularyStats(rows: VocabularyWithReviewRow[], now = new Date()): DashboardVocabularyStats {
-  const forecast = summarizeSrsForecast(
-    rows.map((row) => {
-      const review = getReviewRow(row);
-      return { next_review: review?.next_review ?? null, status: review?.status ?? null };
-    }),
-    7,
-    now
-  );
-
-  let learnedWords = 0;
-  let masteredWords = 0;
-
-  for (const row of rows) {
-    const review = getReviewRow(row);
-    const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
-
-    if (level !== null && level >= 2 && level < 5) {
-      learnedWords += 1;
-    } else if (level === 5) {
-      masteredWords += 1;
-    }
-  }
-
-  return {
-    totalWords: rows.length,
-    learnedWords,
-    masteredWords,
-    dueWords: forecast.summary.today,
-  };
 }
 
 export interface ReviewItem {
@@ -114,13 +37,6 @@ export interface SrsSummary {
   dueToday: number;
   masteredWords: number;
   learningWords: number;
-}
-
-export interface DashboardVocabularyStats {
-  totalWords: number;
-  learnedWords: number;
-  masteredWords: number;
-  dueWords: number;
 }
 
 export interface SetReviewPreviewSummary {
@@ -310,9 +226,8 @@ export const ReviewRepository = {
     };
   },
 
-  async getDashboardVocabularyStats(userId: string): Promise<DashboardVocabularyStats> {
-    const rows = await getSrsVocabularyRows(userId);
-    return summarizeDashboardVocabularyStats(rows);
+  async getDashboardVocabularyStats(userId: string): Promise<VocabularyStats> {
+    return VocabularyStatsService.getUserVocabularyStats(userId);
   },
 
   async getUpcomingReviewForecast(userId: string, days = 7): Promise<UpcomingReviewSummary> {

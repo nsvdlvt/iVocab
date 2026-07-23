@@ -177,6 +177,34 @@ export const VocabSetRepository = {
     if (error) throw error;
   },
 
+  async deleteVocabSetCascade(id: string, userId: string): Promise<void> {
+    const supabase = await createClient();
+    const { error: deleteReviewSessionsError } = await supabase
+      .from("review_sessions")
+      .delete()
+      .eq("vocabulary_set_id", id)
+      .eq("user_id", userId);
+
+    if (deleteReviewSessionsError) throw deleteReviewSessionsError;
+
+    const { error: deleteSentenceHistoryError } = await supabase
+      .from("sentence_practice_history")
+      .delete()
+      .eq("vocab_set_id", id)
+      .eq("user_id", userId);
+
+    if (deleteSentenceHistoryError) throw deleteSentenceHistoryError;
+
+    // Deleting the set removes all vocabularies via FK cascade.
+    const { error: deleteSetError } = await supabase
+      .from("vocab_sets")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
+
+    if (deleteSetError) throw deleteSetError;
+  },
+
   async getSharedVocabSetById(id: string): Promise<VocabSetRow | null> {
     return this.getPublicVocabSetById(id);
   },

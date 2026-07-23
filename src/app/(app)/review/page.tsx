@@ -5,16 +5,13 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { UpcomingReviewsForecast } from "@/components/features/review/UpcomingReviewsForecast";
 import { StartReviewButton } from "@/components/features/review/StartReviewButton";
 import { requireUser } from "@/lib/auth/require-user";
-import { ReviewRepository } from "@/repositories/review.repository";
+import { VocabularyStatsService } from "@/lib/statistics/vocabulary-stats.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
   const user = await requireUser();
-  const [summary, forecast] = await Promise.all([
-    ReviewRepository.getSummary(user.id),
-    ReviewRepository.getUpcomingReviewForecast(user.id),
-  ]);
+  const stats = await VocabularyStatsService.getUserVocabularyStats(user.id);
 
   return (
     <PageContainer className="max-w-5xl space-y-6 md:space-y-8">
@@ -24,7 +21,7 @@ export default async function ReviewPage() {
         action={<StartReviewButton />}
       />
 
-      <UpcomingReviewsForecast forecast={forecast} />
+      <UpcomingReviewsForecast forecast={stats.forecast} />
 
       <div className="rounded-3xl border bg-card p-8 shadow-sm text-center space-y-4">
         <div className="flex justify-center">
@@ -34,7 +31,7 @@ export default async function ReviewPage() {
         </div>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Tổng số từ đang chờ ôn: <span className="font-bold text-foreground">{summary.dueToday}</span>
+            Tổng số từ đang chờ ôn: <span className="font-bold text-foreground">{stats.dueToday}</span>
           </p>
         </div>
       </div>

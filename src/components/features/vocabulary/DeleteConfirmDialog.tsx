@@ -42,18 +42,12 @@ export function DeleteConfirmDialog({ open, onOpenChange, vocabSet, isPermanent 
       <DialogContent className="max-w-md w-[95%] rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-rose-600">
-            {isPermanent ? "Xác nhận xóa vĩnh viễn" : "Xác nhận xóa bộ từ vựng"}
+            Xác nhận xóa vĩnh viễn
           </DialogTitle>
           <DialogDescription className="pt-2">
-            {isPermanent ? (
-              <span className="text-rose-500 font-medium block">
-                Cảnh báo: Hành động này sẽ xóa vĩnh viễn bộ từ vựng &ldquo;{vocabSet?.title}&rdquo; cùng với tất cả từ vựng bên trong và không thể khôi phục lại!
-              </span>
-            ) : (
-              <span>
-                Bạn có chắc chắn muốn xóa bộ từ vựng &ldquo;{vocabSet?.title}&rdquo;? Bạn có thể khôi phục lại bộ từ này từ mục lưu trữ đã xóa tạm thời bất cứ lúc nào.
-              </span>
-            )}
+            <span className="text-rose-500 font-medium block">
+              Cảnh báo: Hành động này sẽ xóa vĩnh viễn bộ từ vựng &ldquo;{vocabSet?.title}&rdquo; cùng với tất cả từ vựng, tiến trình học, lịch sử ôn tập và mọi dữ liệu liên quan. Không thể khôi phục lại.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -62,7 +56,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, vocabSet, isPermanent 
             Hủy
           </Button>
           <Button type="button" variant="destructive" onClick={handleDelete} disabled={isPending}>
-            {isPending ? "Đang xử lý..." : isPermanent ? "Xóa vĩnh viễn" : "Xóa tạm thời"}
+            {isPending ? "Đang xử lý..." : "Xóa vĩnh viễn"}
           </Button>
         </DialogFooter>
       </DialogContent>
