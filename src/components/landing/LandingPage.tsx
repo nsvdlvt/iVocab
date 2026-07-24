@@ -77,7 +77,19 @@ export function LandingPage() {
         description="Flashcards là nơi người học chạm vào từ vựng nhiều nhất. Màn hình này cho thấy rõ trải nghiệm lật thẻ và nhịp học tập trung."
       >
         <SectionCard className="border-slate-200 bg-white p-4 shadow-sm">
-          <FlashcardDeck word={landingDemoFlashcard} flipped={false} showIpa showExamples onFlip={() => {}} onSpeak={() => {}} />
+          <FlashcardDeck
+            word={landingDemoFlashcard}
+            flipped={false}
+            frontMode="term"
+            autoSpeak={false}
+            isStarred={false}
+            readOnly
+            onFlip={() => {}}
+            onSpeak={() => {}}
+            onOpenSettings={() => {}}
+            onToggleAutoSpeak={() => {}}
+            onToggleStar={() => {}}
+          />
         </SectionCard>
       </ShowcaseSection>
       <ShowcaseSection
@@ -134,4 +146,3 @@ export function LandingPage() {
     </div>
   );
 }
-

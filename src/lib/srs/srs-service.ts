@@ -147,7 +147,6 @@ export const SrsService = {
     const isCorrect = params.answerResult === "correct" || params.answerResult === "near";
 
     const canContribute =
-      params.mode !== "flashcard" &&
       (params.mode !== "sentence-practice" || currentLevel >= 2) &&
       (currentLevel < 2 || due);
 

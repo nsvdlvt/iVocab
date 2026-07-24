@@ -87,7 +87,19 @@ export function LandingHero() {
                       </button>
                     </div>
                     <div className="mt-4 scale-[0.92] origin-top">
-                      <FlashcardDeck word={landingDemoFlashcard} flipped={flipped} showIpa showExamples onFlip={() => setFlipped((v) => !v)} onSpeak={() => {}} />
+                      <FlashcardDeck
+                        word={landingDemoFlashcard}
+                        flipped={flipped}
+                        frontMode="term"
+                        autoSpeak={false}
+                        isStarred={false}
+                        readOnly
+                        onFlip={() => setFlipped((v) => !v)}
+                        onSpeak={() => {}}
+                        onOpenSettings={() => {}}
+                        onToggleAutoSpeak={() => {}}
+                        onToggleStar={() => {}}
+                      />
                     </div>
                   </div>
                 </SectionCard>
