@@ -33,6 +33,20 @@ const DEFAULT_SETTINGS: FlashcardSettingsState = {
   filterMode: "all",
 };
 
+const AUTO_SPEAK_STORAGE_KEY = "ivocab_flashcard_auto_speak";
+
+function loadDefaultSettings() {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  return {
+    ...DEFAULT_SETTINGS,
+    autoSpeak: window.localStorage.getItem(AUTO_SPEAK_STORAGE_KEY) === "true",
+  };
+}
+
+function saveAutoSpeakPreference(autoSpeak: boolean) {
+  window.localStorage.setItem(AUTO_SPEAK_STORAGE_KEY, String(autoSpeak));
+}
+
 function isUnlearnedWord(word: FlashcardRow) {
   if (!word.review?.status) return true;
   const level = SrsService.getLevelFromReview(word.review);
@@ -62,7 +76,7 @@ function shuffleIds(words: FlashcardRow[]) {
 
 export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = false }: FlashcardStudyProps) {
   const router = useRouter();
-  const [settings, setSettings] = React.useState<FlashcardSettingsState>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = React.useState<FlashcardSettingsState>(loadDefaultSettings);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
@@ -115,6 +129,10 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
   const persistSettings = React.useCallback((next: FlashcardSettingsState) => {
     setSettings(next);
   }, []);
+
+  React.useEffect(() => {
+    saveAutoSpeakPreference(settings.autoSpeak);
+  }, [settings.autoSpeak]);
 
   const handlePrevious = React.useCallback(() => {
     setTransitionDirection(-1);
@@ -397,9 +415,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
           <span>để chuyển thẻ</span>
           <span>•</span>
           <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">Space</kbd>
-          <span>/</span>
-          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">Enter</kbd>
-          <span>hoặc lật thẻ</span>
+          <span>để lật thẻ</span>
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">

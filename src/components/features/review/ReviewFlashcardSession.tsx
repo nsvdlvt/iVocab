@@ -3,11 +3,12 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, Shuffle, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Layers3, Shuffle, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { FlashcardDeck } from "../flashcard/FlashcardDeck";
+import { FlashcardSettingsDialog, FlashcardSettingsState } from "../flashcard/FlashcardSettingsDialog";
 import { FlashcardRow } from "../flashcard/flashcard-utils";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 import {
@@ -30,6 +31,26 @@ interface ReviewFlashcardShuffleState {
 }
 
 const SHUFFLE_STORAGE_VERSION = 1;
+
+const DEFAULT_SETTINGS: FlashcardSettingsState = {
+  autoSpeak: false,
+  frontMode: "term",
+  filterMode: "all",
+};
+
+const AUTO_SPEAK_STORAGE_KEY = "ivocab_flashcard_auto_speak";
+
+function loadDefaultSettings() {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  return {
+    ...DEFAULT_SETTINGS,
+    autoSpeak: window.localStorage.getItem(AUTO_SPEAK_STORAGE_KEY) === "true",
+  };
+}
+
+function saveAutoSpeakPreference(autoSpeak: boolean) {
+  window.localStorage.setItem(AUTO_SPEAK_STORAGE_KEY, String(autoSpeak));
+}
 
 function getShuffleStorageKey(reviewSessionId: string) {
   return `ivocab_review_flashcard_shuffle_v${SHUFFLE_STORAGE_VERSION}_${reviewSessionId}`;
@@ -73,6 +94,8 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   const initialShuffleState = React.useMemo(() => loadShuffleState(reviewSessionId, words), [reviewSessionId, words]);
   const [queueState, setQueueState] = React.useState<FlashcardReviewQueueState>(() => createFlashcardReviewQueue(initialShuffleState.queue));
   const [shuffleEnabled, setShuffleEnabled] = React.useState<boolean>(() => initialShuffleState.enabled);
+  const [settings, setSettings] = React.useState<FlashcardSettingsState>(loadDefaultSettings);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [flipped, setFlipped] = React.useState(false);
   const [activeAction, setActiveAction] = React.useState<FlashcardReviewAction | null>(null);
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -85,6 +108,30 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   const progress = totalDue > 0 ? Math.round((queueState.knownCount / totalDue) * 100) : 0;
   const finished = totalDue > 0 && queueState.queue.length === 0;
   usePreserveScrollPosition(currentWord?.id ?? (finished ? "finished" : "ready"));
+
+  const handleSpeak = React.useCallback(() => {
+    if (!currentWord || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(currentWord.word);
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  }, [currentWord]);
+
+  React.useEffect(() => {
+    if (!settings.autoSpeak || !currentWord) return;
+    const handle = window.setTimeout(() => {
+      handleSpeak();
+    }, 150);
+    return () => window.clearTimeout(handle);
+  }, [currentWord, handleSpeak, settings.autoSpeak]);
+
+  const persistSettings = React.useCallback((next: FlashcardSettingsState) => {
+    setSettings(next);
+  }, []);
+
+  React.useEffect(() => {
+    saveAutoSpeakPreference(settings.autoSpeak);
+  }, [settings.autoSpeak]);
 
   React.useEffect(() => {
     return () => {
@@ -104,20 +151,21 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
 
   const applyShuffle = React.useCallback(
     (enabled: boolean) => {
-      setShuffleEnabled(enabled);
-      setQueueState((prev) => {
-        const remaining = words.filter((word) => !knownIdsRef.current.has(word.id));
-        if (remaining.length === 0) return prev;
+      if (actionTimerRef.current) {
+        window.clearTimeout(actionTimerRef.current);
+        actionTimerRef.current = null;
+      }
 
-        const currentId = prev.queue[0]?.id ?? null;
-        const current = currentId ? remaining.find((word) => word.id === currentId) ?? null : null;
-        const others = remaining.filter((word) => word.id !== currentId);
-        const orderedOthers = enabled ? shuffleWords(others) : others;
-        const nextQueue = current ? [current, ...orderedOthers] : orderedOthers;
+      setShuffleEnabled(enabled);
+      setActiveAction(null);
+      setFlipped(false);
+      setQueueState(() => {
+        const remaining = words.filter((word) => !knownIdsRef.current.has(word.id));
+        const nextQueue = enabled ? shuffleWords(remaining) : remaining;
 
         return {
           queue: nextQueue,
-          knownCount: prev.knownCount,
+          knownCount: knownIdsRef.current.size,
         };
       });
     },
@@ -190,7 +238,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
       if (event.code === "ArrowLeft") {
         event.preventDefault();
         submitAction("not-yet");
-      } else if (event.code === "ArrowRight" || event.code === "Enter") {
+      } else if (event.code === "ArrowRight") {
         event.preventDefault();
         submitAction("known");
       } else if (event.code === "Space") {
@@ -292,15 +340,6 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
         <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
           {queueState.knownCount} / {totalDue}
         </Badge>
-        <Button
-          variant={shuffleEnabled ? "secondary" : "outline"}
-          size="sm"
-          onClick={() => applyShuffle(!shuffleEnabled)}
-          className="rounded-xl text-xs font-semibold"
-        >
-          <Shuffle className={`mr-1 h-3.5 w-3.5 transition-transform ${shuffleEnabled ? "rotate-12" : ""}`} />
-          Trộn thẻ
-        </Button>
       </div>
 
       <div className="space-y-3">
@@ -343,53 +382,113 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             <FlashcardDeck
               word={currentWord}
               flipped={flipped}
-              frontMode="term"
-              autoSpeak={false}
+              frontMode={settings.frontMode}
+              autoSpeak={settings.autoSpeak}
               isStarred={false}
               readOnly={true}
               onFlip={() => setFlipped((prev) => !prev)}
-              onSpeak={() => {
-                if (!window.speechSynthesis) return;
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(currentWord.word);
-                utterance.lang = "en-US";
-                window.speechSynthesis.speak(utterance);
-              }}
-              onOpenSettings={() => {}}
-              onToggleAutoSpeak={() => {}}
+              onSpeak={handleSpeak}
+              onOpenSettings={() => setSettingsOpen(true)}
+              onToggleAutoSpeak={() => persistSettings({ ...settings, autoSpeak: !settings.autoSpeak })}
               onToggleStar={() => {}}
             />
           </motion.div>
         </AnimatePresence>
       )}
 
-      <div className="sticky bottom-0 z-20 -mx-4 w-[calc(100%+2rem)] border-t border-border/70 bg-background/95 px-4 py-3 backdrop-blur-sm sm:static sm:mx-0 sm:w-full sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
-        <div className="mx-auto flex w-full max-w-4xl gap-3">
-          <Button
-            variant="outline"
-            onClick={() => submitAction("not-yet")}
-            disabled={!!activeAction}
-            className="h-14 flex-1 basis-0 rounded-2xl border-rose-200 bg-rose-50/40 text-rose-700 hover:bg-rose-100 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300"
-          >
-            <X className="mr-2 h-5 w-5" />
-            Chưa thuộc
-          </Button>
-          <Button
-            onClick={() => submitAction("known")}
-            disabled={!!activeAction}
-            className="h-14 flex-1 basis-0 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
-          >
-            <Check className="mr-2 h-5 w-5" />
-            Đã thuộc
-          </Button>
+      <div className="mx-auto flex w-full max-w-[62rem] flex-col gap-3 px-1 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 text-sm text-slate-500">
+          <span className="font-medium">Phím tắt:</span>
+          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">←</kbd>
+          <span>Chưa thuộc</span>
+          <span className="text-slate-300">•</span>
+          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">→</kbd>
+          <span>Đã thuộc</span>
+          <span className="text-slate-300">•</span>
+          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">Space</kbd>
+          <span>lật thẻ</span>
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex justify-start">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled
+              className="group relative inline-flex h-12 items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-600 px-4 text-white shadow-sm disabled:cursor-default disabled:opacity-100"
+              aria-label="Progress mode locked"
+            >
+              <Layers3 className="h-4 w-4 text-white" />
+              <span className="text-sm font-medium">Tiến độ</span>
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => submitAction("not-yet")}
+              disabled={!!activeAction}
+              className="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition-all duration-200 hover:bg-rose-100 disabled:opacity-40"
+              aria-label="Chưa thuộc"
+            >
+              <X className="h-4 w-4" />
+              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                Chưa thuộc
+              </span>
+            </Button>
+
+            <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+              Thẻ {queueState.knownCount + 1} / {totalDue}
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => submitAction("known")}
+              disabled={!!activeAction}
+              className="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition-all duration-200 hover:bg-emerald-100 disabled:opacity-40"
+              aria-label="Đã thuộc"
+            >
+              <Check className="h-4 w-4" />
+              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                Đã thuộc
+              </span>
+            </Button>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => applyShuffle(!shuffleEnabled)}
+              className={[
+                "group relative inline-flex h-12 w-12 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
+                shuffleEnabled
+                  ? "border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-500"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+              ].join(" ")}
+              aria-label="Shuffle cards"
+            >
+              <Shuffle className={["h-4 w-4 transition-transform", shuffleEnabled ? "rotate-12 text-white" : "text-slate-500"].join(" ")} />
+              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                Trộn thẻ
+              </span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="text-center text-xs text-muted-foreground">
-        Phím tắt: <span className="font-semibold text-foreground">←</span> Chưa thuộc,{" "}
-        <span className="font-semibold text-foreground">→</span> Đã thuộc,{" "}
-        <span className="font-semibold text-foreground">Enter</span> Đã thuộc
-      </div>
+      <FlashcardSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={settings}
+        showFilterOptions={false}
+        onSave={(next) => {
+          persistSettings(next);
+          setFlipped(false);
+        }}
+      />
     </div>
   );
 }
