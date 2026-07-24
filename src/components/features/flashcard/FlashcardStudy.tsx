@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Layers3, Shuffle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { SrsService } from "@/lib/srs/srs-service";
+import { SrsLevel, SrsService } from "@/lib/srs/srs-service";
 import { FlashcardDeck } from "./FlashcardDeck";
 import { FlashcardFilterMode, FlashcardSettingsDialog, FlashcardSettingsState } from "./FlashcardSettingsDialog";
 import { FlashcardRow } from "./flashcard-utils";
@@ -21,7 +21,7 @@ interface FlashcardStudyProps {
 }
 
 interface FlashcardProgressState {
-  level: number;
+  level: SrsLevel;
   progress: number;
   nextReviewAt: string | null;
   intervalDays: number | null;
