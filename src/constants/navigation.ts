@@ -10,7 +10,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   {
     title: "Bộ từ vựng",
     href: ROUTES.VOCABULARY,
-    iconName: "BookOpen",
+    iconName: "Folder",
   },
   {
     title: "Từ vựng",

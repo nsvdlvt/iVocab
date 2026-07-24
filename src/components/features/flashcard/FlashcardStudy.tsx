@@ -407,17 +407,18 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
             <Button
               type="button"
               variant="ghost"
-              onClick={handleToggleShuffle}
+              onClick={() => setProgressModeEnabled((prev) => !prev)}
               title="Ngẫu nhiên"
               className={[
-                "group relative inline-flex h-12 w-12 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
-                shuffleEnabled
+                "group relative inline-flex h-12 items-center justify-center gap-2 rounded-full border px-4 shadow-sm transition-all duration-200",
+                progressModeEnabled
                   ? "border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-500"
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
               ].join(" ")}
-              aria-label="Shuffle cards"
+              aria-label="Toggle progress mode"
             >
-              <Shuffle className={["h-4 w-4 transition-transform", shuffleEnabled ? "rotate-12 text-white" : "text-slate-500"].join(" ")} />
+              <Layers3 className={["h-4 w-4 transition-transform", progressModeEnabled ? "text-white" : "text-slate-500"].join(" ")} />
+              <span className="text-sm font-medium">Tiến độ</span>
               <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
                 Ngẫu nhiên
               </span>
@@ -498,17 +499,17 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setProgressModeEnabled((prev) => !prev)}
+              onClick={handleToggleShuffle}
               title="Đánh dấu tiến độ học"
               className={[
                 "group relative inline-flex h-12 w-12 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
-                progressModeEnabled
+                shuffleEnabled
                   ? "border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-500"
                   : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
               ].join(" ")}
-              aria-label="Toggle progress mode"
+              aria-label="Shuffle cards"
             >
-              <Layers3 className={["h-4 w-4 transition-transform", progressModeEnabled ? "text-white" : "text-slate-500"].join(" ")} />
+              <Shuffle className={["h-4 w-4 transition-transform", shuffleEnabled ? "rotate-12 text-white" : "text-slate-500"].join(" ")} />
               <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
                 Đánh dấu tiến độ học
               </span>

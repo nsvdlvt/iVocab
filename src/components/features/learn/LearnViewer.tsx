@@ -40,7 +40,7 @@ interface LearnViewerProps {
 }
 
 const getStorageKey = (setId: string) => `ivocab_learn_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
-const getSettingsStorageKey = (setId: string) => `ivocab_learn_settings_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
+const getSettingsStorageKey = () => `ivocab_learn_settings_v${SESSION_CONFIG.STORAGE_VERSION}_global`;
 
 interface SerializedSession {
   wordStates: LearnWordState[];
@@ -56,7 +56,7 @@ interface SerializedSession {
 
 export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: LearnViewerProps) {
   const router = useRouter();
-  const settingsKey = getSettingsStorageKey(setInfo.id);
+  const settingsKey = getSettingsStorageKey();
 
   // Active configurations
   const [settings, setSettings] = useState<LearnSettings>(() => {

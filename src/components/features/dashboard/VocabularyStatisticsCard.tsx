@@ -50,7 +50,7 @@ export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProp
         description="Tổng quan tiến độ học tập của bạn"
       />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3">
         {STAT_ITEMS.map((item) => {
           const Icon = item.icon;
           const value = stats[item.key];

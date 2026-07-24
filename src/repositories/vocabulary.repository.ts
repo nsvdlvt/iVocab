@@ -19,17 +19,35 @@ const ACTIVE_VOCABULARY_SELECT = `
 
 async function getActiveVocabularyRows(userId: string): Promise<LibraryVocabularyRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("vocabularies")
-    .select(ACTIVE_VOCABULARY_SELECT)
-    .eq("owner_id", userId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const rawRows: LibraryVocabularyRow[] = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
 
-  if (error) throw error;
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("vocabularies")
+      .select(ACTIVE_VOCABULARY_SELECT)
+      .eq("owner_id", userId)
+      .is("deleted_at", null)
+      .is("vocab_sets.deleted_at", null)
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
-  return (data ?? []).map((row) => {
-    const typed = row as unknown as LibraryVocabularyRow;
+    if (error) throw error;
+
+    const page = (data ?? []) as unknown as LibraryVocabularyRow[];
+    rawRows.push(...page);
+
+    if (page.length < PAGE_SIZE) {
+      break;
+    }
+
+    from += PAGE_SIZE;
+  }
+
+  return rawRows.map((row) => {
+    const typed = row;
     const review = (row as LibraryVocabularyRow & { review?: ReviewRow | ReviewRow[] | null }).review;
     return {
       ...typed,

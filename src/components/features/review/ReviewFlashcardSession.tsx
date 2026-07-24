@@ -343,8 +343,10 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             <FlashcardDeck
               word={currentWord}
               flipped={flipped}
-              showIpa={true}
-              showExamples={true}
+              frontMode="term"
+              autoSpeak={false}
+              isStarred={false}
+              readOnly={true}
               onFlip={() => setFlipped((prev) => !prev)}
               onSpeak={() => {
                 if (!window.speechSynthesis) return;
@@ -353,6 +355,9 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
                 utterance.lang = "en-US";
                 window.speechSynthesis.speak(utterance);
               }}
+              onOpenSettings={() => {}}
+              onToggleAutoSpeak={() => {}}
+              onToggleStar={() => {}}
             />
           </motion.div>
         </AnimatePresence>

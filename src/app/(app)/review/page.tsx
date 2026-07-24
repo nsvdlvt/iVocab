@@ -17,8 +17,7 @@ export default async function ReviewPage() {
     <PageContainer className="max-w-5xl space-y-6 md:space-y-8">
       <PageHeader
         title="Ôn tập hôm nay"
-        description="Chỉ tải những từ đang đến hạn vào hàng đợi ôn tập."
-        action={<StartReviewButton />}
+        action={<StartReviewButton dueCount={stats.dueToday} />}
       />
 
       <UpcomingReviewsForecast forecast={stats.forecast} />

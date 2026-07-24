@@ -49,7 +49,7 @@ export function VocabularyToolbar({
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground truncate">Tạo bộ thẻ mới</h1>
           <p className="text-[11px] text-muted-foreground font-medium hidden sm:block mt-0.5">
-            Không sử dụng màu và biểu tượng, chỉ tập trung vào từ vựng học tập của bạn.
+            Thêm vào thư viện bộ từ
           </p>
         </div>
       </div>

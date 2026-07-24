@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 export interface LearnSettings {
   directionEnVi: boolean;
@@ -119,7 +119,7 @@ export function LearnSettingsDialog({
                   onCheckedChange={(val: boolean) => updateSetting("typeMcq", val)}
                   className="rounded-md"
                 />
-                <Label htmlFor="type-mcq" className="text-xs font-semibold cursor-pointer">Trắc nghiệm</Label>
+                <Label htmlFor="type-mcq" className="text-xs font-semibold cursor-pointer">Trắc nghiệm 4 đáp án</Label>
               </div>
               <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
                 <Checkbox
@@ -128,7 +128,7 @@ export function LearnSettingsDialog({
                   onCheckedChange={(val: boolean) => updateSetting("typeInput", val)}
                   className="rounded-md"
                 />
-                <Label htmlFor="type-input" className="text-xs font-semibold cursor-pointer">Tự điền từ</Label>
+                <Label htmlFor="type-input" className="text-xs font-semibold cursor-pointer">Điền từ (Fill in the blank)</Label>
               </div>
             </div>
           </div>
@@ -136,20 +136,16 @@ export function LearnSettingsDialog({
           {/* Section 3 - Study Order */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Thứ tự câu hỏi</h4>
-            <RadioGroup
-              value={localSettings.orderRandom ? "random" : "original"}
-              onValueChange={(val: unknown) => updateSetting("orderRandom", (val as string) === "random")}
-              className="grid grid-cols-2 gap-3"
-            >
-              <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
-                <RadioGroupItem id="order-random" value="random" className="text-indigo-600" />
-                <Label htmlFor="order-random" className="text-xs font-semibold cursor-pointer">Trộn ngẫu nhiên</Label>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex items-center justify-between rounded-xl border p-3 bg-muted/20">
+                <Label htmlFor="order-random" className="text-xs font-semibold cursor-pointer">Xáo trộn câu hỏi</Label>
+                <Switch
+                  id="order-random"
+                  checked={localSettings.orderRandom}
+                  onCheckedChange={(val: boolean) => updateSetting("orderRandom", val)}
+                />
               </div>
-              <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
-                <RadioGroupItem id="order-original" value="original" className="text-indigo-600" />
-                <Label htmlFor="order-original" className="text-xs font-semibold cursor-pointer">Theo thứ tự cũ</Label>
-              </div>
-            </RadioGroup>
+            </div>
           </div>
 
           {/* Section 4 - Study Filter & Behaviors */}

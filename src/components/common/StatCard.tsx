@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
+  compactTitle?: string;
   value: string | number;
   description?: string;
   icon?: LucideIcon;
@@ -23,6 +24,7 @@ interface StatCardProps {
 
 export function StatCard({
   title,
+  compactTitle,
   value,
   description,
   icon: Icon,
@@ -58,39 +60,55 @@ export function StatCard({
           : undefined
       }
     >
-      <div className={cn("flex items-center justify-between", compactOnMobile && "justify-center md:justify-between")}>
-        <span className={cn("text-sm font-medium text-muted-foreground", compactOnMobile && "hidden xl:block")}>{title}</span>
-        {Icon && (
-          <div
-            className={cn(
-              "rounded-xl p-2 bg-muted/50 text-muted-foreground",
-              compactOnMobile && "mx-auto xl:mx-0",
-              iconClassName
-            )}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-        )}
-      </div>
-      <div className={cn("mt-4 space-y-1", compactOnMobile && "mt-2 text-center xl:text-left")}>
-        <div className={cn("text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/90 bg-clip-text", compactOnMobile && "text-2xl xl:text-3xl")}>
-          {value}
+      {/* Mobile compact: vertical stack icon → label → value */}
+      {compactOnMobile && compactTitle && (
+        <div className="flex flex-col items-center gap-1.5 xl:hidden">
+          {Icon && (
+            <div className={cn("rounded-xl p-2 bg-muted/50 text-muted-foreground", iconClassName)}>
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{compactTitle}</span>
+          <div className="text-2xl font-bold tracking-tight">{value}</div>
         </div>
-        {(description || trend) && (
-          <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", compactOnMobile && "hidden xl:flex")}>
-            {trend && (
-              <span
-                className={cn(
-                  "font-semibold",
-                  trend.isPositive ? "text-emerald-500" : "text-rose-500"
-                )}
-              >
-                {trend.value}
-              </span>
-            )}
-            {description && <span>{description}</span>}
+      )}
+
+      {/* Desktop / non-compact: original layout */}
+      <div className={cn(compactOnMobile && compactTitle && "hidden xl:block")}>
+        <div className={cn("flex items-center justify-between", compactOnMobile && "justify-center md:justify-between")}>
+          <span className={cn("text-sm font-medium text-muted-foreground", compactOnMobile && !compactTitle && "hidden xl:block")}>{title}</span>
+          {Icon && (
+            <div
+              className={cn(
+                "rounded-xl p-2 bg-muted/50 text-muted-foreground",
+                compactOnMobile && "mx-auto xl:mx-0",
+                iconClassName
+              )}
+            >
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+        <div className={cn("mt-4 space-y-1", compactOnMobile && "mt-2 text-center xl:text-left")}>
+          <div className={cn("text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/90 bg-clip-text", compactOnMobile && "text-2xl xl:text-3xl")}>
+            {value}
           </div>
-        )}
+          {(description || trend) && (
+            <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", compactOnMobile && "hidden xl:flex")}>
+              {trend && (
+                <span
+                  className={cn(
+                    "font-semibold",
+                    trend.isPositive ? "text-emerald-500" : "text-rose-500"
+                  )}
+                >
+                  {trend.value}
+                </span>
+              )}
+              {description && <span>{description}</span>}
+            </div>
+          )}
+        </div>
       </div>
     </SectionCard>
   );

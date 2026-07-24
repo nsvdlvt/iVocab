@@ -4,10 +4,17 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export function StartReviewButton() {
+interface StartReviewButtonProps {
+  dueCount?: number;
+}
+
+export function StartReviewButton({ dueCount = 0 }: StartReviewButtonProps) {
   const router = useRouter();
+  const hasDue = dueCount > 0;
 
   const handleStart = async () => {
+    if (!hasDue) return;
+
     const response = await fetch("/api/review-sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -26,7 +33,11 @@ export function StartReviewButton() {
   };
 
   return (
-    <Button onClick={handleStart} className="rounded-xl px-5">
+    <Button
+      onClick={handleStart}
+      disabled={!hasDue}
+      className="rounded-xl px-5"
+    >
       Bắt đầu ôn
     </Button>
   );

@@ -29,29 +29,9 @@ export function UpcomingReviewsForecast({ forecast }: UpcomingReviewsForecastPro
   return (
     <SectionCard className="space-y-4">
       <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-black text-foreground">Lịch ôn sắp tới (7 ngày)</h3>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Dự báo dựa trên lịch SRS hiện có, chỉ tính các từ đến hạn trong 7 ngày tới.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span className="rounded-full border bg-muted/30 px-3 py-1">
-            Tổng: <span className="font-bold text-foreground">{forecast.total}</span>
-          </span>
-          <span className="rounded-full border bg-muted/30 px-3 py-1">
-            TB/ngày: <span className="font-bold text-foreground">{forecast.averagePerDay}</span>
-          </span>
-          <span className="rounded-full border bg-muted/30 px-3 py-1">
-            Đỉnh: <span className="font-bold text-foreground">{forecast.busiestDay?.label ?? "-"}</span>
-            {forecast.busiestDay ? ` (${forecast.busiestDay.count})` : ""}
-          </span>
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-black text-foreground">Lịch ôn sắp tới (7 ngày)</h3>
         </div>
       </div>
 

@@ -5,15 +5,28 @@ import { format } from "date-fns";
 import Link from "next/link";
 import {
   BookOpen,
-  CircleCheckBig,
+  Clock3,
   GraduationCap,
-  History,
+  Medal,
   Search,
+  Funnel,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -201,10 +214,10 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
   const hasFilters = search || levelFilter !== "all" || statusFilter !== "all" || sort !== "created_desc";
 
   const statsCards = [
-    { title: "Tổng số từ", value: stats.totalWords, icon: BookOpen, iconClassName: "bg-primary/10 text-primary" },
-    { title: "Đã thuộc", value: stats.learnedWords, icon: GraduationCap, iconClassName: "bg-emerald-500/10 text-emerald-600" },
-    { title: "Cần ôn hôm nay", value: stats.dueToday, icon: History, iconClassName: "bg-red-500/10 text-red-600" },
-    { title: "Đã thành thạo", value: stats.masteredWords, icon: CircleCheckBig, iconClassName: "bg-amber-500/10 text-amber-600" },
+    { title: "Tổng số từ", compactTitle: "TỔNG TỪ", value: stats.totalWords, icon: BookOpen, iconClassName: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
+    { title: "Đã thuộc", compactTitle: "ĐÃ THUỘC", value: stats.learnedWords, icon: GraduationCap, iconClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    { title: "Cần ôn hôm nay", compactTitle: "ĐẾN HẠN", value: stats.dueToday, icon: Clock3, iconClassName: "bg-rose-500/15 text-rose-600 dark:text-rose-300" },
+    { title: "Đã thành thạo", compactTitle: "THÀNH THẠO", value: stats.masteredWords, icon: Medal, iconClassName: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   ] as const;
 
   const selectedEditable: EditableVocabulary | null = selected
@@ -223,10 +236,11 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-2 md:grid-cols-4 xl:gap-4">
-        {statsCards.map(({ title, value, icon: Icon, iconClassName }) => (
+        {statsCards.map(({ title, compactTitle, value, icon: Icon, iconClassName }) => (
           <StatCard
             key={title}
             title={title}
+            compactTitle={compactTitle}
             value={value}
             icon={Icon}
             compactOnMobile
@@ -236,8 +250,8 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
       </div>
 
       <SectionCard className="space-y-4 p-4 md:p-5">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="relative w-full xl:max-w-sm">
+        <div className="flex flex-row gap-2 items-center justify-between">
+          <div className="relative flex-1 xl:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -247,50 +261,107 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
             />
           </div>
 
-          <div className="flex flex-1 flex-wrap items-center gap-2 xl:justify-center">
-            <Select value={levelFilter} onValueChange={(value) => setLevelFilter((value ?? "all") as LevelFilter)}>
-              <SelectTrigger className="h-10 w-[160px] rounded-xl">
-                <span>{getLevelFilterLabel(levelFilter)}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả Level</SelectItem>
-                {(["lv0", "lv1", "lv2", "lv3", "lv4", "lv5"] as LevelFilter[]).map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {LEVEL_LABELS[level]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-2">
+              <Select value={levelFilter} onValueChange={(value) => setLevelFilter((value ?? "all") as LevelFilter)}>
+                <SelectTrigger className="h-10 w-[160px] rounded-xl">
+                  <span>{getLevelFilterLabel(levelFilter)}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả Level</SelectItem>
+                  {(["lv0", "lv1", "lv2", "lv3", "lv4", "lv5"] as LevelFilter[]).map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {LEVEL_LABELS[level]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter((value ?? "all") as StatusFilter)}>
-              <SelectTrigger className="h-10 w-[170px] rounded-xl">
-                <span>{getStatusFilterLabel(statusFilter)}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả Trạng thái</SelectItem>
-                <SelectItem value="new">Mới</SelectItem>
-                <SelectItem value="learning">Đang học</SelectItem>
-                <SelectItem value="due">Cần ôn hôm nay</SelectItem>
-                <SelectItem value="overdue">Quá hạn</SelectItem>
-                <SelectItem value="mastered">Thành thạo</SelectItem>
-                <SelectItem value="archived">Đã lưu trữ</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter((value ?? "all") as StatusFilter)}>
+                <SelectTrigger className="h-10 w-[170px] rounded-xl">
+                  <span>{getStatusFilterLabel(statusFilter)}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả Trạng thái</SelectItem>
+                  <SelectItem value="new">Mới</SelectItem>
+                  <SelectItem value="learning">Đang học</SelectItem>
+                  <SelectItem value="due">Cần ôn hôm nay</SelectItem>
+                  <SelectItem value="overdue">Quá hạn</SelectItem>
+                  <SelectItem value="mastered">Thành thạo</SelectItem>
+                  <SelectItem value="archived">Đã lưu trữ</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={sort} onValueChange={(value) => setSort((value ?? "created_desc") as SortKey)}>
-              <SelectTrigger className="h-10 w-[170px] rounded-xl">
-                <span>{getSortLabel(sort)}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_desc">{SORT_LABELS.created_desc}</SelectItem>
-                <SelectItem value="created_asc">{SORT_LABELS.created_asc}</SelectItem>
-                <SelectItem value="word_asc">{SORT_LABELS.word_asc}</SelectItem>
-                <SelectItem value="word_desc">{SORT_LABELS.word_desc}</SelectItem>
-                <SelectItem value="next_review_asc">{SORT_LABELS.next_review_asc}</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={sort} onValueChange={(value) => setSort((value ?? "created_desc") as SortKey)}>
+                <SelectTrigger className="h-10 w-[170px] rounded-xl">
+                  <span>{getSortLabel(sort)}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_desc">{SORT_LABELS.created_desc}</SelectItem>
+                  <SelectItem value="created_asc">{SORT_LABELS.created_asc}</SelectItem>
+                  <SelectItem value="word_asc">{SORT_LABELS.word_asc}</SelectItem>
+                  <SelectItem value="word_desc">{SORT_LABELS.word_desc}</SelectItem>
+                  <SelectItem value="next_review_asc">{SORT_LABELS.next_review_asc}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Button className="ml-auto h-10 rounded-xl gap-2" onClick={() => router.push("/vocabulary/new")}>
+            <div className="flex md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger className={cn(buttonVariants({ variant: "outline", size: "icon" }), "h-10 w-10 shrink-0 rounded-xl")}>
+                  <Funnel className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>Level ({getLevelFilterLabel(levelFilter)})</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={levelFilter} onValueChange={(v) => setLevelFilter(v as LevelFilter)}>
+                        <DropdownMenuRadioItem value="all">Tất cả Level</DropdownMenuRadioItem>
+                        {(["lv0", "lv1", "lv2", "lv3", "lv4", "lv5"] as LevelFilter[]).map((level) => (
+                          <DropdownMenuRadioItem key={level} value={level}>
+                            {LEVEL_LABELS[level]}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>Trạng thái ({getStatusFilterLabel(statusFilter)})</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                        <DropdownMenuRadioItem value="all">Tất cả Trạng thái</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="new">Mới</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="learning">Đang học</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="due">Cần ôn hôm nay</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="overdue">Quá hạn</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="mastered">Thành thạo</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="archived">Đã lưu trữ</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>Sắp xếp</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                        <DropdownMenuRadioItem value="created_desc">{SORT_LABELS.created_desc}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="created_asc">{SORT_LABELS.created_asc}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="word_asc">{SORT_LABELS.word_asc}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="word_desc">{SORT_LABELS.word_desc}</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="next_review_asc">{SORT_LABELS.next_review_asc}</DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <Button className="h-10 rounded-xl gap-2" onClick={() => router.push("/vocabulary/new")}>
               Thêm từ
             </Button>
           </div>
@@ -351,12 +422,13 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            Đang hiển thị {startItem}–{endItem} trên tổng số {filtered.length}
-          </p>
-          <div className="flex items-center gap-3">
-            <p className="text-xs font-medium text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 mt-4">
+          <div className="text-xs text-muted-foreground whitespace-nowrap">
+            <span className="hidden sm:inline">Đang hiển thị {startItem}–{endItem} trên tổng số {filtered.length}</span>
+            <span className="sm:hidden">Đang hiển thị {startItem}–{endItem} trên tổng số {filtered.length}</span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <p className="text-xs font-medium text-muted-foreground whitespace-nowrap">
               Trang {safePage} / {totalPages}
             </p>
             <div className="flex items-center gap-2">

@@ -199,7 +199,7 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
       disabled={isPending}
     >
       <Sparkles className="h-3.5 w-3.5" />
-      ✨ AI Import
+      AI Import
     </Button>
   );
 
