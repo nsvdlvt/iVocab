@@ -132,7 +132,7 @@ export function LearnInput({
                 onClick={onSkip}
                 className="rounded-xl h-11 px-4 text-xs font-bold border-border/80 hover:bg-muted shrink-0 cursor-pointer"
               >
-                Không biết
+                Không biết (5)
               </Button>
             )}
             <Button

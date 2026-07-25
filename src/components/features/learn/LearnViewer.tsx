@@ -397,6 +397,12 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
         return;
       }
 
+      if (!isSubmitted && !settingsOpened && (e.code === "Digit5" || e.code === "Numpad5")) {
+        e.preventDefault();
+        handleSkip();
+        return;
+      }
+
       // Handle continue
       if (isSubmitted && e.code === "Enter") {
         e.preventDefault();

@@ -137,11 +137,10 @@ export function LearnMCQ({
             onClick={onSkip}
             className="text-xs font-semibold text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
           >
-            Không biết
+            Không biết (5)
           </button>
         </div>
       )}
     </div>
   );
 }
-

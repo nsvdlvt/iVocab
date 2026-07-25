@@ -1,24 +1,60 @@
-const CACHE_NAME = "vocabee-pwa-v2";
-const PRECACHE_URLS = [
-  "/",
-  "/offline",
-  "/manifest.webmanifest",
-  "/icon-192.png",
-  "/icon-512.png",
-];
+const CACHE_NAME = "vocabee-pwa-v3";
+const APP_SHELL_URLS = ["/offline", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+const IGNORED_CACHE_HEADERS = ["rsc", "next-router-state-tree", "next-url"];
+
+function hasAppRouterHeaders(request) {
+  return IGNORED_CACHE_HEADERS.some((header) => request.headers.has(header));
+}
+
+function isDocumentNavigation(request) {
+  return request.mode === "navigate" && request.destination === "document";
+}
+
+function isHtmlResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("text/html");
+}
+
+async function cacheResponse(cacheKey, response) {
+  if (!response || !response.ok) return;
+  if (!isHtmlResponse(response)) return;
+
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(cacheKey, response.clone());
+}
+
+async function getOfflineFallback() {
+  const cache = await caches.open(CACHE_NAME);
+
+  const offline = await cache.match("/offline", {
+    ignoreSearch: true,
+    ignoreVary: false,
+  });
+  if (offline) return offline;
+
+  const shell = await cache.match("/", {
+    ignoreSearch: true,
+    ignoreVary: false,
+  });
+  if (shell && isHtmlResponse(shell)) return shell;
+
+  return new Response("Offline", {
+    status: 200,
+    headers: new Headers({ "Content-Type": "text/html; charset=utf-8" }),
+  });
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Fetch and cache one by one so a single failure doesn't block the whole SW installation
-      for (const url of PRECACHE_URLS) {
+      for (const url of APP_SHELL_URLS) {
         try {
-          const response = await fetch(url);
+          const response = await fetch(url, { cache: "no-store" });
           if (response.ok) {
             await cache.put(url, response);
           }
-        } catch (e) {
-          console.error("Failed to precache:", url, e);
+        } catch (error) {
+          console.error("Failed to precache:", url, error);
         }
       }
     })
@@ -29,11 +65,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
     )
   );
   self.clients.claim();
@@ -44,64 +76,62 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip API requests and Supabase
-  if (url.pathname.startsWith("/api/") || url.host.includes("supabase")) {
-    return;
-  }
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/") || url.host.includes("supabase")) return;
+  if (hasAppRouterHeaders(event.request)) return;
 
-  // Handle HTML navigation requests
-  if (event.request.mode === "navigate") {
+  if (isDocumentNavigation(event.request)) {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request.url, copy));
-          return response;
+        .then(async (response) => {
+          if (response && response.ok && isHtmlResponse(response)) {
+            await cacheResponse(event.request.url, response);
+            return response;
+          }
+          return getOfflineFallback();
         })
         .catch(async () => {
-          // ignoreVary is critical for Next.js because it sets Vary: RSC headers
-          // ignoreSearch handles start_url like /?source=pwa
-          let cached = await caches.match(event.request.url, {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedDocument = await cache.match(event.request.url, {
             ignoreSearch: true,
-            ignoreVary: true,
+            ignoreVary: false,
           });
 
-          if (!cached) {
-            cached = await caches.match("/", { ignoreSearch: true, ignoreVary: true });
+          if (cachedDocument && isHtmlResponse(cachedDocument)) {
+            return cachedDocument;
           }
 
-          if (!cached) {
-            cached = await caches.match("/offline", { ignoreSearch: true, ignoreVary: true });
-          }
-
-          if (cached) return cached;
-          
-          return new Response("Offline", {
-            status: 200,
-            headers: new Headers({ "Content-Type": "text/html" }),
-          });
+          return getOfflineFallback();
         })
     );
     return;
   }
 
-  // Handle other same-origin requests (assets, images, etc.)
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request, { ignoreSearch: true, ignoreVary: true }).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          // Do not cache opaque responses or non-200 responses
-          if (!response || response.status !== 200 || response.type !== "basic") {
+  if (event.request.destination === "document") return;
+
+  event.respondWith(
+    caches.match(event.request, { ignoreSearch: false, ignoreVary: false }).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request)
+        .then((response) => {
+          if (!response || !response.ok || response.type !== "basic") {
             return response;
           }
+
+          const isCacheableAsset =
+            event.request.destination !== "document" &&
+            event.request.destination !== "serviceworker";
+
+          if (!isCacheableAsset) return response;
+
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           return response;
-        }).catch((err) => {
-          console.error("Asset fetch failed", err);
+        })
+        .catch((error) => {
+          console.error("Asset fetch failed", error);
         });
-      })
-    );
-  }
+    })
+  );
 });
