@@ -139,4 +139,41 @@ describe("SrsService", () => {
     expect(result.state.level).toBe(2);
     expect(result.state.nextReviewAt).toBe("2026-07-08T00:00:00.000Z");
   });
+
+  it("moves Flashcard cards to Lv2 for lower levels, then keeps Lv2+ unchanged on correct answers", () => {
+    const lowLevel = SrsService.processLearningResult({
+      mode: "flashcard",
+      answerResult: "correct",
+      currentState: { level: 1, progress: 3, nextReviewAt: null, intervalDays: null },
+      now,
+    });
+
+    expect(lowLevel.shouldPersist).toBe(true);
+    expect(lowLevel.gainedLevel).toBe(true);
+    expect(lowLevel.state.level).toBe(2);
+    expect(lowLevel.state.nextReviewAt).toBe("2026-07-09T00:00:00.000Z");
+
+    const lv2 = SrsService.processLearningResult({
+      mode: "flashcard",
+      answerResult: "correct",
+      currentState: { level: 2, progress: 1, nextReviewAt: "2026-07-08T00:00:00.000Z", intervalDays: 1 },
+      now,
+    });
+
+    expect(lv2.shouldPersist).toBe(false);
+    expect(lv2.gainedLevel).toBe(false);
+    expect(lv2.state.level).toBe(2);
+    expect(lv2.state.nextReviewAt).toBe("2026-07-08T00:00:00.000Z");
+
+    const wrong = SrsService.processLearningResult({
+      mode: "flashcard",
+      answerResult: "wrong",
+      currentState: { level: 3, progress: 2, nextReviewAt: "2026-07-08T00:00:00.000Z", intervalDays: 3 },
+      now,
+    });
+
+    expect(wrong.shouldPersist).toBe(true);
+    expect(wrong.state.level).toBe(2);
+    expect(wrong.state.nextReviewAt).toBe("2026-07-08T00:00:00.000Z");
+  });
 });

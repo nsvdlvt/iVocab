@@ -13,17 +13,19 @@ import { ROUTES } from "@/constants/routes";
 import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight } from "lucide-react";
 import { duplicateVocabularySet } from "@/actions/vocab-sets/duplicate";
 import { toast } from "sonner";
+import type { VocabSetProgressSummary } from "@/lib/statistics/vocab-set-summary.service";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 
 interface VocabSetListProps {
   sets: VocabSetRow[];
+  summaries?: Record<string, VocabSetProgressSummary>;
   onEdit: (set: VocabSetRow) => void;
   onDelete: (set: VocabSetRow, isPermanent: boolean) => void;
   onRestore: (set: VocabSetRow) => void;
 }
 
-export function VocabSetList({ sets, onEdit, onDelete, onRestore }: VocabSetListProps) {
+export function VocabSetList({ sets, summaries, onEdit, onDelete, onRestore }: VocabSetListProps) {
   const [isPending, setIsPending] = useState(false);
 
   const getVisibilityBadge = (vis: string) => {

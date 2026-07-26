@@ -152,6 +152,10 @@ export const VocabularyRepository = {
     if (error) throw error;
   },
 
+  async setFavoriteStatus(id: string, ownerId: string, isFavorite: boolean): Promise<void> {
+    return this.updateStarStatus(id, ownerId, isFavorite);
+  },
+
   getLibraryByUser: cache(async (userId: string): Promise<LibraryVocabularyRow[]> => {
     return getActiveVocabularyRows(userId);
   }),

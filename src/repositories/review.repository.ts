@@ -33,6 +33,12 @@ export interface ReviewItem {
   vocabulary: VocabularyRow;
 }
 
+export interface ProcessedReviewResult {
+  previousLevel: number;
+  nextLevel: number;
+  gainedLevel: boolean;
+}
+
 export interface SrsSummary {
   dueToday: number;
   masteredWords: number;
@@ -317,7 +323,7 @@ export const ReviewRepository = {
     vocabularyId: string;
     mode: "learn" | "dictation" | "sentence-practice" | "flashcard" | "review";
     answerResult: "correct" | "wrong" | "near" | "unknown";
-  }): Promise<void> {
+  }): Promise<ProcessedReviewResult | null> {
     const supabase = await createClient();
     const now = new Date();
 
@@ -330,6 +336,7 @@ export const ReviewRepository = {
 
     if (fetchError) throwDbError(fetchError);
 
+    const previousLevel = existing ? SrsService.getLevelFromReview(existing) : 0;
     const nextState = SrsService.processLearningResult({
       mode: params.mode,
       answerResult: params.answerResult,
@@ -344,21 +351,27 @@ export const ReviewRepository = {
       now,
     });
 
-    if (!nextState.shouldPersist) return;
+    if (!nextState.shouldPersist) {
+      return null;
+    }
 
     const updatePayload = SrsService.toReviewUpdate(nextState.state, now);
     if (existing?.id) {
-      const { data: updated, error } = await supabase
+      const { error } = await supabase
         .from("reviews")
         .update(updatePayload)
         .eq("id", existing.id)
         .select("*")
         .maybeSingle();
       if (error) throwDbError(error);
-      return;
+      return {
+        previousLevel,
+        nextLevel: nextState.state.level,
+        gainedLevel: nextState.gainedLevel,
+      };
     }
 
-    const { data: inserted, error } = await supabase
+    const { error } = await supabase
       .from("reviews")
       .insert({
         user_id: params.userId,
@@ -368,5 +381,11 @@ export const ReviewRepository = {
       .select("*")
       .maybeSingle();
     if (error) throwDbError(error);
+
+    return {
+      previousLevel,
+      nextLevel: nextState.state.level,
+      gainedLevel: nextState.gainedLevel,
+    };
   },
 };

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,21 +9,46 @@ import { getMetadataOptions } from "@/constants/vocab-set";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight, Share2 } from "lucide-react";
+import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight, Share2, Lock, Globe } from "lucide-react";
 import { duplicateVocabularySet } from "@/actions/vocab-sets/duplicate";
 import { toast } from "sonner";
 import { ShareSetDialog } from "./ShareSetDialog";
+import type { VocabSetProgressSummary } from "@/lib/statistics/vocab-set-summary.service";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 
 interface VocabSetCardProps {
   set: VocabSetRow;
+  summary?: VocabSetProgressSummary | null;
   onEdit: (set: VocabSetRow) => void;
   onDelete: (set: VocabSetRow, isPermanent: boolean) => void;
   onRestore: (set: VocabSetRow) => void;
 }
 
-export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardProps) {
+function formatRelativeTime(iso: string | null) {
+  if (!iso) return "Chưa học";
+
+  const diffMs = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diffMs) || diffMs < 0) return "Chưa học";
+
+  const minutes = Math.floor(diffMs / (60 * 1000));
+  if (minutes < 1) return "Vừa xong";
+  if (minutes < 60) return `${minutes} phút trước`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} ngày trước`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks} tuần trước`;
+
+  const months = Math.floor(days / 30);
+  return `${Math.max(1, months)} tháng trước`;
+}
+
+export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: VocabSetCardProps) {
   const [isPending, setIsPending] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isDeleted = !!set.deleted_at;
@@ -64,55 +88,19 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
     setShareDialogOpen(true);
   };
 
-  const getVisibilityBadge = (vis: string) => {
-    switch (vis) {
-      case "public":
-        return <Badge variant="outline" className="text-emerald-500 bg-emerald-500/10 border-emerald-500/20 text-[10px] font-bold">Công khai</Badge>;
-      case "unlisted":
-        return <Badge variant="outline" className="text-amber-500 bg-amber-500/10 border-amber-500/20 text-[10px] font-bold">Không công khai</Badge>;
-      default:
-        return <Badge variant="outline" className="text-blue-500 bg-blue-500/10 border-blue-500/20 text-[10px] font-bold">Riêng tư</Badge>;
-    }
-  };
-
-  const [lastStudiedDate, setLastStudiedDate] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const storageKey = `ivocab_learn_v1_${set.id}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        const data = JSON.parse(stored);
-        if (data && data.timestamp) {
-          const formatted = new Date(data.timestamp).toLocaleDateString("vi-VN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          });
-          const handle = setTimeout(() => {
-            setLastStudiedDate(formatted);
-          }, 0);
-          return () => clearTimeout(handle);
-        }
-      } catch {
-        // Ignore invalid local storage payloads.
-      }
-    }
-  }, [set.id]);
-
-  const formattedUpdateDate = new Date(set.updated_at).toLocaleDateString("vi-VN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-
-  const displayDate = lastStudiedDate || formattedUpdateDate;
-  const dateLabel = lastStudiedDate ? "Học lần cuối" : "Cập nhật";
+  const masteredCount = summary?.masteredWords ?? 0;
+  const learningCount = summary?.learningWords ?? 0;
+  const newCount = summary?.newWords ?? 0;
+  const totalWords = summary?.totalWords ?? 0;
+  const masteredPercent = totalWords > 0 ? (masteredCount / totalWords) * 100 : 0;
+  const learningPercent = totalWords > 0 ? (learningCount / totalWords) * 100 : 0;
+  const newPercent = Math.max(0, 100 - masteredPercent - learningPercent);
+  const lastStudiedLabel = formatRelativeTime(summary?.lastStudiedAt ?? null);
 
   const cardContent = (
-    <div className="p-5 flex flex-col justify-between h-[185px] w-full">
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
+    <div className="flex h-full min-h-[228px] w-full flex-col p-5">
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border shrink-0", color.lightBg, color.border)}>
               <LucideIcon className={cn("h-5 w-5", color.text)} />
@@ -122,10 +110,22 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
               <h3 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-1">
                 {set.title}
               </h3>
-              <div className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1 mt-0.5 uppercase tracking-wide">
+              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 <span>{(set.source_language || "en").toUpperCase()}</span>
                 <ArrowRight className="h-3 w-3 inline text-muted-foreground/60" />
                 <span>{(set.target_language || "vi").toUpperCase()}</span>
+                <span
+                  className={cn(
+                    "ml-1 inline-flex items-center justify-center rounded-full p-1",
+                    set.visibility === "public"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
+                  )}
+                  title={set.visibility === "public" ? "Công khai" : "Riêng tư"}
+                  aria-label={set.visibility === "public" ? "Công khai" : "Riêng tư"}
+                >
+                  {set.visibility === "public" ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                </span>
               </div>
             </div>
           </div>
@@ -174,25 +174,44 @@ export function VocabSetCard({ set, onEdit, onDelete, onRestore }: VocabSetCardP
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed min-h-[3.75rem]">
           {set.description || <span className="italic opacity-60">Không có mô tả</span>}
         </p>
       </div>
 
-      <div className="flex items-center justify-between pt-2 border-t text-[10px] text-muted-foreground">
-        <span className="font-medium">{dateLabel}: {displayDate}</span>
-        {isDeleted ? (
-          <Badge variant="destructive" className="rounded-lg text-[9px] font-bold px-1.5 py-0.5">Đã xóa</Badge>
-        ) : (
-          getVisibilityBadge(set.visibility || "private")
-        )}
+      <div className="mt-auto space-y-2 pt-3 border-t">
+        <div className="space-y-1">
+          <div className="flex h-2 overflow-hidden rounded-full bg-muted/70">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-700 ease-out"
+              style={{ width: `${masteredPercent}%` }}
+              title={`Đã thuộc: ${masteredCount}/${totalWords}`}
+            />
+            <div
+              className="h-full bg-amber-500 transition-all duration-700 ease-out"
+              style={{ width: `${learningPercent}%` }}
+              title={`Đang học: ${learningCount}/${totalWords}`}
+            />
+            <div
+              className="h-full bg-slate-200 transition-all duration-700 ease-out dark:bg-slate-700"
+              style={{ width: `${newPercent}%` }}
+              title={`Chưa học: ${newCount}/${totalWords}`}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 text-[10px] font-semibold text-muted-foreground">
+            <span className="min-w-0 whitespace-nowrap">
+              Đã thuộc: {masteredCount}/{totalWords}
+            </span>
+            <span className="min-w-0 truncate text-right">Học lần cuối: {lastStudiedLabel}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   return (
     <>
-      <SectionCard hoverable className="p-0 overflow-hidden flex flex-col justify-between h-[185px] group border-border/80">
+      <SectionCard hoverable className="p-0 overflow-hidden flex flex-col justify-between min-h-[228px] group border-border/80">
         {isDeleted ? (
           <div className="w-full h-full relative bg-muted/20">
             {cardContent}

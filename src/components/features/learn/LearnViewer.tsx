@@ -12,6 +12,8 @@ import { LearnInput } from "./LearnInput";
 import { StudyExplanation } from "../study/StudyExplanation";
 import { StudySummary } from "../study/StudySummary";
 import { EmptyFlashcard } from "../flashcard/EmptyFlashcard";
+import { EditVocabularyDialog, type EditableVocabulary } from "@/components/features/vocabulary/EditVocabularyDialog";
+import { toast } from "sonner";
 
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { QuestionGenerator } from "@/lib/learning/question-generator";
@@ -31,6 +33,8 @@ import {
 } from "@/components/ui/dialog";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
+type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
+type LearnWord = VocabularyRow & { review?: ReviewRow | null };
 
 interface LearnViewerProps {
   initialWords: VocabularyRow[];
@@ -57,6 +61,8 @@ interface SerializedSession {
 export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: LearnViewerProps) {
   const router = useRouter();
   const settingsKey = getSettingsStorageKey();
+  const [words, setWords] = useState<LearnWord[]>(() => initialWords as LearnWord[]);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Active configurations
   const [settings, setSettings] = useState<LearnSettings>(() => {
@@ -141,6 +147,25 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const [elapsedTime, setElapsedTime] = useState(0);
   const startedAt = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const currentWord = React.useMemo(() => {
+    if (!currentQuestion) return null;
+    return words.find((word) => word.id === currentQuestion.word.id) ?? (currentQuestion.word as LearnWord);
+  }, [currentQuestion, words]);
+
+  const editableWord = React.useMemo<EditableVocabulary | null>(() => {
+    if (!currentWord) return null;
+    return {
+      id: currentWord.id,
+      word: currentWord.word,
+      meaning: currentWord.meaning,
+      ipa: currentWord.ipa,
+      part_of_speech: currentWord.part_of_speech,
+      example: currentWord.example,
+      synonyms: currentWord.synonyms,
+      note: currentWord.note,
+    };
+  }, [currentWord]);
 
   useEffect(() => {
     if (isFinished) return;
@@ -369,6 +394,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   // Re-run session initialization
   const handleRestart = () => {
     setWordStates(AdaptiveEngine.initializeStates(initialWords));
+    setWords(initialWords as LearnWord[]);
     setCurrentQuestion(null);
     setIsFinished(false);
     setTotalQuestions(0);
@@ -480,6 +506,76 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const totalDone = correctCount + wrongCount;
   const accuracyValue = totalDone > 0 ? Math.round((correctCount / totalDone) * 100) : 100;
 
+  const handleSaveEdit = useCallback((updated: EditableVocabulary) => {
+    setWords((prev) =>
+      prev.map((word) =>
+        word.id === updated.id
+          ? {
+              ...word,
+              word: updated.word,
+              meaning: updated.meaning,
+              ipa: updated.ipa,
+              part_of_speech: updated.part_of_speech,
+              example: updated.example,
+              synonyms: updated.synonyms,
+              note: updated.note,
+            }
+          : word
+      )
+    );
+
+    setCurrentQuestion((prev) =>
+      prev && prev.word.id === updated.id
+        ? {
+            ...prev,
+            word: {
+              ...prev.word,
+              word: updated.word,
+              meaning: updated.meaning,
+              ipa: updated.ipa,
+              part_of_speech: updated.part_of_speech,
+              example: updated.example,
+              synonyms: updated.synonyms,
+              note: updated.note,
+            },
+          }
+        : prev
+    );
+  }, []);
+
+  const handleToggleStar = useCallback(async () => {
+    if (!currentWord) return;
+    const nextStarred = !Boolean(currentWord.is_starred);
+
+    setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: nextStarred } : word)));
+    setCurrentQuestion((prev) =>
+      prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: nextStarred } } : prev
+    );
+
+    try {
+      const response = await fetch("/api/vocabulary/star", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vocabularyId: currentWord.id,
+          isStarred: nextStarred,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save star status");
+      }
+      toast.success(nextStarred ? "Đã đánh dấu yêu thích" : "Đã bỏ đánh dấu yêu thích");
+    } catch (error) {
+      console.error("Star update error:", error);
+      setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: !nextStarred } : word)));
+      setCurrentQuestion((prev) =>
+        prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: !nextStarred } } : prev
+      );
+      toast.error("Không thể cập nhật trạng thái yêu thích");
+    }
+  }, [currentWord]);
+
   return (
     <div className="w-full space-y-6 max-w-4xl mx-auto pb-10">
       {/* Header bar actions */}
@@ -529,6 +625,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
                   }
                 }}
                 onSkip={handleSkip}
+                onEdit={() => setEditOpen(true)}
+                onToggleStar={handleToggleStar}
+                isStarred={Boolean(currentWord?.is_starred)}
                 autoPlayQuestionAudio={autoPlayQuestionAudio}
                 onToggleAutoPlayQuestion={() => setAutoPlayQuestionAudio((prev) => !prev)}
                 onSpeakPrompt={() => speakText(currentQuestion.prompt)}
@@ -542,6 +641,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
                 onSubmit={() => handleCheckAnswer(inputValue)}
                 onContinue={handleContinue}
                 onSkip={handleSkip}
+                onEdit={() => setEditOpen(true)}
+                onToggleStar={handleToggleStar}
+                isStarred={Boolean(currentWord?.is_starred)}
                 autoPlayQuestionAudio={autoPlayQuestionAudio}
                 onToggleAutoPlayQuestion={() => setAutoPlayQuestionAudio((prev) => !prev)}
                 onSpeakPrompt={() => speakText(currentQuestion.prompt)}
@@ -589,6 +691,15 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
           setCurrentQuestion(null);
           // Save instantly
           saveSessionState(list, recentConfigs, recentAskedIds, totalQuestions, correctCount, wrongCount, elapsedTime, nextSettings);
+        }}
+      />
+
+      <EditVocabularyDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        item={editableWord}
+        onSaved={(updated) => {
+          handleSaveEdit(updated);
         }}
       />
 

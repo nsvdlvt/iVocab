@@ -11,17 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
+import type { VocabSetProgressSummary } from "@/lib/statistics/vocab-set-summary.service";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 
 interface VocabularyClientProps {
   sets: VocabSetRow[];
+  summaries: Record<string, VocabSetProgressSummary>;
   totalCount: number;
   currentPage: number;
   itemsPerPage: number;
 }
 
-export function VocabularyClient({ sets, totalCount, currentPage, itemsPerPage }: VocabularyClientProps) {
+export function VocabularyClient({ sets, summaries, totalCount, currentPage, itemsPerPage }: VocabularyClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -67,6 +69,7 @@ export function VocabularyClient({ sets, totalCount, currentPage, itemsPerPage }
           {currentView === "grid" ? (
             <VocabSetGrid
               sets={sets}
+              summaries={summaries}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onRestore={handleRestore}
@@ -74,6 +77,7 @@ export function VocabularyClient({ sets, totalCount, currentPage, itemsPerPage }
           ) : (
             <VocabSetList
               sets={sets}
+              summaries={summaries}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onRestore={handleRestore}

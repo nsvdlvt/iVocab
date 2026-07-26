@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Missing required parameters" }, { status: 400 });
     }
 
-    await ReviewRepository.processResult({
+    const processed = await ReviewRepository.processResult({
       userId: user.id,
       vocabularyId,
       mode,
@@ -34,8 +34,17 @@ export async function POST(request: Request) {
     if (mode === "sentence-practice") source = "sentence";
     if (mode === "flashcard") source = "learn";
     
-    // We pass 1 as count. Duration could be tracked if sent from client, currently 0.
-    await LearningProgressService.recordActivity(user.id, 1, 0, source);
+    const shouldCountActivity =
+      processed !== null &&
+      (
+        (processed.previousLevel < 2 && processed.nextLevel === 2) ||
+        (processed.previousLevel >= 2 && processed.nextLevel === processed.previousLevel + 1)
+      );
+
+    if (shouldCountActivity) {
+      // Count only when the word actually crosses the requested level milestone.
+      await LearningProgressService.recordActivity(user.id, 1, 0, source);
+    }
 
     revalidatePath("/review");
     revalidatePath("/dashboard");

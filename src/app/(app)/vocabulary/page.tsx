@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { VocabularyClient } from "@/components/features/vocabulary/VocabularyClient";
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
+import { VocabSetSummaryService } from "@/lib/statistics/vocab-set-summary.service";
 
 interface PageProps {
   searchParams: Promise<{
@@ -29,14 +30,17 @@ export default async function VocabularyPage({ searchParams }: PageProps) {
   const showDeleted = visibility === "deleted";
   const repoVisibility = showDeleted ? undefined : visibility;
 
-  const { data: sets, count: totalCount } = await VocabSetRepository.getVocabSets(user.id, {
-    search,
-    visibility: repoVisibility,
-    sort,
-    page,
-    limit: ITEMS_PER_PAGE,
-    showDeleted,
-  });
+  const [{ data: sets, count: totalCount }, summaries] = await Promise.all([
+    VocabSetRepository.getVocabSets(user.id, {
+      search,
+      visibility: repoVisibility,
+      sort,
+      page,
+      limit: ITEMS_PER_PAGE,
+      showDeleted,
+    }),
+    VocabSetSummaryService.getUserVocabSetSummaries(user.id),
+  ]);
 
   return (
     <PageContainer>
@@ -46,6 +50,7 @@ export default async function VocabularyPage({ searchParams }: PageProps) {
       />
       <VocabularyClient
         sets={sets}
+        summaries={summaries}
         totalCount={totalCount}
         currentPage={page}
         itemsPerPage={ITEMS_PER_PAGE}

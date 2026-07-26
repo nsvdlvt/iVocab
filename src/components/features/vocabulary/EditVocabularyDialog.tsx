@@ -23,7 +23,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: EditableVocabulary | null;
-  onSaved: () => void;
+  onSaved: (updated: EditableVocabulary) => void;
 }
 
 export function EditVocabularyDialog({ open, onOpenChange, item, onSaved }: Props) {
@@ -74,8 +74,21 @@ export function EditVocabularyDialog({ open, onOpenChange, item, onSaved }: Prop
       }
 
       toast.success("Đã cập nhật từ vựng.");
+      const updated: EditableVocabulary = {
+        id: item.id,
+        word: form.word,
+        meaning: form.meaning,
+        ipa: form.ipa || null,
+        part_of_speech: form.partOfSpeech || null,
+        example: form.example || null,
+        synonyms: form.synonyms
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        note: form.notes || null,
+      };
       onOpenChange(false);
-      onSaved();
+      onSaved(updated);
     } catch {
       toast.error("Lỗi kết nối máy chủ.");
     } finally {

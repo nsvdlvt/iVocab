@@ -12,6 +12,7 @@ import {
   Funnel,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,11 +33,15 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatCard } from "@/components/common/StatCard";
 import { SectionCard } from "@/components/common/SectionCard";
+import { FavoriteToggleButton } from "@/components/common/FavoriteToggleButton";
 import { cn } from "@/lib/utils";
+import { toggleFavoriteVocabulary } from "@/actions/vocabulary/favorite";
+import { toast } from "sonner";
 import { SrsService } from "@/lib/srs/srs-service";
 import type { VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 import { EditVocabularyDialog, type EditableVocabulary } from "@/components/features/vocabulary/EditVocabularyDialog";
 import type { LibraryVocabularyRow } from "@/repositories/vocabulary.repository";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 
 type SortKey = "created_desc" | "created_asc" | "word_asc" | "word_desc" | "next_review_asc";
 type StatusFilter = "all" | "new" | "learning" | "due" | "overdue" | "mastered" | "archived";
@@ -134,8 +139,9 @@ function getReviewState(row: LibraryVocabularyRow) {
 
   if (review?.status === "archived") return { level, status: "Đã lưu trữ", statusKey: "archived" as const };
   if (level >= 5) return { level, status: "Thành thạo", statusKey: "mastered" as const };
+  if (level < 2) return { level, status: "Mới", statusKey: "new" as const };
 
-  if (level >= 2 && nextReview) {
+  if (nextReview) {
     const reviewDay = new Date(nextReview);
     reviewDay.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((reviewDay.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
@@ -163,8 +169,20 @@ function friendlyNextReview(nextReview?: string | null) {
   return format(value, "d MMM");
 }
 
+function getFriendlyNextReview(row: LibraryVocabularyRow) {
+  const review = row.review ?? null;
+  const level = SrsService.getLevelFromReview(review);
+  if (!review?.next_review || level < 2 || level >= 5 || review.status === "new" || review.status === "learning") {
+    return "—";
+  }
+  return friendlyNextReview(review.next_review);
+}
+
 export function VocabularyLibraryClient({ words, stats }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  useScrollRestoration(pathname);
+  const [localWords, setLocalWords] = React.useState(words);
   const [search, setSearch] = React.useState("");
   const [levelFilter, setLevelFilter] = React.useState<LevelFilter>("all");
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
@@ -173,9 +191,26 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
   const [selected, setSelected] = React.useState<LibraryVocabularyRow | null>(null);
   const [editOpen, setEditOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    setLocalWords(words);
+  }, [words]);
+
+  const toggleFavorite = React.useCallback(async (row: LibraryVocabularyRow) => {
+    const nextFavorite = !Boolean(row.is_starred);
+    setLocalWords((prev) => prev.map((word) => (word.id === row.id ? { ...word, is_starred: nextFavorite } : word)));
+    try {
+      await toggleFavoriteVocabulary(row.id, nextFavorite);
+      toast.success(nextFavorite ? "?? ??nh d?u y?u th?ch" : "?? b? ??nh d?u y?u th?ch");
+    } catch (error) {
+      console.error("Favorite update error:", error);
+      setLocalWords((prev) => prev.map((word) => (word.id === row.id ? { ...word, is_starred: !nextFavorite } : word)));
+      toast.error("Kh?ng th? c?p nh?t tr?ng th?i y?u th?ch");
+    }
+  }, []);
+
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
-    const items = words.filter((row) => {
+    const items = localWords.filter((row) => {
       const state = getReviewState(row);
       const matchesQuery =
         !q ||
@@ -204,7 +239,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
     });
 
     return items;
-  }, [search, levelFilter, statusFilter, sort, words]);
+  }, [search, levelFilter, statusFilter, sort, localWords]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -371,6 +406,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead className="w-12" aria-label="Yêu thích" />
                 <TableHead>Từ</TableHead>
                 <TableHead>Nghĩa</TableHead>
                 <TableHead>IPA</TableHead>
@@ -386,7 +422,15 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                   const state = getReviewState(row);
                   const statusMeta = getStatusMeta(state.statusKey);
                   return (
-                    <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelected(row)}>
+                    <TableRow
+                      key={row.id}
+                      className="cursor-pointer"
+                      data-scroll-anchor={`vocab-row-${row.id}`}
+                      onClick={() => setSelected(row)}
+                    >
+                      <TableCell className="w-12" onClick={(e) => e.stopPropagation()}>
+                        <FavoriteToggleButton isFavorite={Boolean(row.is_starred)} onToggle={() => void toggleFavorite(row)} />
+                      </TableCell>
                       <TableCell className="max-w-[16rem] truncate font-semibold">{row.word}</TableCell>
                       <TableCell className="max-w-[20rem] truncate text-muted-foreground">{row.meaning}</TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{row.ipa ?? "-"}</TableCell>
@@ -407,7 +451,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                           {statusMeta.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{friendlyNextReview(row.review?.next_review ?? null)}</TableCell>
+                      <TableCell className="text-muted-foreground">{getFriendlyNextReview(row)}</TableCell>
                     </TableRow>
                   );
                 })
@@ -470,7 +514,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                   <Detail label="Nghĩa" value={selected.meaning} />
                   <Detail label="Mức hiện tại" value={`Lv${getReviewState(selected).level}`} />
                   <Detail label="Trạng thái hiện tại" value={getReviewState(selected).status} />
-                  <Detail label="Lần ôn tiếp theo" value={friendlyNextReview(selected.review?.next_review ?? null)} />
+                  <Detail label="Lần ôn tiếp theo" value={selected ? getFriendlyNextReview(selected) : "—"} />
                 </div>
 
                 <Detail label="Ví dụ" value={selected.example ?? "-"} />
@@ -492,7 +536,10 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
         open={editOpen}
         onOpenChange={setEditOpen}
         item={selectedEditable}
-        onSaved={() => router.refresh()}
+        onSaved={(updated) => {
+          setLocalWords((prev) => prev.map((word) => (word.id === updated.id ? { ...word, ...updated } : word)));
+          setSelected((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+        }}
       />
     </div>
   );

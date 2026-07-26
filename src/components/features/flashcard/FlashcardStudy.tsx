@@ -175,12 +175,14 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         currentState,
       });
 
-      if (!result.shouldPersist) return;
-
-      setProgressStateMap((prev) => ({ ...prev, [currentWord.id]: result.state }));
+      if (result.shouldPersist) {
+        setProgressStateMap((prev) => ({ ...prev, [currentWord.id]: result.state }));
+      }
       setTransitionDirection(1);
       setCurrentIndex((prev) => Math.min(deck.length - 1, prev + 1));
       setFlipped(false);
+
+      if (!result.shouldPersist) return;
 
       try {
         const response = await fetch("/api/srs/result", {
@@ -333,7 +335,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
           </Button>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">{setInfo.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Minimal flashcards focused on vocabulary study</p>
+            <p className="mt-1 text-sm text-muted-foreground">Học từ vựng bằng Flashcard</p>
           </div>
         </div>
 
@@ -424,7 +426,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
               type="button"
               variant="ghost"
               onClick={() => setProgressModeEnabled((prev) => !prev)}
-              title="Ngẫu nhiên"
+              title="Chế độ tiến độ"
               className={[
                 "group relative inline-flex h-12 items-center justify-center gap-2 rounded-full border px-4 shadow-sm transition-all duration-200",
                 progressModeEnabled
@@ -436,7 +438,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
               <Layers3 className={["h-4 w-4 transition-transform", progressModeEnabled ? "text-white" : "text-slate-500"].join(" ")} />
               <span className="text-sm font-medium">Tiến độ</span>
               <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                Ngẫu nhiên
+                Chế độ tiến độ
               </span>
             </Button>
           </div>
@@ -516,7 +518,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
               type="button"
               variant="ghost"
               onClick={handleToggleShuffle}
-              title="Đánh dấu tiến độ học"
+              title="Trộn thứ tự thẻ"
               className={[
                 "group relative inline-flex h-12 w-12 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
                 shuffleEnabled
@@ -527,7 +529,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
             >
               <Shuffle className={["h-4 w-4 transition-transform", shuffleEnabled ? "rotate-12 text-white" : "text-slate-500"].join(" ")} />
               <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                Đánh dấu tiến độ học
+                Trộn thứ tự thẻ
               </span>
             </Button>
           </div>

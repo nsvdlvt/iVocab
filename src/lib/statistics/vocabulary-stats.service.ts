@@ -64,19 +64,6 @@ function getVocabularyState(review: ReviewRow | null): VocabularyState {
   return "new";
 }
 
-function getNextReviewState(review: ReviewRow | null, now: Date): "dueToday" | "overdue" | null {
-  if (!review?.next_review) return null;
-  const nextReview = new Date(review.next_review);
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(nextReview);
-  target.setHours(0, 0, 0, 0);
-  const diffDays = Math.floor((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "dueToday";
-  return null;
-}
-
 export const VocabularyStatsService = {
   async getUserVocabularyStats(userId: string): Promise<VocabularyStats> {
     const supabase = await createClient();
@@ -127,15 +114,9 @@ export const VocabularyStatsService = {
     let learningWords = 0;
     let learnedWords = 0;
     let masteredWords = 0;
-    let dueToday = 0;
-    let overdue = 0;
-
     const forecast = summarizeSrsForecast(
       rows.map((row) => {
         const review = row.review;
-        const nextReviewState = getNextReviewState(review, now);
-        if (nextReviewState === "dueToday") dueToday += 1;
-        if (nextReviewState === "overdue") overdue += 1;
         return { next_review: review?.next_review ?? null, status: review?.status ?? null };
       }),
       7,
@@ -165,8 +146,8 @@ export const VocabularyStatsService = {
       learningWords,
       learnedWords,
       masteredWords,
-      dueToday,
-      overdue,
+      dueToday: forecast.summary.today,
+      overdue: forecast.summary.overdue,
       forecast: {
         total: forecast.buckets.reduce((sum, day) => sum + day.count, 0),
         averagePerDay: 7 > 0 ? Math.round((forecast.buckets.reduce((sum, day) => sum + day.count, 0) / 7) * 10) / 10 : 0,

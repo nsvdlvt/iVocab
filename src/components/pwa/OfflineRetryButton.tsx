@@ -10,7 +10,7 @@ export function OfflineRetryButton() {
       className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
     >
       <RotateCcw className="h-4 w-4" />
-      Retry
+      Thử lại
     </Button>
   );
 }

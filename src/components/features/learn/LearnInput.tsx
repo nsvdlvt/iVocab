@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { cn } from "@/lib/utils";
-import { Volume2 } from "lucide-react";
+import { Pencil, Star, Volume2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface LearnInputProps {
@@ -16,6 +16,9 @@ interface LearnInputProps {
   onSubmit: () => void;
   onContinue: () => void;
   onSkip?: () => void;
+  onEdit?: () => void;
+  onToggleStar?: () => void;
+  isStarred?: boolean;
   // Audio configuration switches
   autoPlayQuestionAudio?: boolean;
   onToggleAutoPlayQuestion?: () => void;
@@ -30,6 +33,9 @@ export function LearnInput({
   onSubmit,
   onContinue,
   onSkip,
+  onEdit,
+  onToggleStar,
+  isStarred,
   autoPlayQuestionAudio,
   onToggleAutoPlayQuestion,
   onSpeakPrompt,
@@ -75,20 +81,22 @@ export function LearnInput({
   return (
     <div className="w-full max-w-xl mx-auto space-y-4 select-none">
       <div className="relative py-6 sm:py-8 px-4 border border-border/80 rounded-2xl bg-card shadow-xs">
-        {/* Optional EN prompt speaker trigger */}
-        {question.direction === "en-vi" && (
-          <div className="absolute top-3 right-3 flex items-center gap-1">
-            {onSpeakPrompt && (
-              <button
+        <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            {question.direction === "en-vi" && onSpeakPrompt && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={onSpeakPrompt}
-                className="h-7 w-7 rounded-lg flex items-center justify-center text-indigo-600 hover:bg-indigo-500/10 cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900"
                 title="Nghe phát âm"
               >
                 <Volume2 className="h-4 w-4" />
-              </button>
+              </Button>
             )}
-            {onToggleAutoPlayQuestion && (
-              <div className="flex items-center ml-1" title="Tự động phát âm thanh">
+            {question.direction === "en-vi" && onToggleAutoPlayQuestion && (
+              <div className="flex items-center" title="Tự động phát âm thanh">
                 <Switch
                   checked={!!autoPlayQuestionAudio}
                   onChange={onToggleAutoPlayQuestion}
@@ -97,7 +105,39 @@ export function LearnInput({
               </div>
             )}
           </div>
-        )}
+
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900"
+                title="Chỉnh sửa"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {onToggleStar && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onToggleStar}
+                className={[
+                  "h-8 w-8 rounded-lg bg-transparent transition-all hover:bg-slate-100",
+                  isStarred
+                    ? "text-amber-500 hover:text-amber-500"
+                    : "text-slate-500 hover:text-amber-500",
+                ].join(" ")}
+                title={isStarred ? "Bỏ đánh dấu yêu thích" : "Đánh dấu yêu thích"}
+              >
+                <Star className={["h-4 w-4", isStarred ? "fill-amber-400 text-amber-500" : ""].join(" ")} />
+              </Button>
+            )}
+          </div>
+        </div>
 
         <div className="text-center">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">

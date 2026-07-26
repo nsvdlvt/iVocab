@@ -10,8 +10,6 @@ import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { UserMenu } from "@/components/layout/UserMenu";
-import { BrandLogo } from "@/components/common/BrandLogo";
-import { ROUTES } from "@/constants/routes";
 import type { UserProfile } from "@/lib/auth/get-current-user";
 
 const SidebarIcon = ({ name, className }: { name: string; className?: string }) => {
@@ -31,6 +29,15 @@ export function Sidebar({ profile }: SidebarProps) {
 function SidebarContent({ profile }: { profile?: UserProfile | null }) {
   const pathname = usePathname();
   const { isCollapsed, isMobileOpen, toggleCollapse, setMobileOpen } = useSidebar();
+  const [isMobileViewport, setIsMobileViewport] = React.useState(false);
+
+  React.useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") {
@@ -79,55 +86,40 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
 
   return (
     <>
-      {/* 1. Mobile Sidebar Drawer */}
-      <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="p-0 w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
-          <div className="flex h-16 items-center px-5 border-b border-sidebar-border">
+      {isMobileViewport && (
+        <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="p-0 w-64 border-r border-sidebar-border bg-sidebar flex flex-col h-full">
             <SheetTitle className="sr-only">Vocabee</SheetTitle>
-            <Link href={ROUTES.DASHBOARD} className="flex items-center">
-              <BrandLogo
-                className="gap-2"
-                imageClassName="h-9 w-9"
-                textClassName="scale-[0.88] origin-left"
-                subtitleClassName="text-[0.6rem] tracking-[0.22em]"
-              />
-            </Link>
-          </div>
-          {renderNavLinks(true)}
-          
-          {/* User profile dropdown in Mobile Drawer */}
-          <div className="p-4 border-t border-sidebar-border bg-muted/10">
-            <UserMenu profile={profile} />
-          </div>
-        </SheetContent>
-      </Sheet>
+            {renderNavLinks(true)}
 
-      {/* 2. Desktop & Tablet Fixed Sidebar */}
+            <div className="p-4 border-t border-sidebar-border bg-muted/10">
+              <UserMenu profile={profile} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+
       <aside
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-300 shrink-0 h-full sticky top-0 self-start",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
-        {/* Navigation list */}
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {renderNavLinks(false)}
         </div>
 
-        {/* User profile dropdown at the bottom of the Desktop Sidebar */}
-        <div className="p-3 border-t border-border bg-muted/10">
+        <div className="border-t border-border bg-muted/10 p-3">
+          <div className="flex justify-end pb-3">
+            <button
+              onClick={toggleCollapse}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-accent text-muted-foreground transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+              title={isCollapsed ? "Mở rộng Sidebar" : "Thu gọn Sidebar"}
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+          </div>
           <UserMenu profile={profile} />
-        </div>
-
-        {/* Collapse toggle button at bottom - only visible on desktop screen size */}
-        <div className="hidden lg:flex p-4 border-t border-border justify-end">
-          <button
-            onClick={toggleCollapse}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-accent text-muted-foreground transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
-            title={isCollapsed ? "Mở rộng Sidebar" : "Thu gọn Sidebar"}
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
         </div>
       </aside>
     </>

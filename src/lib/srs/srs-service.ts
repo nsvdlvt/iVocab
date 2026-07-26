@@ -120,19 +120,27 @@ export const SrsService = {
     const currentProgress = params.currentState?.progress ?? 0;
     if (params.mode === "flashcard") {
       const isCorrect = params.answerResult === "correct" || params.answerResult === "near";
-      const nextLevel = isCorrect ? Math.min(5, currentLevel + 1) as SrsLevel : Math.max(0, currentLevel - 1) as SrsLevel;
-      const nextState: SrsReviewState = {
-        level: nextLevel,
-        progress: 0,
-        ...(nextLevel >= 2
-          ? nextLevel === 2
-            ? this.scheduleInitialReview(now)
-            : this.scheduleNextReview({ level: nextLevel as 2 | 3 | 4, now })
-          : { nextReviewAt: null, intervalDays: null }),
-      };
+      const nextLevel: SrsLevel = isCorrect
+        ? currentLevel < 2
+          ? 2
+          : currentLevel
+        : Math.max(0, currentLevel - 1) as SrsLevel;
+      const nextState: SrsReviewState =
+        isCorrect && currentLevel < 2
+          ? {
+              level: 2,
+              progress: 0,
+              ...this.scheduleInitialReview(now),
+            }
+          : {
+              level: nextLevel,
+              progress: 0,
+              nextReviewAt: params.currentState?.nextReviewAt ?? null,
+              intervalDays: params.currentState?.intervalDays ?? null,
+            };
 
       return {
-        shouldPersist: true,
+        shouldPersist: !isCorrect || currentLevel < 2,
         canContribute: true,
         gainedLevel: nextLevel > currentLevel,
         state: nextState,
@@ -238,13 +246,12 @@ export const SrsService = {
   },
 
   toReviewUpdate(state: SrsReviewState, now = new Date()): ReviewUpdate {
+    const nextReviewAt = state.level < 2 || state.level >= 5 ? null : state.nextReviewAt;
     return {
       status: toStatus(state.level),
       repetitions: state.progress,
       interval: state.intervalDays,
-      // Keep phase-1 rows compatible with databases that still enforce NOT NULL on next_review.
-      // The SRS scheduling semantics remain unchanged because all review queries only read Lv2+ rows.
-      next_review: state.nextReviewAt ?? now.toISOString(),
+      next_review: nextReviewAt,
       last_review: now.toISOString(),
       updated_at: now.toISOString(),
     };
