@@ -3,7 +3,9 @@ import Link from "next/link";
 import { PartyPopper } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { requireUser } from "@/lib/auth/require-user";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 
 interface PageProps {
   params: Promise<{ sessionId: string }>;
@@ -11,6 +13,11 @@ interface PageProps {
 
 export default async function ReviewSessionCompletePage({ params }: PageProps) {
   const { sessionId } = await params;
+  const user = await requireUser();
+  const session = await ReviewSessionStore.get(sessionId);
+  if (session?.vocabularySetId) {
+    await VocabSetRepository.touchLastStudiedAt(session.vocabularySetId, user.id);
+  }
   await ReviewSessionStore.delete(sessionId);
 
   return (

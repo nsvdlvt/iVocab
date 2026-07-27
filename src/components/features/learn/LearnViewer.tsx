@@ -147,6 +147,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const [elapsedTime, setElapsedTime] = useState(0);
   const startedAt = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const currentWord = React.useMemo(() => {
     if (!currentQuestion) return null;
@@ -222,6 +223,50 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
       localStorage.setItem(getStorageKey(setInfo.id), JSON.stringify(data));
     },
     [setInfo.id]
+  );
+
+  const flushSaveQueue = useCallback(async () => {
+    try {
+      await saveQueueRef.current;
+    } catch {
+      // Individual request errors are logged when enqueued.
+    }
+  }, []);
+
+  const enqueueSave = useCallback(
+    (payload: { vocabularyId: string; answerResult: "correct" | "wrong" }) => {
+      const nextSave = saveQueueRef.current.then(async () => {
+        const response = await fetch("/api/srs/result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vocabularyId: payload.vocabularyId,
+            mode: "learn",
+            answerResult: payload.answerResult,
+            reviewSessionId,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("SRS save failed (learn)", await response.text());
+          return;
+        }
+
+        if (reviewSessionId) {
+          const data = (await response.json()) as { completed?: boolean };
+          if (data.completed) {
+            router.replace(`/review/session/${reviewSessionId}/complete`);
+          }
+        }
+      });
+
+      saveQueueRef.current = nextSave.catch((error) => {
+        console.error("SRS save request failed (learn)", error);
+      });
+
+      return nextSave;
+    },
+    [flushSaveQueue, reviewSessionId, router]
   );
 
   // Debounce saver hook
@@ -349,28 +394,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     setWordStates(updated);
     setCurrentQuestion(null);
 
-    void fetch("/api/srs/result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        vocabularyId: currentQuestion.id,
-        mode: "learn",
-        answerResult: isSuccessful ? "correct" : "wrong",
-        reviewSessionId,
-      }),
-    }).then(async (response) => {
-      if (!response.ok) {
-        console.error("SRS save failed (learn)", await response.text());
-        return;
-      }
-      if (reviewSessionId) {
-        const data = (await response.json()) as { completed?: boolean };
-        if (data.completed) {
-          router.replace(`/review/session/${reviewSessionId}/complete`);
-        }
-      }
-    }).catch((error) => {
-      console.error("SRS save request failed (learn)", error);
+    void enqueueSave({
+      vocabularyId: currentQuestion.id,
+      answerResult: isSuccessful ? "correct" : "wrong",
     });
 
     // Immediate save trigger
@@ -389,6 +415,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     saveSessionState,
     reviewSessionId,
     router,
+    enqueueSave,
   ]);
 
   // Re-run session initialization
@@ -406,6 +433,81 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     startedAt.current = Date.now();
     localStorage.removeItem(getStorageKey(setInfo.id));
   };
+
+  const handleLeave = useCallback(async () => {
+    await flushSaveQueue();
+    await onBack();
+  }, [flushSaveQueue, onBack]);
+
+  const handleSaveEdit = useCallback((updated: EditableVocabulary) => {
+    setWords((prev) =>
+      prev.map((word) =>
+        word.id === updated.id
+          ? {
+              ...word,
+              word: updated.word,
+              meaning: updated.meaning,
+              ipa: updated.ipa,
+              part_of_speech: updated.part_of_speech,
+              example: updated.example,
+              synonyms: updated.synonyms,
+              note: updated.note,
+            }
+          : word
+      )
+    );
+
+    setCurrentQuestion((prev) =>
+      prev && prev.word.id === updated.id
+        ? {
+            ...prev,
+            word: {
+              ...prev.word,
+              word: updated.word,
+              meaning: updated.meaning,
+              ipa: updated.ipa,
+              part_of_speech: updated.part_of_speech,
+              example: updated.example,
+              synonyms: updated.synonyms,
+              note: updated.note,
+            },
+          }
+        : prev
+    );
+  }, []);
+
+  const handleToggleStar = useCallback(async () => {
+    if (!currentWord) return;
+    const nextStarred = !Boolean(currentWord.is_starred);
+
+    setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: nextStarred } : word)));
+    setCurrentQuestion((prev) =>
+      prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: nextStarred } } : prev
+    );
+
+    try {
+      const response = await fetch("/api/vocabulary/star", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vocabularyId: currentWord.id,
+          isStarred: nextStarred,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save star status");
+      }
+      toast.success(nextStarred ? "Đã đánh dấu yêu thích" : "Đã bỏ đánh dấu yêu thích");
+    } catch (error) {
+      console.error("Star update error:", error);
+      setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: !nextStarred } : word)));
+      setCurrentQuestion((prev) =>
+        prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: !nextStarred } } : prev
+      );
+      toast.error("Không thể cập nhật trạng thái yêu thích");
+    }
+  }, [currentWord]);
 
   // Setup Hotkey keys mapping
   useEffect(() => {
@@ -505,76 +607,6 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const remainingCount = initialWords.length - masteredCount - learningCount;
   const totalDone = correctCount + wrongCount;
   const accuracyValue = totalDone > 0 ? Math.round((correctCount / totalDone) * 100) : 100;
-
-  const handleSaveEdit = useCallback((updated: EditableVocabulary) => {
-    setWords((prev) =>
-      prev.map((word) =>
-        word.id === updated.id
-          ? {
-              ...word,
-              word: updated.word,
-              meaning: updated.meaning,
-              ipa: updated.ipa,
-              part_of_speech: updated.part_of_speech,
-              example: updated.example,
-              synonyms: updated.synonyms,
-              note: updated.note,
-            }
-          : word
-      )
-    );
-
-    setCurrentQuestion((prev) =>
-      prev && prev.word.id === updated.id
-        ? {
-            ...prev,
-            word: {
-              ...prev.word,
-              word: updated.word,
-              meaning: updated.meaning,
-              ipa: updated.ipa,
-              part_of_speech: updated.part_of_speech,
-              example: updated.example,
-              synonyms: updated.synonyms,
-              note: updated.note,
-            },
-          }
-        : prev
-    );
-  }, []);
-
-  const handleToggleStar = useCallback(async () => {
-    if (!currentWord) return;
-    const nextStarred = !Boolean(currentWord.is_starred);
-
-    setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: nextStarred } : word)));
-    setCurrentQuestion((prev) =>
-      prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: nextStarred } } : prev
-    );
-
-    try {
-      const response = await fetch("/api/vocabulary/star", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vocabularyId: currentWord.id,
-          isStarred: nextStarred,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save star status");
-      }
-      toast.success(nextStarred ? "Đã đánh dấu yêu thích" : "Đã bỏ đánh dấu yêu thích");
-    } catch (error) {
-      console.error("Star update error:", error);
-      setWords((prev) => prev.map((word) => (word.id === currentWord.id ? { ...word, is_starred: !nextStarred } : word)));
-      setCurrentQuestion((prev) =>
-        prev && prev.word.id === currentWord.id ? { ...prev, word: { ...prev.word, is_starred: !nextStarred } } : prev
-      );
-      toast.error("Không thể cập nhật trạng thái yêu thích");
-    }
-  }, [currentWord]);
 
   return (
     <div className="w-full space-y-6 max-w-4xl mx-auto pb-10">
@@ -760,7 +792,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
               variant="destructive"
               onClick={() => {
                 setExitPromptOpen(false);
-                onBack();
+                void handleLeave();
               }}
             >
               Thoát

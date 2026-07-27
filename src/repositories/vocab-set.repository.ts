@@ -3,6 +3,7 @@ import { Database } from "@/types/database";
 import { cache } from "react";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
+type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type VocabSetInsert = Database["public"]["Tables"]["vocab_sets"]["Insert"];
 type VocabSetUpdate = Database["public"]["Tables"]["vocab_sets"]["Update"];
 
@@ -136,6 +137,44 @@ export const VocabSetRepository = {
 
     if (error) throw error;
     return updated;
+  },
+
+  async touchLastStudiedAt(id: string, userId: string, studiedAt = new Date().toISOString()): Promise<VocabSetRow> {
+    const supabase = await createClient();
+    const { data: updated, error } = await supabase
+      .from("vocab_sets")
+      .update({ last_studied_at: studiedAt })
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      if ((error as { code?: string }).code === "42703") {
+        const fallback = await supabase.from("vocab_sets").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
+        if (fallback.error) throw fallback.error;
+        if (!fallback.data) throw error;
+        return fallback.data;
+      }
+      throw error;
+    }
+    return updated;
+  },
+
+  async touchLastStudiedAtByVocabularyId(vocabularyId: string, userId: string, studiedAt = new Date().toISOString()): Promise<VocabSetRow | null> {
+    const supabase = await createClient();
+    const { data: vocabRow, error: vocabError } = await supabase
+      .from("vocabularies")
+      .select("set_id")
+      .eq("id", vocabularyId)
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (vocabError) throw vocabError;
+    const setId = (vocabRow as Pick<VocabularyRow, "set_id"> | null)?.set_id ?? null;
+    if (!setId) return null;
+
+    return this.touchLastStudiedAt(setId, userId, studiedAt);
   },
 
   async softDeleteVocabSet(id: string, userId: string): Promise<VocabSetRow> {

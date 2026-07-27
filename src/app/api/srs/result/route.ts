@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ReviewRepository } from "@/repositories/review.repository";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
 import { LearningProgressService, LearningSource } from "@/lib/statistics/learning-progress.service";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +18,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { vocabularyId, mode, answerResult, reviewSessionId } = body ?? {};
 
+    console.log("[api/srs/result] received", {
+      userId: user.id,
+      vocabularyId,
+      mode,
+      answerResult,
+      reviewSessionId,
+    });
+
     if (!vocabularyId || !mode || !answerResult) {
       return NextResponse.json({ success: false, error: "Missing required parameters" }, { status: 400 });
     }
@@ -26,6 +35,14 @@ export async function POST(request: Request) {
       vocabularyId,
       mode,
       answerResult,
+    });
+
+    console.log("[api/srs/result] processed", {
+      userId: user.id,
+      vocabularyId,
+      mode,
+      answerResult,
+      processed,
     });
 
     let source: LearningSource = "learn";
@@ -48,6 +65,10 @@ export async function POST(request: Request) {
 
     revalidatePath("/review");
     revalidatePath("/dashboard");
+
+    if (processed) {
+      await VocabSetRepository.touchLastStudiedAtByVocabularyId(vocabularyId, user.id);
+    }
 
     if (mode === "review" && reviewSessionId) {
       const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);

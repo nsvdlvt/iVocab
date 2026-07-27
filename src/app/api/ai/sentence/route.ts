@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SentenceHistoryRepository } from "@/repositories/sentence-history.repository";
 import { ReviewRepository } from "@/repositories/review.repository";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
+import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 
 function extractScore(explanation: string | undefined, categoryName: string): number {
   if (!explanation) return 10;
@@ -89,6 +90,8 @@ export async function POST(request: Request) {
       mode: "sentence-practice",
       answerResult: result.usedTargetWord ? "correct" : "wrong",
     });
+
+    await VocabSetRepository.touchLastStudiedAtByVocabularyId(vocabId, user.id);
 
     if (reviewSessionId) {
       const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabId);

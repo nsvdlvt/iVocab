@@ -5,6 +5,7 @@ import { SrsService } from "@/lib/srs/srs-service";
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
 type ReviewSessionRow = Database["public"]["Tables"]["review_sessions"]["Row"];
+type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
 
 export interface VocabSetProgressSummary {
   setId: string;
@@ -92,6 +93,36 @@ export const VocabSetSummaryService = {
       }
 
       summaries[setId] = current;
+    }
+
+    const setResult = await supabase
+      .from("vocab_sets")
+      .select("id, last_studied_at")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
+    if (!setResult.error) {
+      for (const setRow of (setResult.data ?? []) as Pick<VocabSetRow, "id" | "last_studied_at">[]) {
+        const current = summaries[setRow.id] ?? {
+          setId: setRow.id,
+          totalWords: 0,
+          masteredWords: 0,
+          learningWords: 0,
+          newWords: 0,
+          lastStudiedAt: null,
+        };
+
+        if (
+          setRow.last_studied_at &&
+          (!current.lastStudiedAt || new Date(setRow.last_studied_at).getTime() > new Date(current.lastStudiedAt).getTime())
+        ) {
+          current.lastStudiedAt = setRow.last_studied_at;
+        }
+
+        summaries[setRow.id] = current;
+      }
+    } else if ((setResult.error as { code?: string } | null)?.code !== "42703") {
+      throw setResult.error;
     }
 
     return summaries;

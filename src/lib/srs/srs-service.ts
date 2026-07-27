@@ -30,6 +30,14 @@ export interface ProcessLearningResult {
 type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"];
 type ReviewUpdate = Database["public"]["Tables"]["reviews"]["Update"];
 
+const REVIEW_TIME_ZONE = "Asia/Ho_Chi_Minh";
+const REVIEW_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: REVIEW_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 const LEARNING_THRESHOLDS: Record<0 | 1, number> = {
   0: 1,
   1: 1,
@@ -39,6 +47,14 @@ const INITIAL_REVIEW_INTERVAL_DAYS = 1;
 
 function addDays(base: Date, days: number) {
   return new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function getReviewDayKey(value: Date) {
+  return REVIEW_DAY_FORMATTER.format(value);
+}
+
+function isSameReviewDay(left: Date, right: Date) {
+  return getReviewDayKey(left) === getReviewDayKey(right);
 }
 
 function parseLevel(status?: string | null): SrsLevel {
@@ -76,7 +92,7 @@ export const SrsService = {
       return params.mode === "sentence-practice" ? false : true;
     }
     if (!params.nextReviewAt) return false;
-    return new Date(params.nextReviewAt).getTime() <= now.getTime();
+    return isSameReviewDay(new Date(params.nextReviewAt), now) || new Date(params.nextReviewAt).getTime() < now.getTime();
   },
 
   canReviewWord(params: {
@@ -85,7 +101,9 @@ export const SrsService = {
     now?: Date;
   }): boolean {
     const now = params.now ?? new Date();
-    return params.level >= 2 && !!params.nextReviewAt && new Date(params.nextReviewAt).getTime() <= now.getTime();
+    if (params.level < 2 || !params.nextReviewAt) return false;
+    const nextReviewAt = new Date(params.nextReviewAt);
+    return isSameReviewDay(nextReviewAt, now) || nextReviewAt.getTime() < now.getTime();
   },
 
   scheduleNextReview(params: {

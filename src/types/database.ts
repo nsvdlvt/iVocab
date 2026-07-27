@@ -77,6 +77,7 @@ export interface Database {
           source: string | null;
           created_at: string;
           updated_at: string;
+          last_studied_at: string | null;
           deleted_at: string | null;
         };
         Insert: {
@@ -93,6 +94,7 @@ export interface Database {
           source?: string | null;
           created_at?: string;
           updated_at?: string;
+          last_studied_at?: string | null;
           deleted_at?: string | null;
         };
         Update: {
@@ -109,6 +111,7 @@ export interface Database {
           source?: string | null;
           created_at?: string;
           updated_at?: string;
+          last_studied_at?: string | null;
           deleted_at?: string | null;
         };
         Relationships: [

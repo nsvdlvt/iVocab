@@ -101,7 +101,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const actionTimerRef = React.useRef<number | null>(null);
   const knownIdsRef = React.useRef<Set<string>>(new Set());
-  const pendingSaveRef = React.useRef<Promise<void> | null>(null);
+  const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
 
   const currentWord = queueState.queue[0] ?? null;
   const totalDue = queueState.knownCount + queueState.queue.length;
@@ -137,6 +137,61 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     return () => {
       if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
     };
+  }, []);
+
+  const enqueueSave = React.useCallback(
+    (payload: { vocabularyId: string; answerResult: "correct" | "wrong" }) => {
+      console.log("[ReviewFlashcardSession] enqueueSave", {
+        reviewSessionId,
+        vocabularyId: payload.vocabularyId,
+        answerResult: payload.answerResult,
+      });
+      const nextSave = saveQueueRef.current.then(async () => {
+        console.log("[ReviewFlashcardSession] save start", {
+          reviewSessionId,
+          vocabularyId: payload.vocabularyId,
+          answerResult: payload.answerResult,
+        });
+        const response = await fetch("/api/srs/result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vocabularyId: payload.vocabularyId,
+            mode: "review",
+            answerResult: payload.answerResult,
+            reviewSessionId,
+          }),
+          keepalive: true,
+        });
+
+        console.log("[ReviewFlashcardSession] save response", {
+          reviewSessionId,
+          vocabularyId: payload.vocabularyId,
+          answerResult: payload.answerResult,
+          ok: response.ok,
+          status: response.status,
+        });
+
+        if (!response.ok) {
+          console.error("SRS save failed (review flashcard)", await response.text());
+        }
+      });
+
+      saveQueueRef.current = nextSave.catch((error) => {
+        console.error("SRS save request failed (review flashcard)", error);
+      });
+
+      return nextSave;
+    },
+    [reviewSessionId]
+  );
+
+  const flushSaveQueue = React.useCallback(async () => {
+    try {
+      await saveQueueRef.current;
+    } catch {
+      // Individual request errors are logged in enqueueSave.
+    }
   }, []);
 
   React.useEffect(() => {
@@ -179,6 +234,9 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
 
     actionTimerRef.current = window.setTimeout(() => {
+      const isKnown = action === "known";
+      const isLastWord = isKnown && queueState.queue.length === 1;
+
       if (action === "known" && currentWord) {
         knownIdsRef.current.add(currentWord.id);
       }
@@ -187,48 +245,22 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
       setFlipped(false);
       setActiveAction(null);
 
-      if (action === "known") {
-        pendingSaveRef.current = fetch("/api/srs/result", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            vocabularyId: currentWord.id,
-            mode: "review",
-            answerResult: "correct",
-            reviewSessionId,
-          }),
-          keepalive: true,
-        })
-          .then(async (response) => {
-            if (!response.ok) {
-              console.error("SRS save failed (review flashcard)", await response.text());
-              return;
-            }
-            const data = (await response.json()) as { completed?: boolean };
-            if (data.completed) {
-              router.push(`/review/session/${reviewSessionId}/complete`);
-            }
-          })
-          .catch((error) => {
-            console.error("SRS save request failed (review flashcard)", error);
-          })
-          .finally(() => {
-            pendingSaveRef.current = null;
-          });
+      if (isKnown && currentWord) {
+        void enqueueSave({
+          vocabularyId: currentWord.id,
+          answerResult: "correct",
+        }).then(async () => {
+          if (!isLastWord) return;
+          router.push(`/review/session/${reviewSessionId}/complete`);
+        });
       }
     }, 180);
-  }, [activeAction, currentWord, finished, reviewSessionId, router]);
+  }, [activeAction, currentWord, finished, queueState.queue.length, reviewSessionId, router, enqueueSave, flushSaveQueue]);
 
   const handleLeaveReview = React.useCallback(async () => {
-    if (pendingSaveRef.current) {
-      try {
-        await pendingSaveRef.current;
-      } catch {
-        // The save handler already logs errors; continue navigation.
-      }
-    }
+    await flushSaveQueue();
     router.push(onBackHref);
-  }, [onBackHref, router]);
+  }, [flushSaveQueue, onBackHref, router]);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
