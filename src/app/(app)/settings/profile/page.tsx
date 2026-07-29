@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { requireUser } from "@/lib/auth/require-user";
 import { SectionCard } from "@/components/common/SectionCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function SettingsProfilePage() {
           <Avatar className="h-16 w-16">
             <AvatarImage src={profile.avatar_url || ""} />
             <AvatarFallback className="bg-primary/5 text-primary text-lg font-bold">
-              {profile.display_name?.substring(0, 2).toUpperCase() || "IV"}
+              <User className="h-6 w-6" />
             </AvatarFallback>
           </Avatar>
           <div>

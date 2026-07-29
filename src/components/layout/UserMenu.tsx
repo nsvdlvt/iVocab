@@ -83,7 +83,7 @@ export function UserMenu({ profile: initialProfile }: UserMenuProps) {
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : (
-                    name.substring(0, 2).toUpperCase()
+                    <User className="h-4 w-4" />
                   )}
                 </AvatarFallback>
               </Avatar>
@@ -111,7 +111,7 @@ export function UserMenu({ profile: initialProfile }: UserMenuProps) {
             <Avatar className="h-10 w-10 shrink-0">
               <AvatarImage src={avatar} alt={name} />
               <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                {name.substring(0, 2).toUpperCase()}
+                <User className="h-4 w-4" />
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col min-w-0 text-left">

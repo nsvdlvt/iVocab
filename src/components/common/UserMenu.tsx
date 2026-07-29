@@ -71,16 +71,16 @@ export function UserMenu({ showName = false }: UserMenuProps) {
         "flex items-center gap-2 rounded-full outline-none cursor-pointer transition-all hover:opacity-90",
         showName ? "px-3 py-1.5 hover:bg-muted w-full" : "ring-2 ring-primary/10 hover:ring-primary/20 justify-center"
       )}>
-        <Avatar className="h-9 w-9 shrink-0">
-          <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : (
-              name.substring(0, 2).toUpperCase()
-            )}
-          </AvatarFallback>
-        </Avatar>
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarImage src={avatar} alt={name} />
+            <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <User className="h-4 w-4" />
+              )}
+            </AvatarFallback>
+          </Avatar>
         {showName && (
           <div className="flex flex-col text-left overflow-hidden">
             <span className="text-sm font-semibold text-foreground leading-none truncate">{name}</span>

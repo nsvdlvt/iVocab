@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { BookOpen, CalendarDays, Headphones, Search, Sparkles } from "lucide-react";
+import { BookOpen, CalendarDays, Headphones, Search, Sparkles, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -125,7 +125,7 @@ export function SharedVocabularyBrowser({
               <Avatar className="h-9 w-9">
                 <AvatarImage src={authorAvatarUrl ?? ""} alt={authorName} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {authorName.slice(0, 2).toUpperCase()}
+                  <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
               <div className="text-left">

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { AdminCommandPalette } from "@/components/admin/layout/command-palette";
 
 interface AdminTopbarProps {
@@ -55,7 +55,9 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
           <DropdownMenuTrigger className={cn(buttonVariants({ variant: "secondary", size: "icon" }), "rounded-full cursor-pointer")}>
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
-              <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || "A"}</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary">
+                <User className="h-4 w-4" />
+              </AvatarFallback>
             </Avatar>
             <span className="sr-only">Toggle user menu</span>
           </DropdownMenuTrigger>
