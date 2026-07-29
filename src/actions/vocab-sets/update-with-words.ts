@@ -9,6 +9,10 @@ import { z } from "zod";
 import { Database } from "@/types/database";
 import { performance } from "perf_hooks";
 
+function normalizeVisibility(visibility: VocabSetFormValues["visibility"] | null | undefined) {
+  return visibility === "public" || visibility === "unlisted" ? visibility : "private";
+}
+
 const vocabularyFormItemSchema = z.object({
   id: z.string().optional(),
   word: z.string().min(1, "Từ vựng không được để trống"),
@@ -66,6 +70,7 @@ export async function updateVocabularySetWithWords(
   }
 
   const { title, description, source_language, target_language, visibility } = validatedFields.data;
+  const normalizedVisibility = normalizeVisibility(visibility);
   const validatedWords = validatedWordsResult.data;
 
   try {
@@ -74,7 +79,7 @@ export async function updateVocabularySetWithWords(
       description: description || null,
       source_language,
       target_language,
-      visibility,
+      visibility: normalizedVisibility,
       updated_at: new Date().toISOString(),
     });
 

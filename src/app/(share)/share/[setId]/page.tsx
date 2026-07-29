@@ -13,17 +13,43 @@ interface PageProps {
 
 export default async function SharedVocabSetDetailPage({ params }: PageProps) {
   const { setId } = await params;
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[share/page] start", { setId });
+  }
+
   const [set, words, user] = await Promise.all([
     VocabSetRepository.getPublicVocabSetById(setId),
     VocabularyRepository.getPublicBySetId(setId),
     getCurrentUser(),
   ]);
 
+  if (process.env.NODE_ENV === "development") {
+    console.log("[share/page] fetched", {
+      setId,
+      hasSet: !!set,
+      visibility: set?.visibility ?? null,
+      wordCount: words.length,
+      hasUser: !!user,
+    });
+  }
+
   if (!set) {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[share/page] missing set -> private notice", { setId });
+    }
     return <PrivateShareNotice backHref={ROUTES.VOCABULARY} />;
   }
 
   const author = await ProfileRepository.getPublicProfile(set.user_id);
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[share/page] author", {
+      setId,
+      authorFound: !!author,
+      authorId: set.user_id,
+    });
+  }
 
   return (
     <PageContainer className="py-6 sm:py-8">

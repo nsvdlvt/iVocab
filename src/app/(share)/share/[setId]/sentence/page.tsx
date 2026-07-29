@@ -12,11 +12,19 @@ interface PageProps {
 
 export default async function SharedSentencePage({ params }: PageProps) {
   const { setId } = await params;
+  if (process.env.NODE_ENV === "development") {
+    console.log("[share/sentence] start", { setId });
+  }
+
   const [set, words, stats] = await Promise.all([
     VocabSetRepository.getPublicVocabSetById(setId),
     VocabularyRepository.getPublicBySetId(setId),
     Promise.resolve({}),
   ]);
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[share/sentence] fetched", { setId, hasSet: !!set, visibility: set?.visibility ?? null, wordCount: words.length });
+  }
 
   if (!set) return <PrivateShareNotice backHref={ROUTES.VOCABULARY} />;
 

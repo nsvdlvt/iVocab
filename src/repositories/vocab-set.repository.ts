@@ -83,16 +83,30 @@ export const VocabSetRepository = {
 
   getPublicVocabSetById: cache(async (id: string): Promise<VocabSetRow | null> => {
     const supabase = await createClient();
+    if (process.env.NODE_ENV === "development") {
+      console.log("[vocab-set.repository] getPublicVocabSetById:start", { id });
+    }
     const { data, error } = await supabase
       .from("vocab_sets")
       .select("*")
       .eq("id", id)
-      .in("visibility", ["public", "unlisted"])
       .is("deleted_at", null)
       .maybeSingle();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error("[vocab-set.repository] getPublicVocabSetById:error", { id, error });
+      throw error;
+    }
+    const isShareable = data?.visibility === "public" || data?.visibility === "unlisted" || data?.visibility == null;
+    if (process.env.NODE_ENV === "development") {
+      console.log("[vocab-set.repository] getPublicVocabSetById:result", {
+        id,
+        found: !!data,
+        visibility: data?.visibility ?? null,
+        shareable: isShareable,
+      });
+    }
+    return isShareable ? data : null;
   }),
 
   getRecentVocabSets: cache(async (userId: string, limit = 4): Promise<VocabSetRow[]> => {

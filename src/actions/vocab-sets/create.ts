@@ -10,6 +10,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { performance } from "perf_hooks";
 
+function normalizeVisibility(visibility: VocabSetFormValues["visibility"] | null | undefined) {
+  return visibility === "public" || visibility === "unlisted" ? visibility : "private";
+}
+
 const vocabularyFormItemSchema = z.object({
   word: z.string().min(1, "Từ vựng không được để trống"),
   meaning: z.string().min(1, "Nghĩa không được để trống"),
@@ -60,6 +64,7 @@ export async function createVocabularySet(
   }
 
   const { title, description, source_language, target_language, visibility } = validatedFields.data;
+  const normalizedVisibility = normalizeVisibility(visibility);
 
   const finalColor = getRandomVocabularySetColor();
   const finalIcon = "BookOpen";
@@ -81,7 +86,7 @@ export async function createVocabularySet(
         target_language,
         color: finalColor,
         icon: finalIcon,
-        visibility,
+        visibility: normalizedVisibility,
         source: "manual",
       });
       success = true;

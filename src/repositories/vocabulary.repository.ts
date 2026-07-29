@@ -74,20 +74,48 @@ export const VocabularyRepository = {
 
   getPublicBySetId: cache(async (setId: string): Promise<VocabularyRow[]> => {
     const supabase = await createClient();
+    if (process.env.NODE_ENV === "development") {
+      console.log("[vocabulary.repository] getPublicBySetId:start", { setId });
+    }
+    const setResult = await supabase
+      .from("vocab_sets")
+      .select("visibility")
+      .eq("id", setId)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (setResult.error) {
+      console.error("[vocabulary.repository] getPublicBySetId:set-check-error", { setId, error: setResult.error });
+      throw setResult.error;
+    }
+    const isShareable = setResult.data?.visibility === "public" || setResult.data?.visibility === "unlisted" || setResult.data?.visibility == null;
+    if (process.env.NODE_ENV === "development") {
+      console.log("[vocabulary.repository] getPublicBySetId:set-check-result", {
+        setId,
+        shareable: !!setResult.data && isShareable,
+        visibility: setResult.data?.visibility ?? null,
+      });
+    }
+    if (!setResult.data || !isShareable) return [];
+
     const { data, error } = await supabase
       .from("vocabularies")
-      .select("*, vocab_sets!inner(visibility)")
+      .select("*")
       .eq("set_id", setId)
-      .in("vocab_sets.visibility", ["public", "unlisted"])
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
-    if (error) throw error;
-    return (data ?? []).map((row) => {
-      const { vocab_sets, ...rest } = row as VocabularyRow & { vocab_sets?: { visibility: string } };
-      void vocab_sets;
-      return rest as VocabularyRow;
-    });
+    if (error) {
+      console.error("[vocabulary.repository] getPublicBySetId:error", { setId, error });
+      throw error;
+    }
+    if (process.env.NODE_ENV === "development") {
+      console.log("[vocabulary.repository] getPublicBySetId:result", {
+        setId,
+        wordCount: data?.length ?? 0,
+      });
+    }
+    return data ?? [];
   }),
 
   countByUser: cache(async (userId: string): Promise<number> => {

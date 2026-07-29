@@ -23,7 +23,7 @@ interface ShareSetDialogProps {
 }
 
 export function ShareSetDialog({ open, onOpenChange, shareLink, visibility }: ShareSetDialogProps) {
-  const isPublic = visibility === "public";
+  const isShareable = visibility !== "private";
 
   const handleCopy = async () => {
     try {
@@ -56,8 +56,8 @@ export function ShareSetDialog({ open, onOpenChange, shareLink, visibility }: Sh
             <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
               <span>Liên kết chia sẻ</span>
               <Badge variant="outline" className="gap-1">
-                {isPublic ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-                {isPublic ? "Công khai" : "Riêng tư"}
+                {isShareable ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                {isShareable ? "Công khai" : "Riêng tư"}
               </Badge>
             </div>
             <div className="flex gap-2">

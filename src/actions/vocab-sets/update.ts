@@ -5,6 +5,10 @@ import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { vocabSetSchema, type VocabSetFormValues } from "@/lib/validators/vocab-set";
 import { revalidatePath } from "next/cache";
 
+function normalizeVisibility(visibility: VocabSetFormValues["visibility"] | null | undefined) {
+  return visibility === "public" || visibility === "unlisted" ? visibility : "private";
+}
+
 export async function updateVocabularySet(id: string, values: VocabSetFormValues) {
   const profile = await requireUser();
   const userId = profile.id;
@@ -18,6 +22,7 @@ export async function updateVocabularySet(id: string, values: VocabSetFormValues
   }
 
   const { title, description, source_language, target_language, color, icon, visibility } = validatedFields.data;
+  const normalizedVisibility = normalizeVisibility(visibility);
 
   try {
     await VocabSetRepository.updateVocabSet(id, userId, {
@@ -27,7 +32,7 @@ export async function updateVocabularySet(id: string, values: VocabSetFormValues
       target_language,
       color: color || null,
       icon: icon || null,
-      visibility,
+      visibility: normalizedVisibility,
       updated_at: new Date().toISOString(),
     });
   } catch (error) {
