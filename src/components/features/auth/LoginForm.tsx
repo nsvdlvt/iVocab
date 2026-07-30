@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, KeyRound, Mail } from "lucide-react";
@@ -15,6 +16,22 @@ import { SocialAuthSection } from "./SocialAuthSection";
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code) return;
+
+    const next = searchParams.get("next");
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("code", code);
+
+    if (next) {
+      callbackUrl.searchParams.set("next", next);
+    }
+
+    window.location.replace(callbackUrl.toString());
+  }, [searchParams]);
 
   const {
     register,

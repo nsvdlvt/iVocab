@@ -3,8 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validators/auth";
 import { mapAuthError } from "@/lib/auth/error-map";
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants/routes";
 
 export async function resetPasswordAction(values: ResetPasswordFormValues) {
   const validatedFields = resetPasswordSchema.safeParse(values);
@@ -18,6 +16,16 @@ export async function resetPasswordAction(values: ResetPasswordFormValues) {
 
   const { password } = validatedFields.data;
   const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return {
+      success: false,
+      error: "Phiên khôi phục đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu đặt lại mật khẩu mới.",
+    };
+  }
 
   const { error } = await supabase.auth.updateUser({
     password,
@@ -30,5 +38,8 @@ export async function resetPasswordAction(values: ResetPasswordFormValues) {
     };
   }
 
-  redirect(ROUTES.LOGIN);
+  return {
+    success: true,
+    message: "Mật khẩu mới đã được cập nhật thành công.",
+  };
 }

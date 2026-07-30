@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { Check, Pencil, Star, Volume2, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 
 interface LearnMCQProps {
   question: LearnQuestion;
@@ -16,7 +15,6 @@ interface LearnMCQProps {
   onEdit?: () => void;
   onToggleStar?: () => void;
   isStarred?: boolean;
-  // Audio configuration switches
   autoPlayQuestionAudio?: boolean;
   onToggleAutoPlayQuestion?: () => void;
   onSpeakPrompt?: () => void;
@@ -43,16 +41,14 @@ export function LearnMCQ({
         <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             {question.direction === "en-vi" && onSpeakPrompt && (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={onSpeakPrompt}
-                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900"
+                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900 inline-flex items-center justify-center"
                 title="Nghe phát âm"
               >
                 <Volume2 className="h-4 w-4" />
-              </Button>
+              </button>
             )}
             {question.direction === "en-vi" && onToggleAutoPlayQuestion && (
               <div className="flex items-center" title="Tự động phát âm thanh">
@@ -67,25 +63,21 @@ export function LearnMCQ({
 
           <div className="flex items-center gap-2">
             {onEdit && (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={onEdit}
-                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900"
+                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900 inline-flex items-center justify-center"
                 title="Chỉnh sửa"
               >
                 <Pencil className="h-4 w-4" />
-              </Button>
+              </button>
             )}
             {onToggleStar && (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={onToggleStar}
                 className={[
-                  "h-8 w-8 rounded-lg bg-transparent transition-all hover:bg-slate-100",
+                  "h-8 w-8 rounded-lg bg-transparent transition-all hover:bg-slate-100 inline-flex items-center justify-center",
                   isStarred
                     ? "text-amber-500 hover:text-amber-500"
                     : "text-slate-500 hover:text-amber-500",
@@ -93,7 +85,7 @@ export function LearnMCQ({
                 title={isStarred ? "Bỏ đánh dấu yêu thích" : "Đánh dấu yêu thích"}
               >
                 <Star className={["h-4 w-4", isStarred ? "fill-amber-400 text-amber-500" : ""].join(" ")} />
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -114,23 +106,25 @@ export function LearnMCQ({
           const isCorrectOption = option.id === question.correctOptionId;
           const isWrongSelected = isSelected && !isCorrectOption;
 
-          // Determine visual state color themes to prevent dimension resizing
           let btnClass = "border-border bg-card hover:bg-muted/50 cursor-pointer";
           let badgeClass = "bg-muted/70 text-muted-foreground border-border";
 
           if (isSubmitted) {
             if (isCorrectOption) {
-              btnClass = "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 cursor-default";
+              btnClass =
+                "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 cursor-default";
               badgeClass = "bg-emerald-500 text-white border-emerald-500";
             } else if (isWrongSelected) {
-              btnClass = "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400 cursor-default";
+              btnClass =
+                "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400 cursor-default";
               badgeClass = "bg-rose-500 text-white border-rose-500";
             } else {
               btnClass = "bg-muted/30 border-border/40 text-muted-foreground/40 cursor-default";
               badgeClass = "bg-muted/30 text-muted-foreground/30 border-border/20";
             }
           } else if (isSelected) {
-            btnClass = "border-indigo-500 bg-indigo-500/5 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 cursor-pointer";
+            btnClass =
+              "border-indigo-500 bg-indigo-500/5 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 cursor-pointer";
             badgeClass = "bg-indigo-500 text-white border-indigo-500";
           }
 
@@ -155,8 +149,7 @@ export function LearnMCQ({
                 </span>
                 <span className="leading-snug">{option.text}</span>
               </div>
-              
-              {/* Optional state icons fade without causing layout shifts */}
+
               {isSubmitted && (isCorrectOption || isWrongSelected) && (
                 <div className="shrink-0 ml-2 animate-in fade-in duration-200">
                   {isCorrectOption ? (

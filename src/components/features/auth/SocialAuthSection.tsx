@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { signInWithOAuth } from "@/lib/auth/oauth";
 import { GoogleIcon } from "./GoogleIcon";
 import { toast } from "sonner";
@@ -14,9 +13,18 @@ export function SocialAuthSection() {
     setIsGoogleLoading(true);
     try {
       const result = await signInWithOAuth("google");
+
       if (!result.success) {
         toast.error(result.error);
+        return;
       }
+
+      if (result.url) {
+        window.location.assign(result.url);
+        return;
+      }
+
+      toast.error("Không lấy được URL đăng nhập Google.");
     } catch {
       toast.error("Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.");
     } finally {
@@ -32,10 +40,9 @@ export function SocialAuthSection() {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <Button
+      <button
         type="button"
-        variant="outline"
-        className="w-full rounded-xl h-10 cursor-pointer shadow-sm font-semibold inline-flex items-center justify-center gap-2"
+        className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background font-semibold shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         disabled={isGoogleLoading}
         onClick={handleGoogleSignIn}
       >
@@ -44,8 +51,8 @@ export function SocialAuthSection() {
         ) : (
           <GoogleIcon className="h-4 w-4" />
         )}
-        Continue with Google
-      </Button>
+        Tiếp tục với Google
+      </button>
     </div>
   );
 }

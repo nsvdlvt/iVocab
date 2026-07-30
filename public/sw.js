@@ -84,11 +84,20 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then(async (response) => {
-          if (response && response.ok && isHtmlResponse(response)) {
+          if (!response) {
+            return getOfflineFallback();
+          }
+
+          if (response.status === 404) {
+            return response;
+          }
+
+          if (response.ok && isHtmlResponse(response)) {
             await cacheResponse(event.request.url, response);
             return response;
           }
-          return getOfflineFallback();
+
+          return response;
         })
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);

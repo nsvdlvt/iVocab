@@ -6,12 +6,16 @@ import { Database } from "@/types/database";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=auth-code-missing`);
+    const errorUrl = new URL(next, origin);
+    errorUrl.pathname = "/reset-password";
+    errorUrl.searchParams.set("error", "missing-code");
+    return NextResponse.redirect(errorUrl);
   }
 
-  const redirectUrl = new URL("/dashboard", origin);
+  const redirectUrl = new URL(next, origin);
   const response = NextResponse.redirect(redirectUrl);
 
   const supabase = createServerClient<Database>(
@@ -37,13 +41,17 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.json(
-      {
-        message: error.message,
-        error,
-      },
-      { status: 500 }
-    );
+    const fallbackUrl = new URL("/reset-password", origin);
+    const errorMessage =
+      error.message.includes("expired") || error.message.includes("invalid")
+        ? "expired-link"
+        : "invalid-link";
+    fallbackUrl.searchParams.set("error", errorMessage);
+    return NextResponse.redirect(fallbackUrl);
+  }
+
+  if (next === "/reset-password") {
+    redirectUrl.searchParams.delete("error");
   }
 
   return response;
