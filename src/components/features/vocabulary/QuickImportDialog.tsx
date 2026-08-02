@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useDeferredValue, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileInput } from "lucide-react";
@@ -10,6 +10,34 @@ import { QuickImportOptions } from "./QuickImportOptions";
 import { QuickImportHelp } from "./QuickImportHelp";
 import { parseQuickImportText, ParseOptions } from "./QuickImportParser";
 import { toast } from "sonner";
+
+const VOCABULARY_TABLE_GENERATOR_URL =
+  "https://chatgpt.com/g/g-69da4bb466048191b6955d29d8cb1518-vocabulary-table-generator";
+
+function ChatGPTMarkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 2.5a4.5 4.5 0 0 1 3.95 2.35 4.5 4.5 0 0 1 5.13 5.13A4.5 4.5 0 0 1 24 12a4.5 4.5 0 0 1-2.92 4.02 4.5 4.5 0 0 1-5.13 5.13A4.5 4.5 0 0 1 12 23.5a4.5 4.5 0 0 1-3.95-2.35 4.5 4.5 0 0 1-5.13-5.13A4.5 4.5 0 0 1 0 12a4.5 4.5 0 0 1 2.92-4.02A4.5 4.5 0 0 1 8.05 2.85 4.5 4.5 0 0 1 12 2.5Z"
+        className="fill-current opacity-90"
+      />
+      <path
+        d="m8.9 6.2 2.1 1.2a2.8 2.8 0 0 1 4.1 2.42v2.4l-2.1-1.2V9.84a.7.7 0 0 0-1.04-.61l-2.1 1.2a.7.7 0 0 0-.35.61v2.42l-2.1 1.2v-3.62a2.8 2.8 0 0 1 1.49-2.47l2.1-1.2Z"
+        className="fill-background"
+      />
+      <path
+        d="M15.1 17.8 13 16.6a2.8 2.8 0 0 1-4.1-2.42v-2.4l2.1 1.2v1.56a.7.7 0 0 0 1.04.61l2.1-1.2a.7.7 0 0 0 .35-.61V10.9l2.1-1.2v3.62a2.8 2.8 0 0 1-1.49 2.47l-2.1 1.2Z"
+        className="fill-background"
+      />
+    </svg>
+  );
+}
 
 interface ImportedCard {
   word: string;
@@ -28,7 +56,7 @@ interface QuickImportDialogProps {
 export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [text, setText] = useState("");
-  const [isPendingParse, startTransition] = useTransition();
+  const deferredText = useDeferredValue(text);
 
   const [options, setOptions] = useState<ParseOptions>({
     termDelimiter: "tab",
@@ -37,9 +65,7 @@ export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProp
     customCardDelimiter: "",
   });
 
-  const parsedItems = useMemo(() => {
-    return parseQuickImportText(text, options);
-  }, [text, options]);
+  const parsedItems = useMemo(() => parseQuickImportText(deferredText, options), [deferredText, options]);
 
   const { validItems, validCount, invalidCount } = useMemo(() => {
     const valid = parsedItems.filter((i) => i.isValid);
@@ -72,14 +98,12 @@ export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProp
 
     onImport(newCards);
     setIsOpen(false);
-    setText(""); 
+    setText("");
     toast.success(`Đã thêm ${validCount} từ vựng vào danh sách thẻ chỉnh sửa.`);
   };
 
   const handleTextChange = (val: string) => {
-    startTransition(() => {
-      setText(val);
-    });
+    setText(val);
   };
 
   return (
@@ -99,38 +123,55 @@ export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProp
         }
       />
 
-      {/* Styled DialogContent for full-height responsive styling */}
       <DialogContent className="max-w-[96vw] lg:max-w-[min(1600px,96vw)] w-full h-[95vh] lg:h-[min(900px,94vh)] flex flex-col p-4 sm:p-6 rounded-2xl shadow-xl gap-4 border border-[#E5E7EB] dark:border-border/60 overflow-hidden">
         <DialogHeader className="shrink-0 select-none border-b border-border/30 pb-3">
-          <DialogTitle className="text-base font-bold text-foreground">
-            Nhập từ vựng nhanh
-          </DialogTitle>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            Dán dữ liệu từ Word, Excel, Google Docs hoặc Quizlet để tự động tách thẻ hàng loạt.
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground">
+                Nhập từ vựng nhanh
+              </DialogTitle>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Dán dữ liệu từ Word, Excel, Google Docs hoặc Quizlet để tự động tách thẻ hàng loạt.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                window.open(VOCABULARY_TABLE_GENERATOR_URL, "_blank", "noopener,noreferrer")
+              }
+              className="shrink-0 h-9 rounded-full border-border/70 bg-background/80 px-3 text-xs font-semibold shadow-sm hover:bg-muted/60"
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <ChatGPTMarkIcon />
+                </span>
+                <span className="hidden sm:inline">Tạo bằng AI</span>
+                <span className="sm:hidden">AI</span>
+              </span>
+            </Button>
+          </div>
         </DialogHeader>
 
-        {/* Responsive layout: Grid shifts from 1 col on mobile, 2 cols (50/50) on tablet, 2 cols (45/55) on desktop */}
         <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[45%_55%] gap-6 pr-1">
-          
-          {/* LEFT COLUMN: Textarea, Options, and Guidelines */}
           <div className="flex flex-col gap-4 md:overflow-y-auto md:pr-2 shrink-0 md:shrink">
             <QuickImportTextarea
               text={text}
               onChangeText={handleTextChange}
-              isPending={isPending || isPendingParse}
+              isPending={isPending}
             />
 
             <QuickImportOptions
               options={options}
               onChangeOptions={setOptions}
-              isPending={isPending || isPendingParse}
+              isPending={isPending}
             />
 
             <QuickImportHelp />
           </div>
 
-          {/* RIGHT COLUMN: Live Preview area. Mobile behaves natively, Desktop gets fixed content layout */}
           <div className="flex flex-col shrink-0 md:shrink md:overflow-hidden h-[380px] md:h-full">
             <QuickImportPreview
               items={parsedItems}
@@ -138,10 +179,8 @@ export function QuickImportDialog({ onImport, isPending }: QuickImportDialogProp
               invalidCount={invalidCount}
             />
           </div>
-
         </div>
 
-        {/* Modal Footer Panel (Fixed at the bottom) */}
         <div className="shrink-0 flex items-center justify-between pt-3 border-t border-border/30 select-none">
           <Button
             type="button"

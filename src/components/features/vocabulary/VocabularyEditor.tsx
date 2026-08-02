@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,17 @@ export function VocabularyEditor({
     }
   };
 
+  const handleTitleChange = useCallback((val: string) => {
+    setTitle(val);
+    if (errors.title && val.trim()) {
+      setErrors((prev) => ({ ...prev, title: undefined }));
+    }
+  }, [errors.title]);
+
+  const handleDescriptionChange = useCallback((val: string) => {
+    setDescription(val);
+  }, []);
+
   const handleImportCards = (
     newCards: Array<{
       word: string;
@@ -178,6 +189,26 @@ export function VocabularyEditor({
       return onlyHasInitialEmpty ? importedItems : [...prev, ...importedItems];
     });
   };
+
+  const handleAddCardClick = useCallback(() => {
+    handleAddCard();
+  }, []);
+
+  const handleImportCardsCallback = useCallback(
+    (newCards: Array<{
+      word: string;
+      meaning: string;
+      ipa?: string;
+      partOfSpeech?: string;
+      example?: string;
+      exampleSentence?: string;
+      synonyms?: string[] | string;
+      topic?: string;
+    }>) => {
+      handleImportCards(newCards);
+    },
+    [handleImportCards]
+  );
 
   const handleSave = async () => {
     const newErrors: typeof errors = {};
@@ -284,21 +315,16 @@ export function VocabularyEditor({
         onChangeVisibility={setVisibility}
         isPending={isPending}
         onCreateClick={handleSave}
-        onImportCards={handleImportCards}
+        onImportCards={handleImportCardsCallback}
         existingWords={items.map((item) => ({ word: item.word, meaning: item.meaning }))}
       />
 
       <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
         <VocabularyInfoCard
           title={title}
-          onChangeTitle={(val) => {
-            setTitle(val);
-            if (errors.title && val.trim()) {
-              setErrors((prev) => ({ ...prev, title: undefined }));
-            }
-          }}
+          onChangeTitle={handleTitleChange}
           description={description}
-          onChangeDescription={setDescription}
+          onChangeDescription={handleDescriptionChange}
           isPending={isPending}
           error={errors.title}
         />
@@ -329,7 +355,7 @@ export function VocabularyEditor({
             <Button
               type="button"
               variant="ghost"
-              onClick={handleAddCard}
+              onClick={handleAddCardClick}
               disabled={isPending}
               className="rounded-xl h-9 text-xs font-semibold gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5 transition-all duration-200 cursor-pointer"
             >

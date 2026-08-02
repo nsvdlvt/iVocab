@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface VocabularyCardProps {
   errors?: { word?: string; meaning?: string };
 }
 
-export function VocabularyCard({
+function VocabularyCardComponent({
   index,
   item,
   onChangeField,
@@ -38,6 +38,36 @@ export function VocabularyCard({
   errors,
 }: VocabularyCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [draft, setDraft] = useState(() => ({
+    word: item.word,
+    meaning: item.meaning,
+    ipa: item.ipa,
+    partOfSpeech: item.partOfSpeech,
+    example: item.example,
+    synonyms: item.synonyms,
+    antonyms: item.antonyms,
+    note: item.note,
+    example_translation: item.example_translation,
+  }));
+
+  React.useEffect(() => {
+    setDraft({
+      word: item.word,
+      meaning: item.meaning,
+      ipa: item.ipa,
+      partOfSpeech: item.partOfSpeech,
+      example: item.example,
+      synonyms: item.synonyms,
+      antonyms: item.antonyms,
+      note: item.note,
+      example_translation: item.example_translation,
+    });
+  }, [item.id]);
+
+  const handleFieldChange = (field: keyof VocabularyItem, value: string) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
+    onChangeField(item.id, field, value);
+  };
 
   return (
     <motion.div
@@ -92,8 +122,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: ability, creative..."
-              value={item.word}
-              onChange={(e) => onChangeField(item.id, "word", e.target.value)}
+              value={draft.word}
+              onChange={(e) => handleFieldChange("word", e.target.value)}
               disabled={isPending}
               className={cn(
                 "w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none",
@@ -110,8 +140,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: /əˈbɪl.ə.ti/..."
-              value={item.ipa}
-              onChange={(e) => onChangeField(item.id, "ipa", e.target.value)}
+              value={draft.ipa}
+              onChange={(e) => handleFieldChange("ipa", e.target.value)}
               disabled={isPending}
               className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
             />
@@ -122,8 +152,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: Reading helps improve vocabulary..."
-              value={item.example}
-              onChange={(e) => onChangeField(item.id, "example", e.target.value)}
+              value={draft.example}
+              onChange={(e) => handleFieldChange("example", e.target.value)}
               disabled={isPending}
               className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
             />
@@ -137,8 +167,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: khả năng, sự sáng tạo..."
-              value={item.meaning}
-              onChange={(e) => onChangeField(item.id, "meaning", e.target.value)}
+              value={draft.meaning}
+              onChange={(e) => handleFieldChange("meaning", e.target.value)}
               disabled={isPending}
               className={cn(
                 "w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none",
@@ -155,8 +185,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: noun, verb, adjective, phrasal verb..."
-              value={item.partOfSpeech}
-              onChange={(e) => onChangeField(item.id, "partOfSpeech", e.target.value)}
+              value={draft.partOfSpeech}
+              onChange={(e) => handleFieldChange("partOfSpeech", e.target.value)}
               disabled={isPending}
               className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
             />
@@ -167,8 +197,8 @@ export function VocabularyCard({
             <input
               type="text"
               placeholder="Ví dụ: skill, capacity..."
-              value={item.synonyms}
-              onChange={(e) => onChangeField(item.id, "synonyms", e.target.value)}
+              value={draft.synonyms}
+              onChange={(e) => handleFieldChange("synonyms", e.target.value)}
               disabled={isPending}
               className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
             />
@@ -192,8 +222,8 @@ export function VocabularyCard({
                 <input
                   type="text"
                   placeholder="Ví dụ: inability..."
-                  value={item.antonyms}
-                  onChange={(e) => onChangeField(item.id, "antonyms", e.target.value)}
+                  value={draft.antonyms}
+                  onChange={(e) => handleFieldChange("antonyms", e.target.value)}
                   disabled={isPending}
                   className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
                 />
@@ -204,8 +234,8 @@ export function VocabularyCard({
                 <input
                   type="text"
                   placeholder="Bản dịch nghĩa tiếng Việt..."
-                  value={item.example_translation}
-                  onChange={(e) => onChangeField(item.id, "example_translation", e.target.value)}
+                  value={draft.example_translation}
+                  onChange={(e) => handleFieldChange("example_translation", e.target.value)}
                   disabled={isPending}
                   className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
                 />
@@ -216,8 +246,8 @@ export function VocabularyCard({
                 <input
                   type="text"
                   placeholder="Mẹo nhớ từ, ngữ cảnh..."
-                  value={item.note}
-                  onChange={(e) => onChangeField(item.id, "note", e.target.value)}
+                  value={draft.note}
+                  onChange={(e) => handleFieldChange("note", e.target.value)}
                   disabled={isPending}
                   className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-xl border-0 text-xs text-foreground placeholder:text-muted-foreground/40 transition-all focus:ring-1 focus:ring-primary/25 focus:outline-none"
                 />
@@ -229,3 +259,5 @@ export function VocabularyCard({
     </motion.div>
   );
 }
+
+export const VocabularyCard = memo(VocabularyCardComponent);

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { Label } from "@/components/ui/label";
 
 interface VocabularyInfoCardProps {
@@ -12,7 +12,7 @@ interface VocabularyInfoCardProps {
   error?: string;
 }
 
-export function VocabularyInfoCard({
+function VocabularyInfoCardComponent({
   title,
   onChangeTitle,
   description,
@@ -55,3 +55,5 @@ export function VocabularyInfoCard({
     </div>
   );
 }
+
+export const VocabularyInfoCard = memo(VocabularyInfoCardComponent);
