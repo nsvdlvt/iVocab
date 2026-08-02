@@ -9,10 +9,7 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/dashboard";
 
   if (!code) {
-    const errorUrl = new URL(next, origin);
-    errorUrl.pathname = "/reset-password";
-    errorUrl.searchParams.set("error", "missing-code");
-    return NextResponse.redirect(errorUrl);
+    return NextResponse.redirect(`${origin}/login?error=auth-code-missing`);
   }
 
   const redirectUrl = new URL(next, origin);
@@ -41,17 +38,13 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    const fallbackUrl = new URL("/reset-password", origin);
-    const errorMessage =
-      error.message.includes("expired") || error.message.includes("invalid")
-        ? "expired-link"
-        : "invalid-link";
-    fallbackUrl.searchParams.set("error", errorMessage);
-    return NextResponse.redirect(fallbackUrl);
-  }
-
-  if (next === "/reset-password") {
-    redirectUrl.searchParams.delete("error");
+    return NextResponse.json(
+      {
+        message: error.message,
+        error,
+      },
+      { status: 500 }
+    );
   }
 
   return response;

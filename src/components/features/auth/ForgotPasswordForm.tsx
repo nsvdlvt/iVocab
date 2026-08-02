@@ -36,15 +36,13 @@ export function ForgotPasswordForm() {
       const result = await forgotPasswordAction(data);
 
       if (result.success) {
-        const message = result.message ?? "Liên kết đặt lại mật khẩu đã được gửi.";
-        setSuccessMessage(message);
-        toast.success(message);
+        setSuccessMessage(result.message);
+        toast.success(result.message);
         return;
       }
 
-      const message = result.error ?? "Không thể gửi liên kết đặt lại mật khẩu.";
-      setFormError(message);
-      toast.error(message);
+      setFormError(result.error);
+      toast.error(result.error);
     } catch {
       const message = "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.";
       setFormError(message);
