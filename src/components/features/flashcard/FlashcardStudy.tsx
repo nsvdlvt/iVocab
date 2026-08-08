@@ -12,6 +12,7 @@ import { FlashcardDeck } from "./FlashcardDeck";
 import { FlashcardFilterMode, FlashcardSettingsDialog, FlashcardSettingsState } from "./FlashcardSettingsDialog";
 import { FlashcardRow } from "./flashcard-utils";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
+import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
 
 interface FlashcardStudyProps {
   initialWords: FlashcardRow[];
@@ -197,6 +198,7 @@ export function FlashcardStudy({ initialWords, setInfo, onBackHref, readOnly = f
         if (!response.ok) {
           throw new Error("Failed to save flashcard progress");
         }
+        notifyStudyActivityUpdated();
       } catch (error: unknown) {
         console.error("Flashcard progress update error:", error);
         toast.error("Could not update progress status");

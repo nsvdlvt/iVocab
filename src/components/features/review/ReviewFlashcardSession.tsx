@@ -11,6 +11,7 @@ import { FlashcardDeck } from "../flashcard/FlashcardDeck";
 import { FlashcardSettingsDialog, FlashcardSettingsState } from "../flashcard/FlashcardSettingsDialog";
 import { FlashcardRow } from "../flashcard/flashcard-utils";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
+import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
 import {
   advanceFlashcardReviewQueue,
   createFlashcardReviewQueue,
@@ -174,6 +175,8 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
 
         if (!response.ok) {
           console.error("SRS save failed (review flashcard)", await response.text());
+        } else {
+          notifyStudyActivityUpdated();
         }
       });
 

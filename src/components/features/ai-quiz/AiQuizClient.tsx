@@ -13,6 +13,7 @@ import type { AiQuizPayload } from "@/lib/ai/schemas/ai-quiz";
 import { ROUTES } from "@/constants/routes";
 import { InlineDictionaryPopup } from "@/components/features/dictionary/InlineDictionaryPopup";
 import { extractSentence } from "@/lib/nlp/pos";
+import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
 
 type QuizAnswerState = Record<string, string>;
 
@@ -147,6 +148,7 @@ export function AiQuizClient({ setId, setTitle, initialQuiz = null }: AiQuizClie
           })
         )
       );
+      notifyStudyActivityUpdated();
       toast.success("Đã cập nhật SRS cho bài AI Quiz.");
     } catch (error) {
       console.error("SRS save request failed (ai-quiz)", error);

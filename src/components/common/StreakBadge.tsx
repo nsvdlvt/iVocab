@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { calculateCurrentStreak, getCalendarDayKey, getStudyDateKeys } from "@/lib/streak";
 import type { Database } from "@/types/database";
 import type { UserProfile } from "@/lib/auth/get-current-user";
+import { subscribeStudyActivityUpdated } from "@/lib/events/study-events";
 
 interface StreakBadgeProps {
   className?: string;
@@ -51,8 +52,47 @@ export function StreakBadge({ className, profile }: StreakBadgeProps) {
 
     fetchSessions();
 
+    // 1. Subscribe to custom client event
+    const unsubscribeCustomEvent = subscribeStudyActivityUpdated(() => {
+      void fetchSessions();
+    });
+
+    // 2. Subscribe to window focus / visibility change
+    const handleFocus = () => {
+      void fetchSessions();
+    };
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    // 3. Subscribe to Supabase Postgres Realtime changes on study_sessions
+    const userId = profile?.id;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    if (userId) {
+      channel = supabase
+        .channel(`streak_realtime_${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "study_sessions",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            void fetchSessions();
+          }
+        )
+        .subscribe();
+    }
+
     return () => {
       mounted = false;
+      unsubscribeCustomEvent();
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
     };
   }, [profile, supabase]);
 

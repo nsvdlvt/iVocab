@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { FlashcardViewer } from "./FlashcardViewer";
 import { Database } from "@/types/database";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
+import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -55,6 +56,7 @@ export function ReviewClient({ words, dueToday, masteredWords, learningWords }: 
       if (!response.ok) {
         console.error("SRS save failed (review)", await response.text());
       } else {
+        notifyStudyActivityUpdated();
         router.refresh();
       }
     } catch (error) {

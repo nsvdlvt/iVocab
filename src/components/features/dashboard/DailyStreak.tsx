@@ -1,9 +1,13 @@
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Flame } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
 import { DailyActivity } from "@/repositories/statistics.repository";
 import { getCalendarDayKey } from "@/lib/streak";
+import { subscribeStudyActivityUpdated } from "@/lib/events/study-events";
 
 interface DailyStreakProps {
   streak: number;
@@ -13,6 +17,14 @@ interface DailyStreakProps {
 const WEEK_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 export function DailyStreak({ streak, weeklyActivity }: DailyStreakProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    return subscribeStudyActivityUpdated(() => {
+      router.refresh();
+    });
+  }, [router]);
+
   const todayKey = getCalendarDayKey(new Date());
 
   const weekDays = WEEK_LABELS.map((label, idx) => {

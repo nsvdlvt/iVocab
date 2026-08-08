@@ -22,6 +22,7 @@ import { AdaptiveEngine, LearningState as LearnWordState, RecentQuestionConfig }
 import { SESSION_CONFIG } from "@/lib/learning/config";
 import { useSpeak } from "@/hooks/use-speak";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
+import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
 
 import {
   Dialog,
@@ -383,6 +384,7 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
         console.error("SRS save failed (dictation)", await response.text());
         return;
       }
+      notifyStudyActivityUpdated();
       if (reviewSessionId) {
         const data = (await response.json()) as { completed?: boolean };
         if (data.completed) {

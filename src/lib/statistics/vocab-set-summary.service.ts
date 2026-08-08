@@ -33,31 +33,63 @@ export const VocabSetSummaryService = {
   async getUserVocabSetSummaries(userId: string): Promise<Record<string, VocabSetProgressSummary>> {
     const supabase = await createClient();
 
-    const [vocabResult, sessionResult] = await Promise.all([
-      supabase
+    const summaries: Record<string, VocabSetProgressSummary> = {};
+
+    // 1. Fetch user's vocabulary sets to initialize all sets
+    const setResult = await supabase
+      .from("vocab_sets")
+      .select("id, last_studied_at")
+      .eq("user_id", userId)
+      .is("deleted_at", null);
+
+    if (setResult.error && (setResult.error as { code?: string })?.code !== "42703") {
+      throw setResult.error;
+    }
+
+    for (const setRow of (setResult.data ?? []) as Pick<VocabSetRow, "id" | "last_studied_at">[]) {
+      summaries[setRow.id] = {
+        setId: setRow.id,
+        totalWords: 0,
+        masteredWords: 0,
+        learningWords: 0,
+        newWords: 0,
+        lastStudiedAt: setRow.last_studied_at || null,
+      };
+    }
+
+    // 2. Fetch all user vocabularies using pagination to avoid PostgREST 1000-row default limit
+    const allVocabs: Array<VocabularyRow & { review?: ReviewRow | ReviewRow[] | null }> = [];
+    let from = 0;
+    const PAGE_SIZE = 1000;
+
+    while (true) {
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
         .from("vocabularies")
         .select("id, set_id, review:reviews(*)")
         .eq("owner_id", userId)
-        .is("deleted_at", null),
-      supabase
-        .from("review_sessions")
-        .select("vocabulary_set_id, created_at")
-        .eq("user_id", userId)
-        .not("vocabulary_set_id", "is", null)
-        .order("created_at", { ascending: true }),
-    ]);
+        .is("deleted_at", null)
+        .range(from, to);
 
-    if (vocabResult.error) throw vocabResult.error;
-    if (sessionResult.error) throw sessionResult.error;
+      if (error) throw error;
 
-    const summaries: Record<string, VocabSetProgressSummary> = {};
+      const page = (data ?? []) as unknown as Array<VocabularyRow & { review?: ReviewRow | ReviewRow[] | null }>;
+      allVocabs.push(...page);
 
-    for (const row of (vocabResult.data ?? []) as Array<VocabularyRow & { review?: ReviewRow | ReviewRow[] | null }>) {
+      if (page.length < PAGE_SIZE) {
+        break;
+      }
+      from += PAGE_SIZE;
+    }
+
+    // 3. Process vocabulary stats and review dates
+    for (const row of allVocabs) {
       const setId = row.set_id;
       if (!setId) continue;
 
       const review = getReview(row);
       const state = getState(review);
+
       const current = summaries[setId] ?? {
         setId,
         totalWords: 0,
@@ -72,57 +104,38 @@ export const VocabSetSummaryService = {
       else if (state === "learning") current.learningWords += 1;
       else current.newWords += 1;
 
-      summaries[setId] = current;
-    }
-
-    for (const session of (sessionResult.data ?? []) as ReviewSessionRow[]) {
-      const setId = session.vocabulary_set_id;
-      if (!setId) continue;
-
-      const current = summaries[setId] ?? {
-        setId,
-        totalWords: 0,
-        masteredWords: 0,
-        learningWords: 0,
-        newWords: 0,
-        lastStudiedAt: null,
-      };
-
-      if (!current.lastStudiedAt || new Date(session.created_at).getTime() > new Date(current.lastStudiedAt).getTime()) {
-        current.lastStudiedAt = session.created_at;
+      // Extract study timestamp from review (last_review or updated_at)
+      const reviewTime = review?.last_review || review?.updated_at;
+      if (reviewTime) {
+        if (!current.lastStudiedAt || new Date(reviewTime).getTime() > new Date(current.lastStudiedAt).getTime()) {
+          current.lastStudiedAt = reviewTime;
+        }
       }
 
       summaries[setId] = current;
     }
 
-    const setResult = await supabase
-      .from("vocab_sets")
-      .select("id, last_studied_at")
+    // 4. Fetch review sessions for last studied timestamp
+    const sessionResult = await supabase
+      .from("review_sessions")
+      .select("vocabulary_set_id, created_at")
       .eq("user_id", userId)
-      .is("deleted_at", null);
+      .not("vocabulary_set_id", "is", null)
+      .order("created_at", { ascending: true });
 
-    if (!setResult.error) {
-      for (const setRow of (setResult.data ?? []) as Pick<VocabSetRow, "id" | "last_studied_at">[]) {
-        const current = summaries[setRow.id] ?? {
-          setId: setRow.id,
-          totalWords: 0,
-          masteredWords: 0,
-          learningWords: 0,
-          newWords: 0,
-          lastStudiedAt: null,
-        };
+    if (!sessionResult.error) {
+      for (const session of (sessionResult.data ?? []) as ReviewSessionRow[]) {
+        const setId = session.vocabulary_set_id;
+        if (!setId || !summaries[setId]) continue;
 
         if (
-          setRow.last_studied_at &&
-          (!current.lastStudiedAt || new Date(setRow.last_studied_at).getTime() > new Date(current.lastStudiedAt).getTime())
+          session.created_at &&
+          (!summaries[setId].lastStudiedAt ||
+            new Date(session.created_at).getTime() > new Date(summaries[setId].lastStudiedAt!).getTime())
         ) {
-          current.lastStudiedAt = setRow.last_studied_at;
+          summaries[setId].lastStudiedAt = session.created_at;
         }
-
-        summaries[setRow.id] = current;
       }
-    } else if ((setResult.error as { code?: string } | null)?.code !== "42703") {
-      throw setResult.error;
     }
 
     return summaries;

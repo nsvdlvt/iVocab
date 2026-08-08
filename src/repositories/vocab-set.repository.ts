@@ -181,7 +181,6 @@ export const VocabSetRepository = {
       .from("vocabularies")
       .select("set_id")
       .eq("id", vocabularyId)
-      .eq("owner_id", userId)
       .maybeSingle();
 
     if (vocabError) throw vocabError;

@@ -65,10 +65,11 @@ export async function POST(request: Request) {
 
     revalidatePath("/review");
     revalidatePath("/dashboard");
+    revalidatePath("/vocabulary");
 
-    if (processed) {
-      await VocabSetRepository.touchLastStudiedAtByVocabularyId(vocabularyId, user.id);
-    }
+    await VocabSetRepository.touchLastStudiedAtByVocabularyId(vocabularyId, user.id).catch((err) => {
+      console.warn("[api/srs/result] touchLastStudiedAt error:", err);
+    });
 
     if (mode === "review" && reviewSessionId) {
       const session = await ReviewSessionStore.markCompleted(reviewSessionId, vocabularyId);
