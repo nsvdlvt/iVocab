@@ -18,6 +18,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     iconName: "BookA",
   },
   {
+    title: "Đọc & Dịch",
+    href: ROUTES.READING,
+    iconName: "BookOpen",
+  },
+  {
     title: "Ôn tập",
     href: ROUTES.REVIEW,
     iconName: "GraduationCap",

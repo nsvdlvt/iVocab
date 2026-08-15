@@ -15,6 +15,7 @@ export const ROUTES = {
   AI_QUIZ: (setId: string, basePath = "/vocabulary") => `${basePath}/${setId}/ai-quiz`,
   AI: "/ai",
   STATISTICS: "/statistics",
+  READING: "/reading",
   SETTINGS: "/settings",
 } as const;
 
