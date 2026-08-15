@@ -13,6 +13,7 @@ import { TranslationControls } from "./TranslationControls";
 import { VocabularyHighlight } from "./VocabularyHighlight";
 import type { HighlightedWord, ReadingLesson } from "./reading-types";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import type { ReadingMode } from "./ReadingToolbar";
 
 export function BilingualReader({ lesson }: { lesson: ReadingLesson }) {
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -20,12 +21,12 @@ export function BilingualReader({ lesson }: { lesson: ReadingLesson }) {
   const [hideMeaning, setHideMeaning] = React.useState(false);
   const [showTranslation, setShowTranslation] = React.useState(true);
   const [highlightEnabled, setHighlightEnabled] = React.useState(true);
-  const [readingMode, setReadingMode] = React.useState<"bilingual" | "english-only" | "read-first">("bilingual");
+  const [readingMode, setReadingMode] = React.useState<ReadingMode>("bilingual");
   const [activeWord, setActiveWord] = React.useState<HighlightedWord | null>(null);
   const [expandedParagraphs, setExpandedParagraphs] = React.useState<Record<string, boolean>>({});
 
   const showBilingual = readingMode === "bilingual" && showTranslation;
-  const showReadFirst = readingMode === "read-first";
+  const showTranslationOnDemand = readingMode === "translation-on-demand";
 
   const toggleParagraph = (paragraphId: string) => {
     setExpandedParagraphs((current) => ({ ...current, [paragraphId]: !current[paragraphId] }));
@@ -67,7 +68,7 @@ export function BilingualReader({ lesson }: { lesson: ReadingLesson }) {
             key={section.id}
             section={section}
             languageLabel={lesson.sourceLanguage}
-            showTranslation={showBilingual || showReadFirst}
+            showTranslation={showBilingual || showTranslationOnDemand}
             expandedParagraphs={expandedParagraphs}
             onToggleParagraph={toggleParagraph}
             onWordClick={highlightEnabled ? setActiveWord : undefined}

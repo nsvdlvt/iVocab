@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { highlightClassName } from "./VocabularyHighlight";
+import type { ReadingMode } from "./ReadingToolbar";
 import type { BilingualParagraph, BilingualSection, HighlightedWord } from "./reading-types";
 
 function renderHighlightedText(text: string, highlightedWords?: HighlightedWord[], onWordClick?: (word: HighlightedWord) => void) {
@@ -78,7 +79,7 @@ export function ReadingSection({
   onToggleParagraph: (paragraphId: string) => void;
   onWordClick?: (word: HighlightedWord) => void;
   isMobile: boolean;
-  mode: "bilingual" | "english-only" | "read-first";
+  mode: ReadingMode;
 }) {
   return (
     <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
