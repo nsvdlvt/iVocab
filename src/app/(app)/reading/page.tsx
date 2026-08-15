@@ -1,4 +1,6 @@
-"use client";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+
+const ADMIN_EMAIL = "dungbnlvt@gmail.com";
 
 const article = {
   badge: "Reading Draft",
@@ -13,31 +15,46 @@ const article = {
   paragraphs: [
     {
       en: "A smart reading system can turn vocabulary into a real lesson instead of a random list of words. It chooses terms that fit the topic, keeps them natural in context, and helps the learner see how the words work inside a paragraph.",
-      vi: "Một hệ thống đọc thông minh có thể biến từ vựng thành một bài học thật sự thay vì chỉ là một danh sách từ ngẫu nhiên. Nó chọn những từ phù hợp với chủ đề, đặt chúng vào ngữ cảnh tự nhiên và giúp người học thấy cách các từ hoạt động trong một đoạn văn.",
+      vi: "Máº™t há»‡ thá»‘ng Ä‘á»c thÃ´ng minh cÃ³ thá»ƒ biáº¿n tá»« vá»±ng thÃ nh má»™t bÃ i há»c tháº­t sá»± thay vÃ¬ chá»‰ lÃ  má»™t danh sÃ¡ch tá»« ngáº«u nhiÃªn. NÃ³ chá»n nhá»¯ng tá»« phÃ¹ há»£p vá»›i chá»§ Ä‘á», Ä‘áº·t chÃºng vÃ o ngá»¯ cáº£nh tá»± nhiÃªn vÃ  giÃºp ngÆ°á»i há»c tháº¥y cÃ¡ch cÃ¡c tá»« hoáº¡t Ä‘á»™ng trong má»™t Ä‘oáº¡n vÄƒn.",
     },
     {
       en: "When the same content is shown in two columns, the learner can compare meaning much faster. The English side gives direct exposure, while the Vietnamese side removes confusion and makes the idea easier to understand.",
-      vi: "Khi cùng một nội dung được hiển thị thành hai cột, người học có thể so sánh nghĩa nhanh hơn rất nhiều. Cột tiếng Anh mang lại sự tiếp xúc trực tiếp, còn cột tiếng Việt gỡ rối và làm ý nghĩa dễ hiểu hơn.",
+      vi: "Khi cÃ¹ng má»™t ná»™i dung Ä‘Æ°á»£c hiá»ƒn thá»‹ thÃ nh hai cá»™t, ngÆ°á»i há»c cÃ³ thá»ƒ so sÃ¡nh nghÄ©a nhanh hÆ¡n ráº¥t nhiá»u. Cá»™t tiáº¿ng Anh mang láº¡i sá»± tiáº¿p xÃºc trá»±c tiáº¿p, cÃ²n cá»™t tiáº¿ng Viá»‡t gá»¡ rá»‘i vÃ  lÃ m Ã½ nghÄ©a dá»… hiá»ƒu hÆ¡n.",
     },
     {
       en: "The best reading lessons do not overload the page. They focus on one article, a clear title, and a clean structure so the eye can move from sentence to sentence without distraction.",
-      vi: "Những bài đọc tốt nhất không làm trang bị quá tải. Chúng chỉ tập trung vào một bài, một tiêu đề rõ ràng và một bố cục sạch sẽ để mắt người học có thể đi từ câu này sang câu khác mà không bị xao nhãng.",
+      vi: "Nhá»¯ng bÃ i Ä‘á»c tá»‘t nháº¥t khÃ´ng lÃ m trang bá»‹ quÃ¡ táº£i. ChÃºng chá»‰ táº­p trung vÃ o má»™t bÃ i, má»™t tiÃªu Ä‘á» rÃµ rÃ ng vÃ  má»™t bá»‘ cá»¥c sáº¡ch sáº½ Ä‘á»ƒ máº¯t ngÆ°á»i há»c cÃ³ thá»ƒ Ä‘i tá»« cÃ¢u nÃ y sang cÃ¢u khÃ¡c mÃ  khÃ´ng bá»‹ xao nhÃ£ng.",
     },
     {
       en: "In the next version, AI can pick the best matching words from the vocabulary bank and generate the article automatically. For now, this fake version is enough to test spacing, hierarchy, and the bilingual reading layout.",
-      vi: "Ở phiên bản tiếp theo, AI có thể chọn những từ khớp nhất từ kho từ vựng và tự động tạo bài đọc. Còn bây giờ, bản giả này là đủ để test khoảng cách, thứ bậc nội dung và bố cục đọc song ngữ.",
+      vi: "á»ž phiÃªn báº£n tiáº¿p theo, AI cÃ³ thá»ƒ chá»n nhá»¯ng tá»« khá»›p nháº¥t tá»« kho tá»« vá»±ng vÃ  tá»± Ä‘á»™ng táº¡o bÃ i Ä‘á»c. CÃ²n bÃ¢y giá», báº£n giáº£ nÃ y lÃ  Ä‘á»§ Ä‘á»ƒ test khoáº£ng cÃ¡ch, thá»© báº­c ná»™i dung vÃ  bá»‘ cá»¥c Ä‘á»c song ngá»¯.",
     },
   ],
   words: [
-    { word: "curated", meaning: "được chọn lọc" },
-    { word: "context", meaning: "ngữ cảnh" },
-    { word: "exposure", meaning: "sự tiếp xúc" },
-    { word: "clarity", meaning: "độ rõ ràng" },
-    { word: "retention", meaning: "khả năng ghi nhớ" },
+    { word: "curated", meaning: "Ä‘Æ°á»£c chá»n lá»c" },
+    { word: "context", meaning: "ngá»¯ cáº£nh" },
+    { word: "exposure", meaning: "sá»± tiáº¿p xÃºc" },
+    { word: "clarity", meaning: "Ä‘á»™ rÃµ rÃ ng" },
+    { word: "retention", meaning: "kháº£ nÄƒng ghi nhá»›" },
   ],
 };
 
-export default function ReadingPage() {
+export default async function ReadingPage() {
+  const user = await getCurrentUser();
+  const canViewReading = user?.email?.toLowerCase() === ADMIN_EMAIL;
+
+  if (!canViewReading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),_transparent_30%),linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] px-4 text-slate-900">
+        <section className="w-full max-w-lg rounded-[28px] border border-sky-200/70 bg-white/90 px-6 py-10 text-center shadow-[0_24px_80px_rgba(14,165,233,0.14)] backdrop-blur-sm">
+          <div className="mx-auto mb-5 h-16 w-16 rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/15" />
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Chức năng đang được phát triển</h1>
+          <p className="mt-3 text-base leading-7 text-slate-600">Vui lòng quay lại sau</p>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_30%),linear-gradient(180deg,#f5f7fb_0%,#ffffff_100%)] text-slate-900">
       <div className="mx-auto w-full max-w-[1680px] px-2 py-3 md:px-4 md:py-6 lg:px-6 lg:py-8">
@@ -61,7 +78,6 @@ export default function ReadingPage() {
                   </div>
                 ))}
               </div>
-
             </div>
           </header>
 
@@ -70,7 +86,7 @@ export default function ReadingPage() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mobile reading</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">English + Tiếng Việt</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">English + Tiáº¿ng Viá»‡t</h2>
                 </div>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                   Pairs
@@ -79,12 +95,7 @@ export default function ReadingPage() {
 
               <div className="space-y-4">
                 {article.paragraphs.map((paragraph, index) => (
-                  <MobilePair
-                    key={index}
-                    number={index + 1}
-                    english={paragraph.en}
-                    vietnamese={paragraph.vi}
-                  />
+                  <MobilePair key={index} number={index + 1} english={paragraph.en} vietnamese={paragraph.vi} />
                 ))}
               </div>
             </div>
@@ -97,19 +108,12 @@ export default function ReadingPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Column 1</p>
                   <h2 className="mt-1 text-2xl font-semibold text-slate-950">English</h2>
                 </div>
-                <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
-                  Source
-                </span>
+                <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">Source</span>
               </div>
 
               <div className="space-y-4">
                 {article.paragraphs.map((paragraph, index) => (
-                  <ArticleBlock
-                    key={index}
-                    number={index + 1}
-                    text={paragraph.en}
-                    accent="bg-sky-500"
-                  />
+                  <ArticleBlock key={index} number={index + 1} text={paragraph.en} accent="bg-sky-500" />
                 ))}
               </div>
             </div>
@@ -118,7 +122,7 @@ export default function ReadingPage() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Column 2</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">Tiếng Việt</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">Tiáº¿ng Viá»‡t</h2>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                   Translation
@@ -127,12 +131,7 @@ export default function ReadingPage() {
 
               <div className="space-y-4">
                 {article.paragraphs.map((paragraph, index) => (
-                  <ArticleBlock
-                    key={index}
-                    number={index + 1}
-                    text={paragraph.vi}
-                    accent="bg-emerald-500"
-                  />
+                  <ArticleBlock key={index} number={index + 1} text={paragraph.vi} accent="bg-emerald-500" />
                 ))}
               </div>
             </div>
@@ -211,7 +210,7 @@ function MobilePair({
           <p className="text-[15px] leading-7 text-slate-700">{english}</p>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-white p-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Tiếng Việt</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Tiáº¿ng Viá»‡t</p>
           <p className="text-[15px] leading-7 text-slate-700">{vietnamese}</p>
         </div>
       </div>
