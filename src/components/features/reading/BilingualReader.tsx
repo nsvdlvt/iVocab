@@ -48,7 +48,6 @@ export function BilingualReader({ lesson }: { lesson: ReadingLesson }) {
 
       <ReadingToolbar
         hideMeaning={hideMeaning}
-        showTranslation={showTranslation}
         highlightEnabled={highlightEnabled}
         readingMode={readingMode}
         onToggleHideMeaning={() => setHideMeaning((value) => !value)}
