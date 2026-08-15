@@ -54,7 +54,7 @@ export function ReadingToolbar({
           </button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button variant="outline" className="rounded-full px-3">
                 <BookOpenText className="h-4 w-4" />
                 {modeLabel[readingMode]}
@@ -69,7 +69,7 @@ export function ReadingToolbar({
           </DropdownMenu>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button variant={highlightEnabled ? "default" : "outline"} className="rounded-full px-3">
                 <Highlighter className="h-4 w-4" />
                 Highlight

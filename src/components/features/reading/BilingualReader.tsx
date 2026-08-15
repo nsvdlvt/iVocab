@@ -51,7 +51,6 @@ export function BilingualReader({ lesson }: { lesson: ReadingLesson }) {
         highlightEnabled={highlightEnabled}
         readingMode={readingMode}
         onToggleHideMeaning={() => setHideMeaning((value) => !value)}
-        onToggleShowTranslation={() => setShowTranslation((value) => !value)}
         onToggleHighlight={() => setHighlightEnabled((value) => !value)}
         onChangeReadingMode={setReadingMode}
         onOpenNotes={() => {}}
