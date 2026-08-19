@@ -1,73 +1,121 @@
 "use client";
 
 import React from "react";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { createClient } from "@/lib/supabase/client";
 import { ReadingHeader } from "./ReadingHeader";
-import { ReadingToolbar, type ReadingMode } from "./ReadingToolbar";
+import { ReadingToolbar, type HighlightColor } from "./ReadingToolbar";
 import { ReadingSection } from "./ReadingSection";
-import { ReadingNavigation } from "./ReadingNavigation";
-import { VocabularyHighlight } from "./VocabularyHighlight";
-import type { HighlightedWord, ReadingLesson } from "./reading-types";
-import { useMediaQuery } from "@/hooks/use-media-query";
-
-type Panel = "vocabulary" | "notes" | null;
-
-function VocabPanel({ lesson }: { lesson: ReadingLesson }) {
-  return (
-    <div className="space-y-4 p-4">
-      <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Từ vựng trong bài</div>
-      <div className="space-y-3">
-        {lesson.sections.flatMap((section) => section.blocks).flatMap((block) =>
-          (block.highlightedWords ?? []).map((word) => (
-            <div key={`${block.id}-${word.text}`} className="rounded-xl border border-border/60 bg-background p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="font-medium">{word.text}</div>
-                  <div className="text-sm text-muted-foreground">{word.meaning}</div>
-                </div>
-                <div className="text-xs text-muted-foreground">{word.vocabularyId ? "★ Đã lưu" : "+ Thêm"}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-function NotesPanel() {
-  return (
-    <div className="space-y-4 p-4">
-      <div className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Ghi chú</div>
-      <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">+ Thêm ghi chú</div>
-    </div>
-  );
-}
+import { Card } from "@/components/ui/card";
+import type { ReadingHighlight, ReadingLesson } from "./reading-types";
 
 export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
-  const isMobile = useMediaQuery("(max-width: 767px)");
+  const MIN_FONT_SIZE = 14;
+  const DEFAULT_FONT_SIZE = 18;
+  const MAX_FONT_SIZE = 28;
+  const STORAGE_KEY = "reading_font_size";
+
   const [isFavorite, setIsFavorite] = React.useState(lesson.isFavorite);
   const [hideMeaning, setHideMeaning] = React.useState(false);
-  const [highlightEnabled, setHighlightEnabled] = React.useState(true);
-  const [readingMode, setReadingMode] = React.useState<ReadingMode>("bilingual");
-  const [activeWord, setActiveWord] = React.useState<HighlightedWord | null>(null);
-  const [openPanel, setOpenPanel] = React.useState<Panel>(null);
-  const [expandedParagraphs, setExpandedParagraphs] = React.useState<Record<string, boolean>>({});
+  const [highlightEnabled, setHighlightEnabled] = React.useState(false);
+  const [highlightColor, setHighlightColor] = React.useState<HighlightColor>("yellow");
+  const [highlights, setHighlights] = React.useState<ReadingHighlight[]>([]);
+  const [readingFontSize, setReadingFontSize] = React.useState(DEFAULT_FONT_SIZE);
 
-  const showTranslation = readingMode !== "english-only";
+  const showTranslation = !hideMeaning;
 
-  const toggleParagraph = (paragraphId: string) => setExpandedParagraphs((curr) => ({ ...curr, [paragraphId]: !curr[paragraphId] }));
+  React.useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (!stored) return;
+      const parsed = Number(stored);
+      if (Number.isFinite(parsed)) {
+        setReadingFontSize(Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, parsed)));
+      }
+    } catch {
+      // Ignore storage issues and fall back to the default size.
+    }
+  }, []);
+
+  React.useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, String(readingFontSize));
+  }, [readingFontSize]);
+
+  const handleCreateHighlight = React.useCallback(
+    async (payload: {
+      paragraphId: string;
+      language: "en" | "vi";
+      selectedText: string;
+      color: HighlightColor;
+    }) => {
+      const response = await fetch("/api/reading/highlights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          articleId: lesson.id,
+          ...payload,
+        }),
+      });
+
+      if (!response.ok) return;
+
+      const result = (await response.json()) as { highlight?: ReadingHighlight };
+      if (!result.highlight) return;
+
+      setHighlights((current) => {
+        const filtered = current.filter(
+          (item) =>
+            !(
+              item.articleId === lesson.id &&
+              item.paragraphId === result.highlight!.paragraphId &&
+              item.language === result.highlight!.language &&
+              item.selectedText === result.highlight!.selectedText
+            )
+        );
+        return [...filtered, result.highlight!];
+      });
+    },
+    [lesson.id]
+  );
+
+  const handleZoomOut = React.useCallback(() => {
+    setReadingFontSize((current) => Math.max(MIN_FONT_SIZE, current - 1));
+  }, []);
+
+  const handleZoomIn = React.useCallback(() => {
+    setReadingFontSize((current) => Math.min(MAX_FONT_SIZE, current + 1));
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const loadHighlights = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        if (!data.user) {
+          if (!cancelled) setHighlights([]);
+          return;
+        }
+        const response = await fetch(`/api/reading/highlights?articleId=${encodeURIComponent(lesson.id)}`);
+        const payload = (await response.json()) as { highlights?: ReadingHighlight[] };
+        if (!cancelled) setHighlights(payload.highlights ?? []);
+      } finally {
+        void cancelled;
+      }
+    };
+
+    void loadHighlights();
+    return () => {
+      cancelled = true;
+    };
+  }, [lesson.id]);
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[1450px] space-y-8">
       <ReadingHeader
         title={lesson.title}
         topic={lesson.topic}
         difficulty={lesson.difficulty}
         readingTime={lesson.estimatedReadingTime}
-        newWords={lesson.vocabularyStats.newWords}
-        knownWords={lesson.vocabularyStats.knownWords}
-        totalHighlighted={lesson.vocabularyStats.totalHighlighted}
         isFavorite={isFavorite}
         onToggleFavorite={() => setIsFavorite((v) => !v)}
       />
@@ -75,59 +123,35 @@ export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
       <ReadingToolbar
         hideMeaning={hideMeaning}
         highlightEnabled={highlightEnabled}
-        readingMode={readingMode}
+        highlightColor={highlightColor}
+        readingFontSize={readingFontSize}
+        canZoomOut={readingFontSize > MIN_FONT_SIZE}
+        canZoomIn={readingFontSize < MAX_FONT_SIZE}
         onToggleHideMeaning={() => setHideMeaning((v) => !v)}
         onToggleHighlight={() => setHighlightEnabled((v) => !v)}
-        onChangeReadingMode={setReadingMode}
-        onOpenNotes={() => setOpenPanel("notes")}
-        onOpenVocabulary={() => setOpenPanel("vocabulary")}
+        onChangeHighlightColor={setHighlightColor}
+        onZoomOut={handleZoomOut}
+        onZoomIn={handleZoomIn}
+        onOpenNotes={() => {}}
+        onOpenVocabulary={() => {}}
         onOpenSettings={() => {}}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-4">
-          {lesson.sections.map((section) => (
-            <ReadingSection
-              key={section.id}
-              section={section}
-              languageLabel={lesson.sourceLanguage}
-              showTranslation={showTranslation}
-              expandedParagraphs={expandedParagraphs}
-              onToggleParagraph={toggleParagraph}
-              onWordClick={highlightEnabled ? setActiveWord : undefined}
-              isMobile={isMobile}
-              mode={readingMode}
-            />
-          ))}
-
-          <ReadingNavigation
-            current={lesson.lessonIndex}
-            total={lesson.lessonCount}
-            progress={lesson.progress}
-            onPrev={() => {}}
-            onNext={() => {}}
+      <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
+        {lesson.paragraphs.map((paragraph, index) => (
+          <ReadingSection
+            key={paragraph.id}
+            paragraph={paragraph}
+            index={index}
+            showTranslation={showTranslation}
+            highlights={highlights}
+            onCreateHighlight={handleCreateHighlight}
+            highlightEnabled={highlightEnabled}
+            highlightColor={highlightColor}
+            fontSize={readingFontSize}
           />
-        </div>
-
-        {!isMobile && openPanel ? (
-          <aside className="sticky top-24 h-fit rounded-2xl border border-border/60 bg-card shadow-sm">
-            {openPanel === "vocabulary" ? <VocabPanel lesson={lesson} /> : <NotesPanel />}
-          </aside>
-        ) : null}
-      </div>
-
-      {isMobile ? (
-        <Sheet open={openPanel !== null} onOpenChange={(open) => setOpenPanel(open ? openPanel ?? "vocabulary" : null)}>
-          <SheetContent side="right" className="w-[min(90vw,26rem)]">
-            <SheetTitle className="sr-only">Reading panel</SheetTitle>
-            {openPanel === "vocabulary" ? <VocabPanel lesson={lesson} /> : <NotesPanel />}
-          </SheetContent>
-        </Sheet>
-      ) : null}
-
-      <div className="pointer-events-none fixed bottom-4 right-4">
-        {activeWord ? <VocabularyHighlight word={activeWord} onClose={() => setActiveWord(null)} /> : null}
-      </div>
+        ))}
+      </Card>
     </div>
   );
 }

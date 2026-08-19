@@ -1,105 +1,235 @@
 "use client";
 
 import React from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
+import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { highlightClassName } from "./VocabularyHighlight";
-import type { ReadingMode } from "./ReadingToolbar";
-import type { BilingualParagraph, BilingualSection, HighlightedWord } from "./reading-types";
+import type { BilingualParagraph, ReadingHighlight } from "./reading-types";
 
-function renderHighlightedText(text: string, highlightedWords?: HighlightedWord[], onWordClick?: (word: HighlightedWord) => void) {
-  if (!highlightedWords?.length) return text;
-  const sorted = [...highlightedWords].sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
-  const parts: React.ReactNode[] = [];
-  let cursor = 0;
-  sorted.forEach((word, index) => {
-    const start = word.start ?? text.indexOf(word.text, cursor);
-    const end = word.end ?? (start >= 0 ? start + word.text.length : -1);
-    if (start < 0 || end < 0) return;
-    if (start > cursor) parts.push(<span key={`text-${index}`}>{text.slice(cursor, start)}</span>);
-    parts.push(
-      <button key={`${word.text}-${index}`} type="button" onClick={() => onWordClick?.(word)} className={cn("inline-flex", highlightClassName(word.highlightColor))}>
-        {text.slice(start, end)}
-      </button>
-    );
-    cursor = end;
-  });
-  if (cursor < text.length) parts.push(<span key="tail">{text.slice(cursor)}</span>);
-  return parts;
+const highlightClassMap: Record<ReadingHighlight["color"], string> = {
+  yellow: "bg-amber-200/90 text-foreground",
+  green: "bg-emerald-200/90 text-foreground",
+  blue: "bg-sky-200/90 text-foreground",
+  pink: "bg-pink-200/90 text-foreground",
+  purple: "bg-violet-200/90 text-foreground",
+};
+
+function normalizeText(value: string) {
+  return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-function Paragraph({
+function renderHighlightedText(
+  text: string,
+  highlights: ReadingHighlight[] | undefined,
+  paragraphId: string,
+  language: "en" | "vi"
+) {
+  const items = (highlights ?? []).filter((item) => item.paragraphId === paragraphId && item.language === language);
+  if (!items.length) return text;
+
+  const selected = items[0];
+  const target = normalizeText(selected.selectedText);
+  const matchIndex = normalizeText(text).indexOf(target);
+  if (matchIndex < 0) return text;
+
+  const lower = text.toLowerCase();
+  const exactStart = lower.indexOf(selected.selectedText.trim().toLowerCase());
+  const start = exactStart >= 0 ? exactStart : matchIndex;
+  const end = start + selected.selectedText.trim().length;
+
+  const chunks: React.ReactNode[] = [];
+  if (start > 0) chunks.push(<span key="before">{text.slice(0, start)}</span>);
+  chunks.push(
+    <mark key="highlight" className={cn("rounded-md px-1 py-0.5 transition-colors", highlightClassMap[selected.color])}>
+      {text.slice(start, end)}
+    </mark>
+  );
+  if (end < text.length) chunks.push(<span key="after">{text.slice(end)}</span>);
+  return chunks;
+}
+
+function extractSelection(container: HTMLElement | null) {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  if (!container || !container.contains(range.commonAncestorContainer)) return null;
+  const selectedText = selection.toString().trim();
+  return selectedText || null;
+}
+
+function EnglishParagraph({
   paragraph,
-  translationVisible,
-  translationExpanded,
-  onToggleTranslation,
-  onWordClick,
+  highlights,
+  onCreateHighlight,
+  highlightEnabled,
+  highlightColor,
+  fontSize,
 }: {
   paragraph: BilingualParagraph;
-  translationVisible: boolean;
-  translationExpanded: boolean;
-  onToggleTranslation: () => void;
-  onWordClick?: (word: HighlightedWord) => void;
+  highlights?: ReadingHighlight[];
+  onCreateHighlight?: (payload: { paragraphId: string; language: "en" | "vi"; selectedText: string; color: ReadingHighlight["color"] }) => void;
+  highlightEnabled?: boolean;
+  highlightColor?: ReadingHighlight["color"];
+  fontSize: number;
 }) {
+  const ref = React.useRef<HTMLParagraphElement | null>(null);
+
+  const onMouseUp = () => {
+    if (!highlightEnabled) return;
+    const selectedText = extractSelection(ref.current);
+    if (!selectedText) return;
+    onCreateHighlight?.({ paragraphId: paragraph.id, language: "en", selectedText, color: highlightColor ?? "yellow" });
+    window.getSelection()?.removeAllRanges();
+  };
+
   return (
-    <div className="space-y-3 rounded-2xl border border-border/60 bg-background/60 p-4">
-      <div className="text-[15px] leading-8 text-foreground">
-        {renderHighlightedText(paragraph.source, paragraph.highlightedWords, onWordClick)}
-      </div>
-      {translationVisible ? (
-        <div className={cn("overflow-hidden rounded-xl border border-border/60 bg-muted/35 p-3 text-[15px] leading-8 text-foreground transition-all", translationExpanded ? "max-h-[24rem] opacity-100" : "max-h-0 p-0 opacity-0")}>
-          {paragraph.translation}
-        </div>
-      ) : (
-        <Button type="button" size="sm" variant="outline" onClick={onToggleTranslation} className="rounded-full">
-          <ChevronDown className="h-4 w-4" />
-          Hiện nghĩa tiếng Việt
-        </Button>
-      )}
-    </div>
+    <motion.p
+      ref={ref}
+      onMouseUp={onMouseUp}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-8 text-foreground select-text"
+      style={{ fontSize: `${fontSize}px` }}
+    >
+      {renderHighlightedText(paragraph.source, highlights, paragraph.id, "en")}
+    </motion.p>
+  );
+}
+
+function TranslationParagraph({
+  paragraph,
+  highlights,
+  showTranslation,
+  onCreateHighlight,
+  highlightEnabled,
+  highlightColor,
+  fontSize,
+}: {
+  paragraph: BilingualParagraph;
+  highlights?: ReadingHighlight[];
+  showTranslation: boolean;
+  onCreateHighlight?: (payload: { paragraphId: string; language: "en" | "vi"; selectedText: string; color: ReadingHighlight["color"] }) => void;
+  highlightEnabled?: boolean;
+  highlightColor?: ReadingHighlight["color"];
+  fontSize: number;
+}) {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  const onMouseUp = () => {
+    if (!highlightEnabled) return;
+    const selectedText = extractSelection(ref.current);
+    if (!selectedText) return;
+    onCreateHighlight?.({ paragraphId: paragraph.id, language: "vi", selectedText, color: highlightColor ?? "yellow" });
+    window.getSelection()?.removeAllRanges();
+  };
+
+  return (
+    <AnimatePresence initial={false}>
+      {showTranslation ? (
+        <motion.div
+          ref={ref}
+          onMouseUp={onMouseUp}
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className="overflow-hidden border-l-2 border-slate-200 pl-4"
+        >
+          <div className="mb-1 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
+            <Languages className="h-3.5 w-3.5" />
+            Dịch nghĩa
+          </div>
+          <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-7 text-slate-600" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
+            {renderHighlightedText(paragraph.translation ?? "", highlights, paragraph.id, "vi")}
+          </p>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
 export function ReadingSection({
-  section,
-  languageLabel,
+  paragraph,
+  index,
   showTranslation,
-  expandedParagraphs,
-  onToggleParagraph,
-  onWordClick,
-  isMobile,
-  mode,
+  highlights,
+  onCreateHighlight,
+  highlightEnabled,
+  highlightColor,
+  fontSize,
 }: {
-  section: BilingualSection;
-  languageLabel: string;
+  paragraph: BilingualParagraph;
+  index: number;
   showTranslation: boolean;
-  expandedParagraphs: Record<string, boolean>;
-  onToggleParagraph: (paragraphId: string) => void;
-  onWordClick?: (word: HighlightedWord) => void;
-  isMobile: boolean;
-  mode: ReadingMode;
+  highlights?: ReadingHighlight[];
+  onCreateHighlight?: (payload: { paragraphId: string; language: "en" | "vi"; selectedText: string; color: ReadingHighlight["color"] }) => void;
+  highlightEnabled?: boolean;
+  highlightColor?: ReadingHighlight["color"];
+  fontSize: number;
 }) {
   return (
-    <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
-      <div className="border-b border-border/60 px-5 py-4">
-        <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{languageLabel}</div>
-        <h2 className="mt-1 text-lg font-semibold text-foreground">{section.sourceTitle}</h2>
-        <p className="text-sm text-muted-foreground">{section.translatedTitle}</p>
-      </div>
-      <div className={cn("grid gap-4 p-5", isMobile ? "grid-cols-1" : "grid-cols-2")}>
-        {section.blocks.map((paragraph) => (
-          <Paragraph
-            key={paragraph.id}
+    <div className={cn("px-5 py-5 md:px-7 md:py-6", index > 0 && "border-t border-border/60")}>
+      <div className="grid gap-6 md:hidden">
+        <div className="space-y-2">
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
+          <EnglishParagraph
             paragraph={paragraph}
-            translationVisible={showTranslation}
-            translationExpanded={mode === "bilingual" ? true : Boolean(expandedParagraphs[paragraph.id])}
-            onToggleTranslation={() => onToggleParagraph(paragraph.id)}
-            onWordClick={onWordClick}
+            highlights={highlights}
+            onCreateHighlight={onCreateHighlight}
+            highlightEnabled={highlightEnabled}
+            highlightColor={highlightColor}
+            fontSize={fontSize}
           />
-        ))}
+        </div>
+        <TranslationParagraph
+          paragraph={paragraph}
+          highlights={highlights}
+          showTranslation={showTranslation}
+          onCreateHighlight={onCreateHighlight}
+          highlightEnabled={highlightEnabled}
+          highlightColor={highlightColor}
+          fontSize={fontSize}
+        />
       </div>
-    </Card>
+
+      <div className="hidden md:block">
+        <motion.div
+          layout
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className={cn(
+            "grid gap-x-8 lg:gap-x-12",
+            showTranslation ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-1"
+          )}
+        >
+          <div className="min-w-0 pr-1">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
+            <EnglishParagraph
+              paragraph={paragraph}
+              highlights={highlights}
+              onCreateHighlight={onCreateHighlight}
+              highlightEnabled={highlightEnabled}
+              highlightColor={highlightColor}
+              fontSize={fontSize}
+            />
+          </div>
+          {showTranslation ? (
+            <motion.div
+              layout
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="min-w-0 pl-1"
+            >
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
+              <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-8 text-foreground select-text" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
+                {renderHighlightedText(paragraph.translation ?? "", highlights, paragraph.id, "vi")}
+              </p>
+            </motion.div>
+          ) : null}
+        </motion.div>
+      </div>
+    </div>
   );
 }

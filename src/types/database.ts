@@ -321,6 +321,111 @@ export interface Database {
           }
         ];
       };
+      reading_articles: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string | null;
+          cover_image_url: string | null;
+          topic: string;
+          level: string;
+          estimated_reading_minutes: number;
+          vocabulary_count: number;
+          english_content: Json;
+          vietnamese_content: Json;
+          status: "draft" | "published";
+          created_at: string;
+          updated_at: string;
+          published_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description?: string | null;
+          cover_image_url?: string | null;
+          topic: string;
+          level: string;
+          estimated_reading_minutes?: number;
+          vocabulary_count?: number;
+          english_content: Json;
+          vietnamese_content: Json;
+          status?: "draft" | "published";
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          description?: string | null;
+          cover_image_url?: string | null;
+          topic?: string;
+          level?: string;
+          estimated_reading_minutes?: number;
+          vocabulary_count?: number;
+          english_content?: Json;
+          vietnamese_content?: Json;
+          status?: "draft" | "published";
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+        };
+        Relationships: [];
+      };
+      reading_highlights: {
+        Row: {
+          id: string;
+          user_id: string;
+          article_id: string;
+          paragraph_id: string;
+          language: "en" | "vi";
+          selected_text: string;
+          color: "yellow" | "green" | "blue" | "pink" | "purple";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          article_id: string;
+          paragraph_id: string;
+          language: "en" | "vi";
+          selected_text: string;
+          color: "yellow" | "green" | "blue" | "pink" | "purple";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          article_id?: string;
+          paragraph_id?: string;
+          language?: "en" | "vi";
+          selected_text?: string;
+          color?: "yellow" | "green" | "blue" | "pink" | "purple";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reading_highlights_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reading_highlights_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "reading_articles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       reviews: {
         Row: {
           id: string;

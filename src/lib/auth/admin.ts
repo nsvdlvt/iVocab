@@ -12,6 +12,8 @@ export type Action =
   | "manageSettings" 
   | "manageSystem";
 
+export const READING_ADMIN_EMAIL = "dungbnlvt@gmail.com";
+
 // Currently only admin role exists, but this structure allows easy expansion
 const rolePermissions: Record<Role, Action[]> = {
   user: [],
@@ -99,4 +101,18 @@ export async function requirePermission(action: Action) {
   }
 
   return { user, role, supabase };
+}
+
+export async function requireReadingAdmin() {
+  const { user, supabase } = await getAdminSession();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (user.email !== READING_ADMIN_EMAIL) {
+    redirect("/403");
+  }
+
+  return { user, supabase };
 }

@@ -18,25 +18,19 @@ export type BilingualParagraph = {
   highlightedWords?: HighlightedWord[];
 };
 
-export type BilingualSection = {
-  id: string;
-  sourceTitle?: string;
-  translatedTitle?: string;
-  blocks: BilingualParagraph[];
-};
-
 export type BilingualDocument = {
   id: string;
   title: string;
   sourceLanguage: string;
   targetLanguage: string;
-  sections: BilingualSection[];
+  paragraphs: BilingualParagraph[];
 };
 
 export type ReadingLesson = BilingualDocument & {
   topic: string;
   difficulty: string;
   estimatedReadingTime: string;
+  coverImageUrl?: string | null;
   vocabularyStats: {
     newWords: number;
     knownWords: number;
@@ -46,4 +40,13 @@ export type ReadingLesson = BilingualDocument & {
   progress: number;
   lessonIndex: number;
   lessonCount: number;
+};
+
+export type ReadingHighlight = {
+  id: string;
+  articleId: string;
+  paragraphId: string;
+  language: "en" | "vi";
+  selectedText: string;
+  color: "yellow" | "green" | "blue" | "pink" | "purple";
 };

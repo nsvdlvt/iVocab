@@ -1,38 +1,49 @@
 "use client";
 
-import { BookOpenText, Eye, EyeOff, Highlighter, NotebookPen, Settings2 } from "lucide-react";
+import { Eye, EyeOff, Highlighter, MoreHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export type ReadingMode = "bilingual" | "english-only" | "vietnamese-only" | "translation-on-demand";
+export type HighlightColor = "yellow" | "green" | "blue" | "pink" | "purple";
 
 export interface ReadingToolbarProps {
   hideMeaning: boolean;
   highlightEnabled: boolean;
-  readingMode: ReadingMode;
+  highlightColor: HighlightColor;
+  readingFontSize: number;
+  canZoomOut: boolean;
+  canZoomIn: boolean;
   onToggleHideMeaning: () => void;
   onToggleHighlight: () => void;
-  onChangeReadingMode: (mode: ReadingMode) => void;
-  onOpenNotes: () => void;
-  onOpenVocabulary: () => void;
-  onOpenSettings: () => void;
+  onChangeHighlightColor: (color: HighlightColor) => void;
+  onZoomOut: () => void;
+  onZoomIn: () => void;
+  onOpenNotes?: () => void;
+  onOpenVocabulary?: () => void;
+  onOpenSettings?: () => void;
 }
 
-const modeLabel: Record<ReadingMode, string> = {
-  bilingual: "Song ngữ",
-  "english-only": "Chỉ tiếng Anh",
-  "vietnamese-only": "Chỉ tiếng Việt",
-  "translation-on-demand": "Dịch khi cần",
-};
+const highlightColors: Array<{ value: HighlightColor; className: string }> = [
+  { value: "yellow", className: "bg-amber-200" },
+  { value: "green", className: "bg-emerald-200" },
+  { value: "blue", className: "bg-sky-200" },
+  { value: "pink", className: "bg-pink-200" },
+  { value: "purple", className: "bg-violet-200" },
+];
 
 export function ReadingToolbar({
   hideMeaning,
   highlightEnabled,
-  readingMode,
+  highlightColor,
+  readingFontSize,
+  canZoomOut,
+  canZoomIn,
   onToggleHideMeaning,
   onToggleHighlight,
-  onChangeReadingMode,
+  onChangeHighlightColor,
+  onZoomOut,
+  onZoomIn,
   onOpenNotes,
   onOpenVocabulary,
   onOpenSettings,
@@ -53,49 +64,82 @@ export function ReadingToolbar({
             Ẩn/Hiện nghĩa
           </button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="outline" className="rounded-full px-3">
-                <BookOpenText className="h-4 w-4" />
-                {modeLabel[readingMode]}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-52">
-              <DropdownMenuItem onSelect={() => onChangeReadingMode("bilingual")}>Song ngữ</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onChangeReadingMode("english-only")}>Chỉ tiếng Anh</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onChangeReadingMode("vietnamese-only")}>Chỉ tiếng Việt</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onChangeReadingMode("translation-on-demand")}>Dịch khi cần</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2 rounded-full border border-border bg-background px-2 py-1">
+            <button
+              type="button"
+              onClick={onToggleHighlight}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                highlightEnabled ? "bg-foreground text-background" : "text-foreground hover:bg-muted"
+              )}
+            >
+              <Highlighter className="h-4 w-4" />
+              Highlight
+            </button>
+            {highlightEnabled ? (
+              <div className="flex items-center gap-1 pl-1">
+                {highlightColors.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => onChangeHighlightColor(item.value)}
+                    aria-label={`Chọn màu ${item.value}`}
+                    aria-pressed={highlightColor === item.value}
+                    className={cn(
+                      "h-6 w-6 rounded-full border transition-all",
+                      item.className,
+                      highlightColor === item.value ? "border-slate-950 ring-2 ring-slate-950/15" : "border-border/70"
+                    )}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant={highlightEnabled ? "default" : "outline"} className="rounded-full px-3">
-                <Highlighter className="h-4 w-4" />
-                Highlight
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
-              <DropdownMenuItem onSelect={onToggleHighlight}>Bật/Tắt highlight</DropdownMenuItem>
-              <DropdownMenuItem onSelect={onToggleHighlight}>Chọn màu khi bôi đen</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1 rounded-full border border-border bg-background px-1 py-1">
+            <button
+              type="button"
+              onClick={onZoomOut}
+              disabled={!canZoomOut}
+              title="Thu nhỏ chữ"
+              aria-label="Thu nhỏ chữ"
+              className={cn(
+                "inline-flex size-8 items-center justify-center rounded-full transition-colors",
+                canZoomOut ? "hover:bg-muted" : "cursor-not-allowed opacity-40"
+              )}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <div className="h-5 w-px bg-border" />
+            <button
+              type="button"
+              onClick={onZoomIn}
+              disabled={!canZoomIn}
+              title="Phóng to chữ"
+              aria-label="Phóng to chữ"
+              className={cn(
+                "inline-flex size-8 items-center justify-center rounded-full transition-colors",
+                canZoomIn ? "hover:bg-muted" : "cursor-not-allowed opacity-40"
+              )}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={onOpenVocabulary} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted">
-            <BookOpenText className="h-4 w-4" />
-            Từ vựng
-          </button>
-          <button type="button" onClick={onOpenNotes} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted">
-            <NotebookPen className="h-4 w-4" />
-            Ghi chú
-          </button>
-          <button type="button" onClick={onOpenSettings} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-muted">
-            <Settings2 className="h-4 w-4" />
-            Cài đặt
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="inline-flex size-8 items-center justify-center rounded-full border border-transparent bg-background text-foreground transition-colors hover:bg-muted"
+            aria-label="Mở menu"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onSelect={() => onOpenVocabulary?.()}>Từ vựng</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onOpenNotes?.()}>Ghi chú</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onOpenSettings?.()}>Cài đặt</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
