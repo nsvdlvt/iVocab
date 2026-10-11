@@ -107,25 +107,25 @@ export function LearnMCQ({
           const isWrongSelected = isSelected && !isCorrectOption;
 
           let btnClass =
-            "border-border/80 bg-card hover:bg-accent/50 hover:border-primary/40 cursor-pointer text-foreground";
+            "border-2 border-b-[4px] border-border/90 bg-card hover:border-primary/50 hover:bg-primary/[0.03] active:translate-y-[2px] active:border-b-2 cursor-pointer text-foreground shadow-2xs";
           let kbdClass = "bg-muted/80 text-muted-foreground border-border";
 
           if (isSubmitted) {
             if (isCorrectOption) {
               btnClass =
-                "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 cursor-default ring-1 ring-emerald-500/30";
+                "border-2 border-b-[4px] border-emerald-500 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 cursor-default ring-1 ring-emerald-500/30";
               kbdClass = "bg-emerald-500 text-white border-emerald-500 shadow-none";
             } else if (isWrongSelected) {
               btnClass =
-                "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-300 cursor-default ring-1 ring-rose-500/30";
+                "border-2 border-b-[4px] border-rose-500 bg-rose-500/10 text-rose-800 dark:text-rose-200 cursor-default ring-1 ring-rose-500/30";
               kbdClass = "bg-rose-500 text-white border-rose-500 shadow-none";
             } else {
-              btnClass = "bg-muted/20 border-border/40 text-muted-foreground/50 cursor-default";
+              btnClass = "border-2 border-b-2 border-border/40 bg-muted/20 text-muted-foreground/50 cursor-default opacity-50";
               kbdClass = "bg-muted/30 text-muted-foreground/40 border-border/30 shadow-none";
             }
           } else if (isSelected) {
             btnClass =
-              "border-primary bg-primary/5 text-primary hover:bg-primary/10 cursor-pointer ring-1 ring-primary/20";
+              "border-2 border-b-[4px] border-primary bg-primary/[0.08] text-primary hover:bg-primary/10 cursor-pointer ring-1 ring-primary/20";
             kbdClass = "bg-primary text-primary-foreground border-primary shadow-none";
           }
 

@@ -7,6 +7,7 @@ import { SectionHeader } from "@/components/common/SectionHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AppearanceSettings } from "@/components/features/settings/AppearanceSettings";
 import { requireUser } from "@/lib/auth/require-user";
 
 export const dynamic = "force-dynamic";
@@ -121,36 +122,9 @@ export default async function SettingsPage() {
           <SectionCard className="space-y-6">
             <SectionHeader
               title="Tùy chọn giao diện"
-              description="Lựa chọn chủ đề sáng/tối cho hệ thống"
+              description="Lựa chọn chủ đề sáng hoặc tối phù hợp với thói quen học tập của bạn"
             />
-            <div className="grid gap-4 sm:grid-cols-3 max-w-2xl">
-              <div className="border border-border rounded-2xl p-4 space-y-3 bg-card hover:border-primary/50 cursor-pointer transition-all">
-                <div className="h-20 w-full rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-800 text-xs font-bold shadow-sm">
-                  Chủ đề Sáng
-                </div>
-                <div className="text-center font-bold text-xs text-foreground">Sáng (Light)</div>
-              </div>
-
-              <div className="border border-primary rounded-2xl p-4 space-y-3 bg-card cursor-pointer transition-all shadow-sm">
-                <div className="h-20 w-full rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-300 text-xs font-bold shadow-sm">
-                  Chủ đề Tối
-                </div>
-                <div className="text-center font-bold text-xs text-foreground">Tối (Dark)</div>
-              </div>
-
-              <div className="border border-border rounded-2xl p-4 space-y-3 bg-card hover:border-primary/50 cursor-pointer transition-all">
-                <div className="h-20 w-full rounded-xl bg-gradient-to-r from-slate-50 to-zinc-950 border border-border flex items-center justify-center text-foreground text-xs font-bold shadow-sm">
-                  Mặc định hệ thống
-                </div>
-                <div className="text-center font-bold text-xs text-foreground">Hệ thống (System)</div>
-              </div>
-            </div>
-            <div className="pt-2">
-              <Button className="rounded-xl gap-2 cursor-pointer shadow-sm">
-                <Save className="h-4 w-4" />
-                Lưu giao diện
-              </Button>
-            </div>
+            <AppearanceSettings />
           </SectionCard>
         </TabsContent>
 

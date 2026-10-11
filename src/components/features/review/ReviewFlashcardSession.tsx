@@ -503,7 +503,7 @@ export function ReviewFlashcardSession({
               size="lg"
               onClick={() => submitAction("not-yet")}
               disabled={!!activeAction}
-              className="border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300"
+              className="border-2 border-b-[4px] border-rose-500/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs"
               aria-label="Chưa thuộc"
             >
               <X className="h-4 w-4" />
@@ -517,7 +517,7 @@ export function ReviewFlashcardSession({
               size="lg"
               onClick={() => submitAction("known")}
               disabled={!!activeAction}
-              className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
+              className="border-2 border-b-[4px] border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs"
               aria-label="Đã thuộc"
             >
               <Check className="h-4 w-4" />

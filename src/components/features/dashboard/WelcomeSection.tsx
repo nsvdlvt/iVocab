@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
+import { VocabeeMascot } from "@/components/common/VocabeeMascot";
 import type { Database } from "@/types/database";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
@@ -55,9 +56,17 @@ export function WelcomeSection({
             )}
           </div>
 
-          <h1 className="text-xl sm:text-2xl md:text-[1.7rem] font-bold tracking-tight text-foreground">
-            {getGreeting()}, <span className="text-primary">{displayName}</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <VocabeeMascot
+              mood={dueToday > 0 ? "encourage" : "celebrate"}
+              size="sm"
+              speech=""
+              className="shrink-0"
+            />
+            <h1 className="text-xl sm:text-2xl md:text-[1.7rem] font-bold tracking-tight text-foreground">
+              {getGreeting()}, <span className="text-primary">{displayName}</span>
+            </h1>
+          </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed">
             {dueToday > 0

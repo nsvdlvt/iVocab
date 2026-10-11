@@ -19,6 +19,14 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/15 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        playful:
+          "bg-primary text-primary-foreground border-2 border-b-[4px] border-primary-foreground/20 shadow-xs hover:brightness-105 active:translate-y-[2px] active:border-b-2 font-semibold tracking-wide",
+        success:
+          "bg-emerald-600 text-white border-2 border-b-[4px] border-emerald-700/50 shadow-xs hover:bg-emerald-500 active:translate-y-[2px] active:border-b-2 font-semibold tracking-wide",
+        amber:
+          "bg-amber-500 text-amber-950 border-2 border-b-[4px] border-amber-600/60 shadow-xs hover:bg-amber-400 active:translate-y-[2px] active:border-b-2 font-semibold tracking-wide",
+        outlinePlayful:
+          "border-2 border-b-[4px] border-border bg-card shadow-2xs hover:border-primary/40 hover:bg-primary/[0.04] active:translate-y-[2px] active:border-b-2 font-semibold text-foreground",
       },
       size: {
         default:

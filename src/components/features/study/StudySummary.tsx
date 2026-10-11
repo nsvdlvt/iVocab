@@ -4,6 +4,7 @@ import React from "react";
 import { CheckCircle2, XCircle, Clock, Award, RotateCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
+import { VocabeeMascot } from "@/components/common/VocabeeMascot";
 
 interface StudySummaryProps {
   totalWords: number;
@@ -28,13 +29,20 @@ export function StudySummary({
   onBackToSet,
   title = "Hoàn thành phiên học!",
 }: StudySummaryProps) {
+  const encouragement =
+    accuracy >= 80
+      ? "Xuất sắc! Trí nhớ phản xạ của bạn đạt mức đỉnh cao! 🐝✨"
+      : accuracy >= 50
+        ? "Làm rất tốt! Bạn đã củng cố đáng kể các từ vựng này!"
+        : "Đừng nản lòng! Lặp lại ngắt quãng sẽ giúp bạn làm chủ toàn bộ các từ này!";
+
   return (
     <div className="w-full max-w-xl mx-auto space-y-6 select-none animate-in fade-in zoom-in-95 duration-300 py-4">
       <SectionCard className="text-center p-6 sm:p-8 space-y-6 border-border/80 rounded-2xl">
-        <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-          <Award className="h-7 w-7" />
+        <div className="flex justify-center">
+          <VocabeeMascot mood="celebrate" size="lg" speech={encouragement} speechPosition="bottom" />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 pt-2">
           <h2 className="text-2xl font-bold tracking-tight text-foreground">{title}</h2>
           <p className="text-sm text-muted-foreground">Bạn đã hoàn thành tất cả các mục từ của vòng này.</p>
         </div>

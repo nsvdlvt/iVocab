@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, GraduationCap, Home } from "lucide-react";
+import { ArrowRight, GraduationCap, Home } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionCard } from "@/components/common/SectionCard";
+import { VocabeeMascot } from "@/components/common/VocabeeMascot";
 import { requireUser } from "@/lib/auth/require-user";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
@@ -24,13 +25,16 @@ export default async function ReviewSessionCompletePage({ params }: PageProps) {
 
   return (
     <PageContainer className="py-12">
-      <SectionCard className="mx-auto max-w-lg p-8 sm:p-10 text-center space-y-5">
+      <SectionCard className="mx-auto max-w-lg p-8 sm:p-10 text-center space-y-6">
         <div className="flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="h-7 w-7" />
-          </div>
+          <VocabeeMascot
+            mood="celebrate"
+            size="lg"
+            speech="Tuyệt vời! Bạn vừa hoàn thành xuất sắc lượt ôn tập hôm nay! 🐝🎉"
+            speechPosition="bottom"
+          />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 pt-2">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Hoàn thành phiên ôn tập!
           </h1>
