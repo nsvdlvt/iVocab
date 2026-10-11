@@ -5,12 +5,9 @@ import { RotateCcw } from "lucide-react";
 
 export function OfflineRetryButton() {
   return (
-    <Button
-      onClick={() => window.location.reload()}
-      className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-    >
+    <Button onClick={() => window.location.reload()}>
       <RotateCcw className="h-4 w-4" />
-      Thử lại
+      <span>Thử kết nối lại</span>
     </Button>
   );
 }

@@ -54,11 +54,11 @@ const HIGHLIGHT_COLORS: Array<{ value: HighlightColor; label: string; className:
 ];
 
 const highlightClass: Record<HighlightColor, string> = {
-  yellow: "bg-yellow-200/90 decoration-yellow-500",
-  green: "bg-emerald-200/90 decoration-emerald-500",
-  blue: "bg-sky-200/90 decoration-sky-500",
-  pink: "bg-pink-200/90 decoration-pink-500",
-  purple: "bg-violet-200/90 decoration-violet-500",
+  yellow: "bg-yellow-200/90 text-slate-900 dark:bg-yellow-500/30 dark:text-yellow-100 decoration-yellow-500",
+  green: "bg-emerald-200/90 text-slate-900 dark:bg-emerald-500/30 dark:text-emerald-100 decoration-emerald-500",
+  blue: "bg-sky-200/90 text-slate-900 dark:bg-sky-500/30 dark:text-sky-100 decoration-sky-500",
+  pink: "bg-pink-200/90 text-slate-900 dark:bg-pink-500/30 dark:text-pink-100 decoration-pink-500",
+  purple: "bg-violet-200/90 text-slate-900 dark:bg-violet-500/30 dark:text-violet-100 decoration-violet-500",
 };
 
 function getNodeOffset(container: HTMLElement, node: Node, nodeOffset: number) {
@@ -291,10 +291,10 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
   };
 
   return (
-    <main className="min-h-screen bg-[#f6f8fb] text-slate-950">
+    <main className="min-h-screen bg-background text-foreground">
       <div className={cn("mx-auto w-full px-4 py-5 md:px-6 md:py-7", shouldShowTranslation ? "max-w-[1320px]" : "max-w-[940px]")}>
-        <header className="mb-5 border-b border-slate-200 pb-4">
-          <Link href="/dashboard" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-950">
+        <header className="mb-5 border-b border-border pb-4">
+          <Link href="/dashboard" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Quay lại
           </Link>
@@ -302,24 +302,24 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">{article.title}</h1>
-                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{article.title}</h1>
+                <span className="rounded-full border border-border bg-card px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                   Bản nháp
                 </span>
               </div>
-              <p className="mt-2 text-sm font-medium text-slate-500">
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
                 Technology · B1-B2 · 6 phút đọc · 24 từ
               </p>
             </div>
 
-            <button type="button" aria-label="Đánh dấu yêu thích" className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 transition-colors hover:text-amber-500">
+            <button type="button" aria-label="Đánh dấu yêu thích" className="rounded-full border border-border bg-card p-2 text-muted-foreground transition-colors hover:text-amber-500">
               <Star className="h-4 w-4" />
             </button>
           </div>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur md:px-5">
+        <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-5">
             <Button
               type="button"
               variant={highlightModeEnabled ? "default" : "outline"}
@@ -335,7 +335,7 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
             </Button>
 
             {highlightModeEnabled ? (
-              <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1.5">
+              <div className="flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1.5">
                 {HIGHLIGHT_COLORS.map((color) => (
                   <button
                     key={color.value}
@@ -346,8 +346,8 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
                       "relative h-7 w-7 rounded-full border transition-all",
                       color.className,
                       selectedHighlightColor === color.value
-                        ? "border-slate-950 ring-2 ring-slate-950/15"
-                        : "border-slate-300 hover:scale-105"
+                        ? "border-foreground ring-2 ring-primary/30"
+                        : "border-border hover:scale-105"
                     )}
                     onClick={() => setSelectedHighlightColor(color.value)}
                   >
@@ -402,7 +402,7 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
             style={{ gridTemplateRows: shouldShowTranslation ? `auto repeat(${article.paragraphs.length}, auto)` : undefined }}
           >
             {shouldShowTranslation ? (
-              <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-slate-200 md:block" />
+              <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-border md:block" />
             ) : null}
             <ColumnHeader title="English" />
             {shouldShowTranslation ? (
@@ -421,7 +421,7 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
                     paragraphRefs.current[paragraph.id] = node;
                   }}
                   data-paragraph-id={paragraph.id}
-                  className="text-[15px] leading-8 text-slate-700"
+                  className="text-[15px] leading-8 text-foreground"
                   onMouseUp={() => handleSelection(paragraph.id)}
                   onKeyUp={() => handleSelection(paragraph.id)}
                 >
@@ -444,16 +444,16 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
               : null}
           </div>
 
-          <footer className="border-t border-slate-200 bg-slate-50/70 px-5 py-4 md:px-7">
+          <footer className="border-t border-border bg-muted/30 px-5 py-4 md:px-7">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-700">Từ vựng trong bài</p>
+                <p className="text-sm font-semibold text-foreground">Từ vựng trong bài</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {article.words.map((item) => (
-                  <span key={item.word} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-                    <strong className="font-semibold text-slate-950">{item.word}</strong>
-                    <span className="text-slate-500">{item.meaning}</span>
+                  <span key={item.word} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm text-foreground">
+                    <strong className="font-semibold text-primary">{item.word}</strong>
+                    <span className="text-muted-foreground">{item.meaning}</span>
                   </span>
                 ))}
               </div>
@@ -475,8 +475,8 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
 
 function ColumnHeader({ title }: { title: string }) {
   return (
-    <div className="border-b border-slate-200 pb-3">
-      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{title}</h2>
+    <div className="border-b border-border pb-3">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</h2>
     </div>
   );
 }
@@ -493,7 +493,7 @@ function ArticleBlock({
   children: ReactNode;
 }) {
   return (
-    <article className={cn("h-full min-w-0 border-b border-slate-200/70 pb-7", className)} style={style}>
+    <article className={cn("h-full min-w-0 border-b border-border/70 pb-7", className)} style={style}>
       <span className="sr-only">Paragraph {number}</span>
       {children}
     </article>
@@ -518,16 +518,16 @@ function MobileParagraph({
   setRef: (node: HTMLParagraphElement | null) => void;
 }) {
   return (
-    <article className="border-b border-slate-200/70 pb-5">
+    <article className="border-b border-border/70 pb-5">
       <span className="sr-only">Paragraph {number}</span>
       <div className="space-y-4">
         <div>
-          <p ref={setRef} className="text-[15px] leading-7 text-slate-700" onMouseUp={() => onSelection(paragraph.id)} onKeyUp={() => onSelection(paragraph.id)}>
+          <p ref={setRef} className="text-[15px] leading-7 text-foreground" onMouseUp={() => onSelection(paragraph.id)} onKeyUp={() => onSelection(paragraph.id)}>
             {renderText(paragraph)}
           </p>
         </div>
         {showTranslation ? (
-          <div className="border-l-2 border-emerald-200 pl-4">
+          <div className="border-l-2 border-primary/40 pl-4">
             <TranslationText state={translation} />
           </div>
         ) : null}
@@ -539,7 +539,7 @@ function MobileParagraph({
 function TranslationText({ state }: { state?: TranslationState[string] }) {
   if (!state || state.status === "idle" || state.status === "loading") {
     return (
-      <p className="inline-flex items-center gap-2 text-[15px] leading-8 text-slate-500">
+      <p className="inline-flex items-center gap-2 text-[15px] leading-8 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Đang dịch đoạn này...
       </p>
@@ -547,10 +547,10 @@ function TranslationText({ state }: { state?: TranslationState[string] }) {
   }
 
   if (state.status === "error") {
-    return <p className="text-[15px] leading-8 text-rose-600">Không dịch được đoạn này. Hãy tắt/bật dịch để thử lại.</p>;
+    return <p className="text-[15px] leading-8 text-rose-600 dark:text-rose-400">Không dịch được đoạn này. Hãy tắt/bật dịch để thử lại.</p>;
   }
 
-  return <p className="text-[15px] leading-8 text-slate-700">{state.text}</p>;
+  return <p className="text-[15px] leading-8 text-muted-foreground">{state.text}</p>;
 }
 
 function HighlightPopover({
@@ -564,7 +564,7 @@ function HighlightPopover({
 }) {
   return (
     <div
-      className="fixed z-50 flex -translate-x-1/2 -translate-y-full items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+      className="fixed z-50 flex -translate-x-1/2 -translate-y-full items-center gap-2 rounded-2xl border border-border bg-popover p-2 shadow-xl"
       style={{ left: popover.x, top: popover.y - 10 }}
     >
       {HIGHLIGHT_COLORS.map((color) => (
@@ -572,11 +572,11 @@ function HighlightPopover({
           key={color.value}
           type="button"
           aria-label={color.label}
-          className={cn("h-7 w-7 rounded-full border border-slate-300", color.className)}
+          className={cn("h-7 w-7 rounded-full border border-border", color.className)}
           onClick={() => onPick(color.value)}
         />
       ))}
-      <button type="button" aria-label="Xóa highlight" className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100" onClick={onDelete}>
+      <button type="button" aria-label="Xóa highlight" className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground" onClick={onDelete}>
         <Trash2 className="h-4 w-4" />
       </button>
     </div>

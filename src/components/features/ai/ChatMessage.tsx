@@ -12,6 +12,30 @@ interface ChatMessageProps {
   userName?: string;
 }
 
+function renderFormattedText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={idx} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code
+          key={idx}
+          className="px-1.5 py-0.5 rounded bg-muted font-mono text-xs"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <React.Fragment key={idx}>{part}</React.Fragment>;
+  });
+}
+
 export function ChatMessage({ role, content, timestamp = "Vừa xong" }: ChatMessageProps) {
   const isAI = role === "assistant";
 
@@ -40,7 +64,7 @@ export function ChatMessage({ role, content, timestamp = "Vừa xong" }: ChatMes
               : "bg-primary text-primary-foreground"
           )}
         >
-          {content}
+          {isAI ? renderFormattedText(content) : content}
         </div>
         <span className={cn("text-[9px] text-muted-foreground block px-1", !isAI && "text-right")}>
           {timestamp}

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { signInWithOAuth } from "@/lib/auth/oauth";
+import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "./GoogleIcon";
 import { toast } from "sonner";
 
@@ -34,25 +35,27 @@ export function SocialAuthSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+      <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
-        <span>OR</span>
+        <span>Hoặc tiếp tục với</span>
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <button
+      <Button
         type="button"
-        className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background font-semibold shadow-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        variant="outline"
+        size="lg"
+        className="h-10 w-full rounded-xl font-semibold shadow-2xs"
         disabled={isGoogleLoading}
         onClick={handleGoogleSignIn}
       >
         {isGoogleLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
-          <GoogleIcon className="h-4 w-4" />
+          <GoogleIcon className="mr-2 h-4 w-4" />
         )}
         Tiếp tục với Google
-      </button>
+      </Button>
     </div>
   );
 }

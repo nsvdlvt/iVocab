@@ -32,7 +32,7 @@ export function ReadingHeader({
               size="icon-sm"
               onClick={onToggleFavorite}
               aria-label={isFavorite ? "Bỏ yêu thích" : "Đánh dấu yêu thích"}
-              className={isFavorite ? "border-amber-300 bg-amber-50 text-amber-600" : ""}
+              className={isFavorite ? "border-amber-400/50 bg-amber-500/10 text-amber-600 dark:text-amber-400" : ""}
             >
               <Star className={isFavorite ? "h-4 w-4 fill-current" : "h-4 w-4"} />
             </Button>

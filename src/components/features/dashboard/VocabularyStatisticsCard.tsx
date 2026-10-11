@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BookOpen, Clock3, GraduationCap, Medal } from "lucide-react";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { cn } from "@/lib/utils";
 import type { VocabularyStats } from "@/lib/statistics/vocabulary-stats.service";
 
 interface VocabularyStatisticsCardProps {
@@ -15,78 +16,80 @@ const STAT_ITEMS = [
     label: "Tổng số từ",
     icon: BookOpen,
     iconClassName: "text-sky-600 dark:text-sky-400",
-    iconBgClassName: "bg-sky-500/10",
+    iconBgClassName: "bg-sky-500/10 border-sky-500/20",
+    href: "/vocabulary-management",
   },
   {
     key: "learnedWords",
     label: "Đã thuộc",
     icon: GraduationCap,
     iconClassName: "text-emerald-600 dark:text-emerald-400",
-    iconBgClassName: "bg-emerald-500/10",
+    iconBgClassName: "bg-emerald-500/10 border-emerald-500/20",
+    href: "/vocabulary-management?status=learned",
   },
   {
     key: "masteredWords",
     label: "Thành thạo",
     icon: Medal,
     iconClassName: "text-amber-600 dark:text-amber-400",
-    iconBgClassName: "bg-amber-500/10",
+    iconBgClassName: "bg-amber-500/10 border-amber-500/20",
+    href: "/vocabulary-management?status=mastered",
   },
   {
     key: "dueToday",
-    label: "Từ đến hạn",
+    label: "Đến hạn ôn",
     icon: Clock3,
-    iconClassName: "text-rose-600 dark:text-rose-300",
-    iconBgClassName: "bg-rose-500/15",
-    cardClassName:
-      "border-rose-200/70 bg-rose-50/80 transition-colors hover:border-rose-300 hover:bg-rose-100/80 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:border-rose-400/30 dark:hover:bg-rose-500/15",
+    iconClassName: "text-rose-600 dark:text-rose-400",
+    iconBgClassName: "bg-rose-500/10 border-rose-500/20",
+    href: "/review",
   },
 ] as const;
 
 export function VocabularyStatisticsCard({ stats }: VocabularyStatisticsCardProps) {
   return (
-    <SectionCard className="flex h-full flex-col">
+    <SectionCard className="flex h-full flex-col justify-between gap-4">
       <SectionHeader
-        title="Thống kê từ vựng"
-        description="Tổng quan tiến độ học tập của bạn"
+        title="Thống kê vốn từ"
+        description="Tổng quan mức độ ghi nhớ từ vựng"
+        className="mb-0"
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         {STAT_ITEMS.map((item) => {
           const Icon = item.icon;
           const value = stats[item.key];
-          const isDueWords = item.key === "dueToday";
+          const isDueWords = item.key === "dueToday" && value > 0;
 
-          const cardContent = (
-            <div
-              className={[
-                "rounded-2xl border border-border/70 bg-muted/20 p-4",
-                "cursor-pointer transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md",
-                isDueWords ? item.cardClassName : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              className={cn(
+                "group rounded-xl border border-border/70 bg-muted/20 p-3 transition-all duration-150 hover:border-primary/30 hover:bg-muted/40",
+                isDueWords &&
+                  "border-rose-500/25 bg-rose-500/[0.06] hover:border-rose-500/40 dark:border-rose-500/30 dark:bg-rose-500/10"
+              )}
             >
-              <div className="flex items-center gap-3">
-                <div className={`rounded-xl p-2 ${item.iconBgClassName}`}>
-                  <Icon className={`h-5 w-5 ${item.iconClassName}`} />
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
+                    item.iconBgClassName
+                  )}
+                >
+                  <Icon className={cn("h-4 w-4", item.iconClassName)} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
-                  <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+                  <p className="text-[11px] font-medium text-muted-foreground truncate">
+                    {item.label}
+                  </p>
+                  <p className="text-lg font-bold tracking-tight tabular-nums text-foreground leading-tight mt-0.5">
+                    {value}
+                  </p>
                 </div>
               </div>
-            </div>
+            </Link>
           );
-
-          if (isDueWords) {
-            return (
-              <Link key={item.key} href="/review" aria-label="Đi tới trang ôn tập">
-                {cardContent}
-              </Link>
-            );
-          }
-
-          return <div key={item.key}>{cardContent}</div>;
         })}
       </div>
     </SectionCard>

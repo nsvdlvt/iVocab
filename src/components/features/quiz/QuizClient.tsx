@@ -48,17 +48,17 @@ export function QuizClient({ questions }: QuizClientProps) {
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-emerald-500/10 p-4">
-            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{correctCount}</div>
-            <p className="text-xs text-muted-foreground">Đúng</p>
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">{correctCount}</div>
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">Đúng</p>
           </div>
-          <div className="rounded-xl bg-rose-500/10 p-4">
-            <div className="text-2xl font-extrabold text-rose-600 dark:text-rose-400">{total - correctCount}</div>
-            <p className="text-xs text-muted-foreground">Sai</p>
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4">
+            <div className="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">{total - correctCount}</div>
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">Sai</p>
           </div>
-          <div className="rounded-xl bg-primary/10 p-4">
-            <div className="text-2xl font-extrabold text-primary">{accuracy}%</div>
-            <p className="text-xs text-muted-foreground">Độ chính xác</p>
+          <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+            <div className="text-2xl font-extrabold text-primary tabular-nums">{accuracy}%</div>
+            <p className="text-xs font-medium text-muted-foreground mt-0.5">Độ chính xác</p>
           </div>
         </div>
         <Button
@@ -67,7 +67,7 @@ export function QuizClient({ questions }: QuizClientProps) {
             setCompleted(false);
             setCorrectCount(0);
           }}
-          className="rounded-xl cursor-pointer"
+          className="rounded-xl cursor-pointer font-bold px-6"
         >
           <RotateCw className="h-4 w-4 mr-2" />
           Làm lại bài thi
@@ -83,8 +83,11 @@ export function QuizClient({ questions }: QuizClientProps) {
       <QuizProgress current={currentIndex + 1} total={total} />
 
       {/* Question card */}
-      <SectionCard className="p-6 md:p-8 bg-card border-border shadow-sm text-center">
-        <h4 className="text-lg md:text-xl font-bold text-foreground leading-relaxed">
+      <SectionCard className="p-6 md:p-10 bg-card border-border shadow-sm text-center space-y-2">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Chọn nghĩa tiếng Việt đúng
+        </p>
+        <h4 className="text-xl md:text-2xl font-extrabold text-foreground leading-relaxed">
           Nghĩa của từ &ldquo;<span className="text-primary">{current.word}</span>&rdquo; là gì?
         </h4>
       </SectionCard>

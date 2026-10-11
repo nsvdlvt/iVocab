@@ -1,12 +1,14 @@
 import React from "react";
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
+import { ArrowRight, GraduationCap } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { UpcomingReviewSummary } from "@/repositories/review.repository";
 import { UpcomingReviewsForecast } from "../review/UpcomingReviewsForecast";
+import { cn } from "@/lib/utils";
 
 interface TodayReviewProps {
   dueToday: number;
@@ -15,41 +17,69 @@ interface TodayReviewProps {
   forecast: UpcomingReviewSummary;
 }
 
-export function TodayReview({ dueToday, masteredWords, learningWords, forecast }: TodayReviewProps) {
+export function TodayReview({
+  dueToday,
+  masteredWords,
+  learningWords,
+  forecast,
+}: TodayReviewProps) {
   return (
-    <SectionCard className="flex flex-col h-full justify-between space-y-4">
-      <div>
-        <SectionHeader title="Ôn tập hôm nay" description="Dữ liệu lấy từ SRS hiện có" />
-        <div className="my-5 grid grid-cols-3 gap-3">
-          <div className="rounded-xl border bg-muted/20 px-3 py-4">
-            <div className="text-3xl font-extrabold text-primary">{dueToday}</div>
-            <div className="text-xs text-muted-foreground">Cần ôn</div>
+    <SectionCard className="flex flex-col h-full justify-between gap-5">
+      <div className="space-y-4">
+        <SectionHeader
+          title="Hàng đợi ôn tập SRS"
+          description="Lặp lại ngắt quãng tối ưu hóa trí nhớ dài hạn"
+          className="mb-0"
+          action={
+            <Badge variant={dueToday > 0 ? "warning" : "success"}>
+              {dueToday > 0 ? `${dueToday} đến hạn` : "Hoàn tất"}
+            </Badge>
+          }
+        />
+
+        <div className="grid grid-cols-3 gap-2.5">
+          <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-3 text-center">
+            <div className="text-2xl font-bold tabular-nums text-primary">
+              {dueToday}
+            </div>
+            <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+              Cần ôn
+            </div>
           </div>
-          <div className="rounded-xl border bg-muted/20 px-3 py-4">
-            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{masteredWords}</div>
-            <div className="text-xs text-muted-foreground">Thuộc</div>
+          <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-3 text-center">
+            <div className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
+              {learningWords}
+            </div>
+            <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+              Đang học
+            </div>
           </div>
-          <div className="rounded-xl border bg-muted/20 px-3 py-4">
-            <div className="text-3xl font-extrabold text-orange-600 dark:text-orange-400">{learningWords}</div>
-            <div className="text-xs text-muted-foreground">Đang học</div>
+          <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-3 text-center">
+            <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {masteredWords}
+            </div>
+            <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+              Thành thạo
+            </div>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-          {dueToday > 0
-            ? "Bấm Bắt đầu ôn để làm các từ đang đến hạn ngay bây giờ."
-            : "🎉 Tuyệt vời! Bạn đã hoàn thành hết các bài ôn đã lên lịch hôm nay."}
-        </p>
-        <UpcomingReviewsForecast forecast={forecast} />
+
+        <UpcomingReviewsForecast forecast={forecast} compact />
       </div>
+
       <Link
         href={ROUTES.REVIEW}
-        className={buttonVariants({
-          variant: dueToday > 0 ? "default" : "outline",
-          className: "w-full rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center justify-center h-10",
-        })}
+        className={cn(
+          buttonVariants({
+            variant: dueToday > 0 ? "default" : "outline",
+            size: "lg",
+          }),
+          "w-full justify-center"
+        )}
       >
         <GraduationCap className="h-4 w-4" />
-        {dueToday > 0 ? "Bắt đầu ôn" : "Mở trang ôn"}
+        <span>{dueToday > 0 ? `Bắt đầu ôn tập (${dueToday} từ)` : "Mở trung tâm ôn tập SRS"}</span>
+        <ArrowRight className="h-4 w-4" />
       </Link>
     </SectionCard>
   );

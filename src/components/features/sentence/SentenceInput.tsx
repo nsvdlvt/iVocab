@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 import { Lightbulb, FileText, RefreshCw, Sparkles } from "lucide-react";
 
 interface SentenceInputProps {
@@ -57,68 +56,64 @@ export function SentenceInput({
   const isAnotherExample = exampleLabel.toLowerCase().includes("another");
 
   return (
-    <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden">
-      {/* Premium glow line at top */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-500 opacity-80" />
-
-      <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-        <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-        Write a sentence using this word
-      </h3>
+    <div className="bg-card border border-border/80 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          <span>Viết câu với từ mục tiêu</span>
+        </h3>
+        <span className="text-xs text-muted-foreground hidden sm:inline">
+          Nhấn <kbd>Enter</kbd> để chấm điểm
+        </span>
+      </div>
 
       <div className="relative">
         <textarea
           ref={textareaRef}
           disabled={disabled || loading}
-          className="w-full min-h-[140px] p-4 text-base bg-muted/30 border border-border/60 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/80 transition-all duration-200 placeholder:text-muted-foreground/60 text-foreground"
-          placeholder={`Write a natural English sentence using '${word}'...`}
+          className="w-full min-h-[140px] p-4 pb-9 text-base bg-muted/20 border border-border/80 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary transition-all duration-150 placeholder:text-muted-foreground/60 text-foreground leading-relaxed"
+          placeholder={`Viết một câu tiếng Anh tự nhiên sử dụng từ '${word}'...`}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           maxLength={500}
         />
         {/* Character counter */}
-        <div className="absolute bottom-3 right-4 text-xs font-mono text-muted-foreground/80 bg-background/50 px-2 py-0.5 rounded-md backdrop-blur-xs select-none">
+        <div className="absolute bottom-3 right-3.5 text-xs font-mono text-muted-foreground bg-background/80 border border-border/60 px-2 py-0.5 rounded-md select-none tabular-nums">
           {value.length}/500
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4 select-none">
-        {/* Helper chips */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1 select-none">
+        {/* AI Assistant pills */}
         <div className="flex flex-wrap gap-2">
-          <motion.button
-            whileHover={hintDisabled ? {} : { scale: 1.05 }}
-            whileTap={hintDisabled ? {} : { scale: 0.95 }}
+          <button
             type="button"
             onClick={onHint}
             disabled={disabled || loading || hintDisabled}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
               hintDisabled
-                ? "bg-muted/50 text-muted-foreground/80 border-border"
-                : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20 hover:bg-amber-500/20"
+                ? "bg-muted/40 text-muted-foreground border-border"
+                : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25 hover:bg-amber-500/15"
             }`}
           >
             <Lightbulb className="h-3.5 w-3.5" />
-            {hintLabel}
-          </motion.button>
+            <span>{hintLabel}</span>
+          </button>
 
-          <motion.button
-            whileHover={exampleDisabled ? {} : { scale: 1.05 }}
-            whileTap={exampleDisabled ? {} : { scale: 0.95 }}
+          <button
             type="button"
             onClick={onExample}
             disabled={disabled || loading || exampleDisabled}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
               exampleDisabled
-                ? "bg-muted/50 text-muted-foreground/80 border-border"
-                : isAnotherExample
-                ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
-                : "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20 hover:bg-indigo-500/20"
+                ? "bg-muted/40 text-muted-foreground border-border"
+                : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
             }`}
           >
-            {isAnotherExample ? <RefreshCw className="h-3.5 w-3.5 animate-spin-hover" /> : <FileText className="h-3.5 w-3.5" />}
-            {exampleLabel}
-          </motion.button>
+            {isAnotherExample ? <RefreshCw className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+            <span>{exampleLabel}</span>
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -128,21 +123,19 @@ export function SentenceInput({
             type="button"
             onClick={handleClear}
             disabled={disabled || loading || value.length === 0}
-            className="rounded-xl px-4 py-2 hover:bg-muted/60"
+            className="rounded-xl px-4 h-10 hover:bg-muted/60 text-xs font-semibold cursor-pointer"
           >
-            Clear
+            Xóa
           </Button>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-              type="button"
-              onClick={() => onSubmit(value.trim())}
-              disabled={disabled || loading || value.trim().length === 0}
-              className="rounded-xl px-5 py-2 font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/25 border-none cursor-pointer flex items-center gap-1.5"
-            >
-              <Sparkles className="h-4 w-4" />
-              {loading ? "Evaluating..." : "Evaluate"}
-            </Button>
-          </motion.div>
+          <Button
+            type="button"
+            onClick={() => onSubmit(value.trim())}
+            disabled={disabled || loading || value.trim().length === 0}
+            className="rounded-xl px-5 h-10 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>{loading ? "Đang chấm..." : "Chấm điểm AI"}</span>
+          </Button>
         </div>
       </div>
     </div>

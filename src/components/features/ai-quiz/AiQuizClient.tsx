@@ -270,26 +270,7 @@ export function AiQuizClient({ setId, setTitle, initialQuiz = null }: AiQuizClie
   if (!quiz) return null;
 
   return (
-    <div className="space-y-6">
-      {/* Floating Toggle */}
-      <div className="fixed top-20 right-4 z-40 md:right-8">
-        <Button
-          variant={isTranslationOn ? "default" : "secondary"}
-          size="sm"
-          className={cn(
-            "rounded-full shadow-lg border border-border/50 gap-2 font-semibold transition-all",
-            isTranslationOn ? "bg-primary text-primary-foreground" : "bg-background/80 backdrop-blur-md hover:bg-muted"
-          )}
-          onClick={() => {
-            setIsTranslationOn(!isTranslationOn);
-            setActiveWord(null);
-          }}
-        >
-          <Globe className={cn("h-4 w-4", isTranslationOn && "animate-pulse")} />
-          Translation {isTranslationOn ? "ON" : "OFF"}
-        </Button>
-      </div>
-
+    <div className="space-y-6 pb-8">
       {activeWord && isTranslationOn && (
         <InlineDictionaryPopup
           word={activeWord.word}
@@ -304,191 +285,245 @@ export function AiQuizClient({ setId, setTitle, initialQuiz = null }: AiQuizClie
         title={quiz.title}
         description={`Bài đọc cloze test theo phong cách TOEIC/IELTS cho bộ "${setTitle}".`}
         action={
-          <Badge className="rounded-full px-3 py-1 gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
-            <Sparkles className="h-3.5 w-3.5" />
-            AI Quiz
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="rounded-full px-3 py-1 gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+              <Sparkles className="h-3.5 w-3.5" />
+              AI Quiz #{generationNonce + 1}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              className="rounded-xl gap-1.5 h-8 text-xs font-semibold"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Đổi bài đọc
+            </Button>
+          </div>
         }
       />
 
-      <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-xs font-medium text-muted-foreground">
-        <span>
-          Source: <span className="font-semibold text-foreground">AI provider</span>
-        </span>
-        <span>Generated #{generationNonce + 1}</span>
-      </div>
-
-      <SectionCard className="space-y-5 p-5 md:p-7">
-        <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-          <span>Tiến trình</span>
-          <span>
-            {answeredCount} / {total}
-          </span>
-        </div>
-        <Progress value={progress} className="h-2 rounded-full" />
-
-        <div className="rounded-2xl border bg-muted/20 p-5 leading-8 text-[15px] md:text-[16px] text-foreground">
-          {parsedParts.map((chunk) => {
-            const question = quiz.questions.find((item) => item.blank === chunk.text);
-            if (!question) {
-              return <React.Fragment key={`${chunk.text}-${chunk.index}`}>{renderPassageText(chunk.text, chunk.index, chunk.globalOffset)}</React.Fragment>;
-            }
-
-            const selected = answers[question.blank];
-            const correctText = question.options[question.correctAnswer];
-            const isCorrect = submitted && selected === correctText;
-            const isWrong = submitted && selected && selected !== correctText;
-
-            return (
-              <span
-                key={question.blank}
-                className={cn(
-                  "inline-flex align-baseline mx-1 px-3 py-0.5 rounded-lg border font-bold text-sm",
-                  submitted
-                    ? isCorrect
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                      : isWrong
-                        ? "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-                        : "border-border bg-background"
-                    : "border-dashed border-border bg-background"
-                )}
-              >
-                {question.blank}
-              </span>
-            );
-          })}
-        </div>
-      </SectionCard>
-
-      <div className="space-y-4">
-        {quiz.questions.map((question, questionIndex) => {
-          const selected = answers[question.blank];
-          const correctText = question.options[question.correctAnswer];
-          const isCorrect = submitted && selected === correctText;
-
-          return (
-            <SectionCard key={question.blank} className="space-y-4 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">
-                    {questionIndex + 1}
-                  </div>
-                </div>
-                {submitted && (
-                  <Badge
-                    className={cn(
-                      "rounded-full px-3 py-1",
-                      isCorrect
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
-                    )}
-                  >
-                    {isCorrect ? "Correct" : "Incorrect"}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                {question.options.map((option, optionIndex) => {
-                  const active = selected === option;
-                  const revealedCorrect = submitted && option === correctText;
-                  const isWrong = submitted && active && option !== correctText;
-
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      disabled={submitted}
-                      onClick={() => handleChange(question.blank, option)}
-                      className={cn(
-                        "group flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200",
-                        !submitted && "hover:border-primary/30 hover:bg-primary/5 cursor-pointer",
-                        active && !submitted && "border-primary bg-primary/5",
-                        submitted && revealedCorrect && "border-emerald-500/30 bg-emerald-500/10",
-                        submitted && isWrong && "border-rose-500/30 bg-rose-500/10",
-                        submitted && !revealedCorrect && !isWrong && "border-border bg-background/60"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black border",
-                          submitted && revealedCorrect
-                            ? "border-emerald-500/30 bg-emerald-500 text-white"
-                            : submitted && isWrong
-                              ? "border-rose-500/30 bg-rose-500 text-white"
-                              : "border-border bg-background text-foreground"
-                        )}
-                      >
-                        {alphabet[optionIndex]}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-foreground">{option}</span>
-                        {submitted && revealedCorrect && (
-                          <span className="mt-1 block text-xs text-emerald-600 dark:text-emerald-400">Đáp án đúng</span>
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {submitted && (
-                <div className="space-y-1 rounded-2xl border border-border/70 bg-muted/20 p-4">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">Correct answer:</span> {correctText}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">Meaning:</span> {question.meaning}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">Explaination:</span> {question.explanation}
-                  </p>
-                </div>
-              )}
-            </SectionCard>
-          );
-        })}
-      </div>
-
-      <div className="flex flex-wrap justify-center gap-3">
-        {!submitted ? (
-          <Button onClick={handleSubmit} disabled={updatingSrs || answeredCount !== total} className="rounded-xl gap-2 px-6">
-            <BookOpen className="h-4 w-4" />
-            Nộp bài
-          </Button>
-        ) : (
-          <Button onClick={handleRetry} variant="outline" className="rounded-xl gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Tạo bài mới
-          </Button>
-        )}
-      </div>
-
       {submitted && (
-        <SectionCard className="grid gap-3 sm:grid-cols-3 p-5">
-          <div className="rounded-2xl bg-emerald-500/10 p-4">
+        <SectionCard className="grid gap-3 sm:grid-cols-3 p-4 md:p-5">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
               <CheckCircle2 className="h-4 w-4" />
               Đúng
             </div>
-            <p className="mt-2 text-2xl font-black">{score.correct}</p>
+            <p className="mt-1.5 text-2xl font-black text-foreground tabular-nums">{score.correct}</p>
           </div>
-          <div className="rounded-2xl bg-rose-500/10 p-4">
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4">
             <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider">
               <XCircle className="h-4 w-4" />
               Sai
             </div>
-            <p className="mt-2 text-2xl font-black">{score.wrong}</p>
+            <p className="mt-1.5 text-2xl font-black text-foreground tabular-nums">{score.wrong}</p>
           </div>
-          <div className="rounded-2xl bg-primary/10 p-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
             <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider">
               <Sparkles className="h-4 w-4" />
               Độ chính xác
             </div>
-            <p className="mt-2 text-2xl font-black">{score.accuracy}%</p>
+            <p className="mt-1.5 text-2xl font-black text-foreground tabular-nums">{score.accuracy}%</p>
           </div>
         </SectionCard>
       )}
+
+      <div className="grid gap-6 lg:grid-cols-12 items-start">
+        {/* Left Column: Sticky Passage Card */}
+        <div className="lg:col-span-7 lg:sticky lg:top-20 space-y-4">
+          <SectionCard className="space-y-4 p-5 md:p-6">
+            {/* Passage Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/70">
+              <div className="flex items-center gap-3 min-w-[160px] flex-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                  Tiến độ ({answeredCount}/{total})
+                </span>
+                <Progress value={progress} className="h-2 max-w-[160px] rounded-full" />
+              </div>
+
+              <Button
+                variant={isTranslationOn ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "rounded-xl gap-2 h-8 text-xs font-semibold transition-all",
+                  isTranslationOn
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-background hover:bg-muted text-foreground"
+                )}
+                onClick={() => {
+                  setIsTranslationOn(!isTranslationOn);
+                  setActiveWord(null);
+                }}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                Tra từ trực tiếp: {isTranslationOn ? "BẬT" : "TẮT"}
+              </Button>
+            </div>
+
+            {isTranslationOn && (
+              <p className="text-xs text-muted-foreground bg-primary/5 border border-primary/15 rounded-lg px-3 py-1.5">
+                Nhấn vào bất kỳ từ tiếng Anh nào trong đoạn văn để xem nghĩa và phiên âm theo ngữ cảnh.
+              </p>
+            )}
+
+            <div className="rounded-xl border border-border/80 bg-muted/20 p-5 md:p-6 leading-8 text-[15px] md:text-[16px] text-foreground">
+              {parsedParts.map((chunk) => {
+                const questionIndex = quiz.questions.findIndex((item) => item.blank === chunk.text);
+                const question = questionIndex >= 0 ? quiz.questions[questionIndex] : undefined;
+                if (!question) {
+                  return (
+                    <React.Fragment key={`${chunk.text}-${chunk.index}`}>
+                      {renderPassageText(chunk.text, chunk.index, chunk.globalOffset)}
+                    </React.Fragment>
+                  );
+                }
+
+                const selected = answers[question.blank];
+                const correctText = question.options[question.correctAnswer];
+                const isCorrect = submitted && selected === correctText;
+                const isWrong = submitted && selected && selected !== correctText;
+
+                return (
+                  <span
+                    key={question.blank}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 align-baseline mx-1 px-2.5 py-0.5 rounded-lg border font-bold text-sm transition-colors",
+                      submitted
+                        ? isCorrect
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                          : isWrong
+                            ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                            : "border-border bg-background text-foreground"
+                        : selected
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-dashed border-primary/40 bg-background text-muted-foreground"
+                    )}
+                  >
+                    <span className="text-[11px] font-mono opacity-75">({questionIndex + 1})</span>
+                    <span>{selected || "_____"}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Right Column: Questions List */}
+        <div className="lg:col-span-5 space-y-4">
+          {quiz.questions.map((question, questionIndex) => {
+            const selected = answers[question.blank];
+            const correctText = question.options[question.correctAnswer];
+            const isCorrect = submitted && selected === correctText;
+
+            return (
+              <SectionCard key={question.blank} className="space-y-3.5 p-4 md:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-black text-primary tabular-nums">
+                      {questionIndex + 1}
+                    </span>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      Chỗ trống ({questionIndex + 1})
+                    </span>
+                  </div>
+                  {submitted && (
+                    <Badge
+                      className={cn(
+                        "rounded-full px-2.5 py-0.5 text-xs",
+                        isCorrect
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                      )}
+                    >
+                      {isCorrect ? "Chính xác" : "Chưa đúng"}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {question.options.map((option, optionIndex) => {
+                    const active = selected === option;
+                    const revealedCorrect = submitted && option === correctText;
+                    const isWrong = submitted && active && option !== correctText;
+
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        disabled={submitted}
+                        onClick={() => handleChange(question.blank, option)}
+                        className={cn(
+                          "group flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left transition-all duration-150",
+                          !submitted && "hover:border-primary/40 hover:bg-primary/5 cursor-pointer",
+                          active && !submitted && "border-primary bg-primary/10 ring-1 ring-primary/20",
+                          submitted && revealedCorrect && "border-emerald-500/40 bg-emerald-500/10",
+                          submitted && isWrong && "border-rose-500/40 bg-rose-500/10",
+                          submitted && !revealedCorrect && !isWrong && "border-border bg-background/60 opacity-70"
+                        )}
+                      >
+                        <kbd
+                          className={cn(
+                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold border",
+                            submitted && revealedCorrect
+                              ? "border-emerald-500 bg-emerald-500 text-white"
+                              : submitted && isWrong
+                                ? "border-rose-500 bg-rose-500 text-white"
+                                : active && !submitted
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-muted/60 text-muted-foreground"
+                          )}
+                        >
+                          {alphabet[optionIndex]}
+                        </kbd>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-foreground truncate">{option}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {submitted && (
+                  <div className="space-y-1.5 rounded-xl border border-border/70 bg-muted/20 p-3.5 text-xs">
+                    <p className="text-muted-foreground">
+                      <span className="font-semibold text-foreground">Đáp án đúng:</span> {correctText}
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="font-semibold text-foreground"> Nghĩa:</span> {question.meaning}
+                    </p>
+                    <p className="text-muted-foreground leading-relaxed">
+                      <span className="font-semibold text-foreground">Giải thích:</span> {question.explanation}
+                    </p>
+                  </div>
+                )}
+              </SectionCard>
+            );
+          })}
+
+          <div className="pt-2">
+            {!submitted ? (
+              <Button
+                onClick={handleSubmit}
+                disabled={updatingSrs || answeredCount !== total}
+                className="w-full rounded-xl gap-2 h-11 font-bold"
+              >
+                <BookOpen className="h-4 w-4" />
+                Nộp bài ({answeredCount}/{total})
+              </Button>
+            ) : (
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                className="w-full rounded-xl gap-2 h-11 font-bold"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Tạo bài AI Quiz mới
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

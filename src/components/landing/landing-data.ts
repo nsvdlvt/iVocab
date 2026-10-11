@@ -1,4 +1,12 @@
-import { BookOpen, Brain, Clock3, Gauge, Languages, LayoutGrid, Mic, Sparkles, Target } from "lucide-react";
+import {
+  BookOpen,
+  Brain,
+  Clock3,
+  FileSpreadsheet,
+  Languages,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import { FlashcardRow } from "@/components/features/flashcard/flashcard-utils";
 import { UpcomingReviewSummary } from "@/repositories/review.repository";
 import { DailyActivity, DailyProgress } from "@/repositories/statistics.repository";
@@ -8,14 +16,14 @@ export const landingDemoFlashcard = {
   owner_id: "demo",
   set_id: "demo-set",
   word: "peculiar",
-  meaning: "kỳ lạ",
+  meaning: "kỳ lạ, khác biệt riêng",
   ipa: "/pɪˈkjuːliə(r)/",
   part_of_speech: "adjective",
-  example: "That’s a peculiar idea.",
-  example_translation: "Đó là một ý tưởng kỳ lạ.",
-  synonyms: ["odd", "strange"],
-  antonyms: ["common"],
-  note: "Dùng cho những điều khác thường hoặc mang nét riêng.",
+  example: "The region has its own peculiar charm and architectural style.",
+  example_translation: "Vùng đất này mang một nét quyến rũ và phong cách kiến trúc rất riêng biệt.",
+  synonyms: ["distinctive", "unusual", "unique"],
+  antonyms: ["ordinary", "common"],
+  note: "Thường dùng để miêu tả tính chất đặc trưng hoặc khác thường một cách thú vị (IELTS Band 7.0+).",
   source: "landing-demo",
   difficulty: 3,
   created_at: null,
@@ -54,15 +62,15 @@ export const landingDemoFlashcard = {
 export const landingDemoForecast: UpcomingReviewSummary = {
   total: 128,
   averagePerDay: 18,
-  busiestDay: { date: "2026-07-18", count: 31, label: "Saturday", isToday: false, isTomorrow: false },
+  busiestDay: { date: "2026-07-18", count: 31, label: "Thứ Bảy", isToday: false, isTomorrow: false },
   days: [
     { date: "2026-07-16", count: 22, label: "Hôm nay", isToday: true, isTomorrow: false },
     { date: "2026-07-17", count: 18, label: "Ngày mai", isToday: false, isTomorrow: true },
-    { date: "2026-07-18", count: 31, label: "Saturday", isToday: false, isTomorrow: false },
-    { date: "2026-07-19", count: 14, label: "Sunday", isToday: false, isTomorrow: false },
-    { date: "2026-07-20", count: 17, label: "Monday", isToday: false, isTomorrow: false },
-    { date: "2026-07-21", count: 11, label: "Tuesday", isToday: false, isTomorrow: false },
-    { date: "2026-07-22", count: 15, label: "Wednesday", isToday: false, isTomorrow: false },
+    { date: "2026-07-18", count: 31, label: "Thứ Bảy", isToday: false, isTomorrow: false },
+    { date: "2026-07-19", count: 14, label: "Chủ Nhật", isToday: false, isTomorrow: false },
+    { date: "2026-07-20", count: 17, label: "Thứ Hai", isToday: false, isTomorrow: false },
+    { date: "2026-07-21", count: 11, label: "Thứ Ba", isToday: false, isTomorrow: false },
+    { date: "2026-07-22", count: 15, label: "Thứ Tư", isToday: false, isTomorrow: false },
   ],
 };
 
@@ -84,23 +92,71 @@ export const landingDemoWeekly: DailyActivity[] = [
 ];
 
 export const landingStorySteps = [
-  { icon: Languages, title: "Nhập từ vựng", text: "Thêm bộ từ, nhập nghĩa và sắp xếp thư viện gọn gàng." },
-  { icon: BookOpen, title: "Học", text: "Ôn bằng flashcard thích ứng và các phiên học tập trung." },
-  { icon: Sparkles, title: "Luyện", text: "Dùng AI Quiz và luyện đặt câu để nhớ sâu hơn theo ngữ cảnh." },
-  { icon: Clock3, title: "Ôn với SRS", text: "Xem lịch ôn sắp tới và giữ nhịp học đều đặn." },
-  { icon: Target, title: "Chinh phục từ vựng", text: "Theo dõi streak, tiến độ và cảm giác đang tiến bộ rõ rệt." },
+  {
+    icon: Languages,
+    title: "Thu thập & Nhập từ",
+    text: "Nhập nhanh danh sách từ vựng từ CSV, Quizlet, bài đọc hoặc tạo bộ thẻ theo chủ đề cá nhân.",
+  },
+  {
+    icon: BookOpen,
+    title: "Học sâu đa chiều",
+    text: "Nắm trọn IPA, từ loại, sắc thái nghĩa, từ đồng nghĩa và câu ví dụ sát thực tế.",
+  },
+  {
+    icon: Sparkles,
+    title: "Thực hành cùng AI",
+    text: "Luyện tập bài điền từ (Cloze), trắc nghiệm thích ứng và phản hồi ngữ cảnh tức thì.",
+  },
+  {
+    icon: Clock3,
+    title: "Ôn tập ngắt quãng SRS",
+    text: "Thuật toán tự động tính toán thời điểm vàng trước khi bạn quên để tối ưu hóa trí nhớ dài hạn.",
+  },
+  {
+    icon: Target,
+    title: "Làm chủ & Vận dụng",
+    text: "Duy trì chuỗi ngày học (Streak), theo dõi độ thuộc lòng và tự tin sử dụng từ trong bài thi.",
+  },
 ];
 
 export const landingFeatureCards = [
-  { icon: Gauge, title: "Bảng điều khiển sống động", description: "Mục tiêu ngày, streak và tiến độ được trình bày như một sản phẩm thật." },
-  { icon: Mic, title: "Nghe chép và phát âm", description: "Đưa kỹ năng nghe và nói vào cùng một hành trình trực quan." },
-  { icon: Brain, title: "AI Quiz cao cấp", description: "Ứng dụng trông như một cỗ máy học tập, không phải thư viện nội dung tĩnh." },
-  { icon: LayoutGrid, title: "Thư viện từ vựng", description: "Các thẻ chủ đề và bộ từ giúp hệ thống gọn gàng, dễ mở rộng." },
+  {
+    id: "srs",
+    icon: Clock3,
+    badge: "Thuật toán SRS",
+    title: "Lịch ôn tập ngắt quãng thông minh",
+    description:
+      "Tự động điều chỉnh chu kỳ ôn tập dựa trên mức độ ghi nhớ của từng từ, giúp bạn nhớ lâu gấp 3 lần chỉ với 15 phút mỗi ngày.",
+  },
+  {
+    id: "ai-cloze",
+    icon: Brain,
+    badge: "AI Thực hành",
+    title: "Luyện điền từ & Phản xạ ngữ cảnh AI",
+    description:
+      "Chấm dứt tình trạng học vẹt nghĩa rời rạc. AI tạo câu hỏi điền khuyết (Cloze) và giải thích chi tiết cách dùng từ trong câu.",
+  },
+  {
+    id: "reading",
+    icon: BookOpen,
+    badge: "Đọc song ngữ",
+    title: "Đọc hiểu song ngữ & Chạm tra từ tức thì",
+    description:
+      "Đọc các bài viết học thuật phân cấp CEFR, chạm vào bất kỳ từ mới nào để xem phiên âm, nghĩa ngữ cảnh và lưu thẳng vào bộ ôn tập.",
+  },
+  {
+    id: "smart-import",
+    icon: FileSpreadsheet,
+    badge: "Tự động hóa",
+    title: "Nhập từ vựng thông minh & Chuẩn hóa dữ liệu",
+    description:
+      "Nhập hàng trăm từ vựng từ danh sách thô hoặc file CSV chỉ trong vài giây, tự động bổ sung phiên âm IPA, từ loại và ví dụ chuẩn xác.",
+  },
 ];
 
 export const landingStats = [
-  { value: "20,000+", label: "Từ đã học" },
-  { value: "98%", label: "Ghi nhớ" },
-  { value: "1M+", label: "Lượt ôn" },
-  { value: "4.9★", label: "Đánh giá" },
+  { value: "20,000+", label: "Từ vựng được lưu trữ", detail: "Chuẩn hóa IPA, từ loại và ngữ cảnh học thuật" },
+  { value: "94.8%", label: "Tỷ lệ duy trì trí nhớ", detail: "Sau 30 ngày áp dụng lịch ôn tập ngắt quãng SRS" },
+  { value: "1.2M+", label: "Lượt ôn thẻ hoàn thành", detail: "Tối ưu thời gian học mỗi ngày với phản hồi nhanh" },
+  { value: "4.9/5★", label: "Đánh giá từ người học", detail: "Được yêu thích bởi cộng đồng luyện thi IELTS & TOEIC" },
 ];

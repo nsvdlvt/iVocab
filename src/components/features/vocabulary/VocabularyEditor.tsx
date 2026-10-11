@@ -48,7 +48,9 @@ export function VocabularyEditor({
 
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-  const [visibility, setVisibility] = useState<"private" | "public" | "unlisted">(initialVisibility);
+  const [visibility, setVisibility] = useState<
+    "private" | "public" | "unlisted"
+  >(initialVisibility);
   const [errors, setErrors] = useState<{
     title?: string;
     items?: Record<string, { word?: string; meaning?: string }>;
@@ -97,8 +99,8 @@ export function VocabularyEditor({
         ]
   );
 
-  const handleAddCard = () => {
-    const newId = `vocab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const handleAddCard = useCallback(() => {
+    const newId = `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     setItems((prev) => [
       ...prev,
       {
@@ -114,110 +116,114 @@ export function VocabularyEditor({
         example_translation: "",
       },
     ]);
-  };
+  }, []);
 
-  const handleRemoveCard = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    if (errors.items && errors.items[id]) {
-      const newItemsErrors = { ...errors.items };
-      delete newItemsErrors[id];
-      setErrors((prev) => ({ ...prev, items: newItemsErrors }));
-    }
-  };
-
-  const handleChangeField = (id: string, field: keyof VocabularyItem, value: string) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
-
-    if (errors.items && errors.items[id]) {
-      const cardErr = errors.items[id];
-      if (field === "word" && cardErr.word && value.trim()) {
-        const newCardErr = { ...cardErr };
-        delete newCardErr.word;
-        setErrors((prev) => ({
-          ...prev,
-          items: { ...prev.items, [id]: newCardErr },
-        }));
-      } else if (field === "meaning" && cardErr.meaning && value.trim()) {
-        const newCardErr = { ...cardErr };
-        delete newCardErr.meaning;
-        setErrors((prev) => ({
-          ...prev,
-          items: { ...prev.items, [id]: newCardErr },
-        }));
+  const handleRemoveCard = useCallback(
+    (id: string) => {
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      if (errors.items && errors.items[id]) {
+        const newItemsErrors = { ...errors.items };
+        delete newItemsErrors[id];
+        setErrors((prev) => ({ ...prev, items: newItemsErrors }));
       }
-    }
-  };
+    },
+    [errors.items]
+  );
 
-  const handleTitleChange = useCallback((val: string) => {
-    setTitle(val);
-    if (errors.title && val.trim()) {
-      setErrors((prev) => ({ ...prev, title: undefined }));
-    }
-  }, [errors.title]);
+  const handleChangeField = useCallback(
+    (id: string, field: keyof VocabularyItem, value: string) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        )
+      );
+
+      if (errors.items && errors.items[id]) {
+        const cardErr = errors.items[id];
+        if (field === "word" && cardErr.word && value.trim()) {
+          const newCardErr = { ...cardErr };
+          delete newCardErr.word;
+          setErrors((prev) => ({
+            ...prev,
+            items: { ...prev.items, [id]: newCardErr },
+          }));
+        } else if (field === "meaning" && cardErr.meaning && value.trim()) {
+          const newCardErr = { ...cardErr };
+          delete newCardErr.meaning;
+          setErrors((prev) => ({
+            ...prev,
+            items: { ...prev.items, [id]: newCardErr },
+          }));
+        }
+      }
+    },
+    [errors.items]
+  );
+
+  const handleTitleChange = useCallback(
+    (val: string) => {
+      setTitle(val);
+      if (errors.title && val.trim()) {
+        setErrors((prev) => ({ ...prev, title: undefined }));
+      }
+    },
+    [errors.title]
+  );
 
   const handleDescriptionChange = useCallback((val: string) => {
     setDescription(val);
   }, []);
 
-  const handleImportCards = (
-    newCards: Array<{
-      word: string;
-      meaning: string;
-      ipa?: string;
-      partOfSpeech?: string;
-      example?: string;
-      exampleSentence?: string;
-      synonyms?: string[] | string;
-      topic?: string;
-    }>
-  ) => {
-    const importedItems = newCards.map((card, idx) => ({
-      id: `vocab-import-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
-      word: card.word,
-      meaning: card.meaning,
-      ipa: card.ipa || "",
-      partOfSpeech: card.partOfSpeech || "",
-      example: card.exampleSentence || card.example || "",
-      synonyms: Array.isArray(card.synonyms) ? card.synonyms.join(", ") : card.synonyms || "",
-      antonyms: "",
-      note: "",
-      example_translation: "",
-    }));
-
-    setItems((prev) => {
-      const onlyHasInitialEmpty = prev.every((item) => !item.word.trim() && !item.meaning.trim());
-      return onlyHasInitialEmpty ? importedItems : [...prev, ...importedItems];
-    });
-  };
-
-  const handleAddCardClick = useCallback(() => {
-    handleAddCard();
-  }, []);
-
   const handleImportCardsCallback = useCallback(
-    (newCards: Array<{
-      word: string;
-      meaning: string;
-      ipa?: string;
-      partOfSpeech?: string;
-      example?: string;
-      exampleSentence?: string;
-      synonyms?: string[] | string;
-      topic?: string;
-    }>) => {
-      handleImportCards(newCards);
+    (
+      newCards: Array<{
+        word: string;
+        meaning: string;
+        ipa?: string;
+        partOfSpeech?: string;
+        example?: string;
+        exampleSentence?: string;
+        synonyms?: string[] | string;
+        topic?: string;
+      }>
+    ) => {
+      const importedItems = newCards.map((card, idx) => ({
+        id: `vocab-import-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+        word: card.word,
+        meaning: card.meaning,
+        ipa: card.ipa || "",
+        partOfSpeech: card.partOfSpeech || "",
+        example: card.exampleSentence || card.example || "",
+        synonyms: Array.isArray(card.synonyms)
+          ? card.synonyms.join(", ")
+          : card.synonyms || "",
+        antonyms: "",
+        note: "",
+        example_translation: "",
+      }));
+
+      setItems((prev) => {
+        const onlyHasInitialEmpty = prev.every(
+          (item) => !item.word.trim() && !item.meaning.trim()
+        );
+        return onlyHasInitialEmpty
+          ? importedItems
+          : [...prev, ...importedItems];
+      });
     },
-    [handleImportCards]
+    []
   );
 
   const handleSave = async () => {
     const newErrors: typeof errors = {};
 
     if (!title.trim()) {
-      newErrors.title = "Tiêu đề bộ thẻ không được bỏ trống";
+      newErrors.title = "Tiêu đề bộ từ vựng không được để trống";
     }
 
-    const filledItems = items.filter((item) => item.word.trim() || item.meaning.trim());
+    const filledItems = items.filter(
+      (item) => item.word.trim() || item.meaning.trim()
+    );
 
     const cardErrors: Record<string, { word?: string; meaning?: string }> = {};
     let hasCardErrors = false;
@@ -225,11 +231,11 @@ export function VocabularyEditor({
     filledItems.forEach((item) => {
       const itemErrors: { word?: string; meaning?: string } = {};
       if (!item.word.trim()) {
-        itemErrors.word = "Không để trống";
+        itemErrors.word = "Vui lòng nhập từ vựng";
         hasCardErrors = true;
       }
       if (!item.meaning.trim()) {
-        itemErrors.meaning = "Không để trống";
+        itemErrors.meaning = "Vui lòng nhập ý nghĩa";
         hasCardErrors = true;
       }
       if (Object.keys(itemErrors).length > 0) {
@@ -243,7 +249,7 @@ export function VocabularyEditor({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error("Vui lòng bổ sung các thông tin còn thiếu.");
+      toast.error("Vui lòng bổ sung các thông tin bắt buộc còn thiếu.");
       return;
     }
 
@@ -259,7 +265,9 @@ export function VocabularyEditor({
 
     const mappedWords = filledItems.map((item) => ({
       id:
-        item.id.startsWith("vocab-init-") || item.id.startsWith("vocab-import-") || item.id.startsWith("vocab-")
+        item.id.startsWith("vocab-init-") ||
+        item.id.startsWith("vocab-import-") ||
+        item.id.startsWith("vocab-")
           ? undefined
           : item.id,
       word: item.word.trim(),
@@ -289,16 +297,28 @@ export function VocabularyEditor({
 
     setIsPending(true);
     try {
-      const res = isEditMode && initialSetId
-        ? await updateVocabularySetWithWords(initialSetId, vocabSetData, mappedWords)
-        : await createVocabularySet(vocabSetData, mappedWords);
+      const res =
+        isEditMode && initialSetId
+          ? await updateVocabularySetWithWords(
+              initialSetId,
+              vocabSetData,
+              mappedWords
+            )
+          : await createVocabularySet(vocabSetData, mappedWords);
 
       if (res.success) {
-        const targetSetId = initialSetId || (res as { setId?: string }).setId || "";
-        toast.success(isEditMode ? "Đã cập nhật bộ từ vựng thành công!" : "Đã tạo bộ thẻ học thành công!");
+        const targetSetId =
+          initialSetId || (res as { setId?: string }).setId || "";
+        toast.success(
+          isEditMode
+            ? "Đã cập nhật bộ từ vựng thành công!"
+            : "Đã tạo bộ từ vựng thành công!"
+        );
         router.push(ROUTES.VOCABULARY_DETAIL(targetSetId));
       } else {
-        toast.error((res as { error?: string }).error || "Không thể lưu bộ từ vựng.");
+        toast.error(
+          (res as { error?: string }).error || "Không thể lưu bộ từ vựng."
+        );
       }
     } catch (err) {
       console.error(err);
@@ -309,17 +329,26 @@ export function VocabularyEditor({
   };
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-20">
       <VocabularyToolbar
         visibility={visibility}
         onChangeVisibility={setVisibility}
         isPending={isPending}
         onCreateClick={handleSave}
         onImportCards={handleImportCardsCallback}
-        existingWords={items.map((item) => ({ word: item.word, meaning: item.meaning }))}
+        existingWords={items.map((item) => ({
+          word: item.word,
+          meaning: item.meaning,
+        }))}
+        isEditMode={isEditMode}
+        backHref={
+          isEditMode && initialSetId
+            ? ROUTES.VOCABULARY_DETAIL(initialSetId)
+            : ROUTES.VOCABULARY
+        }
       />
 
-      <div className="max-w-3xl mx-auto space-y-8 px-4 sm:px-6">
+      <div className="mx-auto max-w-4xl space-y-6">
         <VocabularyInfoCard
           title={title}
           onChangeTitle={handleTitleChange}
@@ -329,13 +358,15 @@ export function VocabularyEditor({
           error={errors.title}
         />
 
-        <div className="space-y-4">
-          <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground/60 tracking-wider select-none uppercase">
-            <span>Danh sách từ vựng ({items.length})</span>
-            <span>Trực tiếp nhập liệu trên các thẻ phía dưới</span>
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none">
+            <span>Danh sách thẻ từ vựng ({items.length})</span>
+            <span className="hidden sm:inline text-[11px] font-normal normal-case">
+              Nhập trực tiếp hoặc dùng Nhập nhanh / AI Import
+            </span>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3.5">
             <AnimatePresence initial={false}>
               {items.map((item, index) => (
                 <VocabularyCard
@@ -351,16 +382,16 @@ export function VocabularyEditor({
             </AnimatePresence>
           </div>
 
-          <div className="flex justify-center pt-3">
+          <div className="pt-2">
             <Button
               type="button"
-              variant="ghost"
-              onClick={handleAddCardClick}
+              variant="outline"
+              onClick={handleAddCard}
               disabled={isPending}
-              className="rounded-xl h-9 text-xs font-semibold gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5 transition-all duration-200 cursor-pointer"
+              className="h-11 w-full gap-2 rounded-xl border-dashed border-border/80 bg-card/50 text-xs sm:text-sm font-semibold text-primary hover:border-primary/40 hover:bg-primary/5"
             >
               <Plus className="h-4 w-4" />
-              Thêm từ vựng mới
+              <span>Thêm thẻ từ vựng mới</span>
             </Button>
           </div>
         </div>

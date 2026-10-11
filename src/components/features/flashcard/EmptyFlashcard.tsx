@@ -12,25 +12,25 @@ interface EmptyFlashcardProps {
 
 export function EmptyFlashcard({ onBack, onAddWords, readOnly = false }: EmptyFlashcardProps) {
   return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 rounded-[2rem] border border-border/70 bg-card p-8 text-center shadow-sm">
-      <div className="rounded-full bg-indigo-500/10 p-4 text-indigo-600">
-        <BookOpen className="h-8 w-8" />
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-xl border border-dashed border-border bg-card p-8 text-center shadow-xs">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+        <BookOpen className="h-6 w-6" />
       </div>
-      <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-foreground">No cards yet</h2>
-        <p className="text-sm text-muted-foreground">
-          Add vocabulary to this set before starting flashcard study.
+      <div className="space-y-1.5">
+        <h2 className="text-lg font-bold text-foreground">Chưa có thẻ từ vựng</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Hãy thêm từ vựng vào bộ từ này trước khi bắt đầu luyện tập với Flashcard.
         </p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
         {onAddWords && !readOnly && (
-          <Button onClick={onAddWords} className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-500">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add words
+          <Button onClick={onAddWords}>
+            <PlusCircle className="h-4 w-4" />
+            <span>Thêm từ vựng</span>
           </Button>
         )}
-        <Button variant="outline" onClick={onBack} className="rounded-xl">
-          Back
+        <Button variant="outline" onClick={onBack}>
+          Quay lại
         </Button>
       </div>
     </div>

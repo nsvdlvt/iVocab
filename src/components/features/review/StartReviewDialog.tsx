@@ -2,10 +2,23 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowRight, BookOpenCheck, CalendarClock, Clock3, GraduationCap } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  CalendarClock,
+  Clock3,
+  GraduationCap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface StartReviewDialogProps {
@@ -27,7 +40,7 @@ type ReviewStats = {
 
 export function StartReviewDialog({
   vocabularySetId,
-  triggerLabel = "Bắt đầu ôn tập",
+  triggerLabel = "Ôn tập SRS",
   className,
 }: StartReviewDialogProps) {
   const router = useRouter();
@@ -47,21 +60,30 @@ export function StartReviewDialog({
       setError(null);
 
       try {
-        const response = await fetch(`/api/review-sessions?vocabularySetId=${encodeURIComponent(vocabularySetId)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/review-sessions?vocabularySetId=${encodeURIComponent(vocabularySetId)}`,
+          {
+            signal: controller.signal,
+          }
+        );
         const data = (await response.json()) as
           | { success: true; stats: ReviewStats }
           | { success: false; error: string };
 
         if (!response.ok || !data.success) {
-          throw new Error("error" in data ? data.error : "Không thể tải thống kê ôn tập.");
+          throw new Error(
+            "error" in data ? data.error : "Không thể tải thống kê ôn tập."
+          );
         }
 
         setStats(data.stats);
       } catch (loadError) {
         if ((loadError as Error).name === "AbortError") return;
-        setError(loadError instanceof Error ? loadError.message : "Không thể tải thống kê ôn tập.");
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Không thể tải thống kê ôn tập."
+        );
       } finally {
         setLoading(false);
       }
@@ -86,105 +108,140 @@ export function StartReviewDialog({
         | { success: false; error: string };
 
       if (!response.ok || !data.success) {
-        throw new Error("error" in data ? data.error : "Không thể tạo phiên ôn tập.");
+        throw new Error(
+          "error" in data ? data.error : "Không thể tạo phiên ôn tập."
+        );
       }
 
       setOpen(false);
       router.push(`/review/session/${data.session.id}`);
     } catch (startError) {
-      setError(startError instanceof Error ? startError.message : "Không thể tạo phiên ôn tập.");
+      setError(
+        startError instanceof Error
+          ? startError.message
+          : "Không thể tạo phiên ôn tập."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const canStart = (stats?.reviewNowCount ?? 0) > 0;
-  const progressValue = stats && stats.totalCount > 0 ? Math.round((stats.learnedCount / stats.totalCount) * 100) : 0;
+  const progressValue =
+    stats && stats.totalCount > 0
+      ? Math.round((stats.learnedCount / stats.totalCount) * 100)
+      : 0;
   const estimatedMinutes = estimateMinutes(stats?.reviewNowCount ?? 0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         onClick={() => setOpen(true)}
-        className={cn("rounded-xl gap-2 cursor-pointer shadow-sm inline-flex items-center", className)}
+        className={cn("gap-2", className)}
       >
         <GraduationCap className="h-4 w-4" />
-        {triggerLabel}
+        <span>{triggerLabel}</span>
       </Button>
 
-      <DialogContent
-        showCloseButton={false}
-        className="w-[min(calc(100vw-0.5rem),46rem)] max-w-none overflow-hidden border-white/50 bg-background/85 p-0 text-foreground shadow-[0_30px_100px_rgba(15,23,42,0.24)] backdrop-blur-2xl sm:w-[min(calc(100vw-2rem),48rem)]"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.985 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 12, scale: 0.985 }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
-          className="relative"
-        >
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
-          <div className="relative space-y-4 p-4 sm:p-6">
-            <DialogHeader className="space-y-2">
-              <DialogTitle className="text-2xl font-black tracking-tight sm:text-[1.7rem]">Ôn tập bộ từ vựng</DialogTitle>
-              <DialogDescription className="max-w-xl text-sm text-muted-foreground">
-                Hiển thị tình trạng học tập của bộ từ này trước khi bắt đầu.
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="max-w-lg rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xl">
+        <DialogHeader className="space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle className="text-lg font-bold text-foreground">
+              Ôn tập bộ từ vựng (SRS)
+            </DialogTitle>
+            {stats && (
+              <Badge variant={canStart ? "warning" : "success"}>
+                {canStart ? `${stats.reviewNowCount} từ đến hạn` : "Đã hoàn tất"}
+              </Badge>
+            )}
+          </div>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Tổng quan trạng thái ghi nhớ của các từ trong bộ này trước khi bắt đầu.
+          </DialogDescription>
+        </DialogHeader>
 
-            {loading ? (
-              <div className="space-y-3">
-                <div className="h-24 rounded-3xl border border-border/60 bg-muted/30 animate-pulse" />
-                <div className="h-18 rounded-2xl border border-border/60 bg-muted/30 animate-pulse" />
+        {loading ? (
+          <div className="space-y-3 py-2">
+            <div className="h-24 rounded-xl border border-border/60 bg-muted/30 animate-pulse" />
+            <div className="h-14 rounded-xl border border-border/60 bg-muted/30 animate-pulse" />
+          </div>
+        ) : stats ? (
+          <div className="space-y-4 py-1">
+            <div className="rounded-xl border border-border/80 bg-muted/15 p-4 space-y-3">
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Cần ôn tập ngay
+                </span>
+                <span className="text-2xl font-bold tabular-nums text-primary">
+                  {stats.reviewNowCount} từ
+                </span>
               </div>
-            ) : stats ? (
-              <div className="space-y-4">
-                <div className="rounded-3xl border border-border/60 bg-card/80 px-4 py-4 shadow-sm">
-                  <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-                    <div className="space-y-1">
-                          <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Phiên ôn tập hôm nay</p>
-                          <p className="text-4xl font-black tracking-tight">{stats.reviewNowCount} từ</p>
-                    </div>
 
-                    <div className="border-t border-border/60 pt-3">
-                      <div className="space-y-2">
-                        <CompactStatRow icon={<CalendarClock className="h-3.5 w-3.5" />} label="Cần ôn tập" value={stats.reviewNowCount} tone="rose" />
-                        <CompactStatRow icon={<Clock3 className="h-3.5 w-3.5" />} label="Sắp đến hạn" value={stats.dueSoonCount} tone="amber" />
-                        <CompactStatRow icon={<BookOpenCheck className="h-3.5 w-3.5" />} label="Chưa học" value={stats.notLearnedCount} tone="emerald" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/70" />
-
-                <div className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3">
-                  <MetricPill label="Đã ghi nhớ" value={`${progressValue}%`} />
-                  <MetricPill label="Ước tính" value={estimatedMinutes} />
-                </div>
-
-                {error && (
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
+              <div className="space-y-2 border-t border-border/60 pt-3">
+                <CompactStatRow
+                  icon={<CalendarClock className="h-3.5 w-3.5" />}
+                  label="Đến hạn & Quá hạn"
+                  value={stats.reviewNowCount}
+                  tone="rose"
+                />
+                <CompactStatRow
+                  icon={<Clock3 className="h-3.5 w-3.5" />}
+                  label="Sắp đến hạn (7 ngày tới)"
+                  value={stats.dueSoonCount}
+                  tone="amber"
+                />
+                <CompactStatRow
+                  icon={<BookOpenCheck className="h-3.5 w-3.5" />}
+                  label="Từ mới / Chưa vào chu kỳ SRS"
+                  value={stats.notLearnedCount}
+                  tone="emerald"
+                />
               </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
-                {error ?? "Không thể tải thống kê ôn tập."}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 rounded-xl border border-border/70 bg-muted/15 p-3">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Tỷ lệ ghi nhớ
+                </p>
+                <p className="text-sm font-bold tabular-nums text-foreground mt-0.5">
+                  {progressValue}% ({stats.learnedCount}/{stats.totalCount})
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Thời gian dự kiến
+                </p>
+                <p className="text-sm font-bold tabular-nums text-foreground mt-0.5">
+                  {estimatedMinutes}
+                </p>
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {error}
               </div>
             )}
-
-            <Button
-              onClick={handleStart}
-              disabled={!canStart || loading || submitting}
-              className="h-12 w-full rounded-2xl bg-blue-600 px-6 text-base font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
-            >
-              {submitting ? "Đang tạo..." : "Bắt đầu ôn tập"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
           </div>
-        </motion.div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/15 px-4 py-6 text-center text-xs text-muted-foreground">
+            {error ?? "Không thể tải thống kê ôn tập."}
+          </div>
+        )}
+
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Đóng
+          </Button>
+          <Button
+            onClick={handleStart}
+            disabled={!canStart || loading || submitting}
+          >
+            <span>{submitting ? "Đang tạo phiên..." : "Bắt đầu ôn tập"}</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -202,29 +259,25 @@ function CompactStatRow({
   tone: "rose" | "amber" | "emerald";
 }) {
   const toneClasses = {
-    rose: "text-rose-600 dark:text-rose-300",
-    amber: "text-amber-600 dark:text-amber-300",
-    emerald: "text-emerald-600 dark:text-emerald-300",
+    rose: "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/20",
+    amber: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20",
+    emerald: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   } as const;
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-background/70 px-3 py-2">
-      <div className={cn("flex h-7 w-7 items-center justify-center rounded-full bg-current/10", toneClasses[tone])}>
+    <div className="flex items-center gap-2.5 rounded-lg bg-background/80 border border-border/50 px-3 py-2">
+      <div
+        className={cn(
+          "flex h-6 w-6 items-center justify-center rounded-md border",
+          toneClasses[tone]
+        )}
+      >
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs font-medium text-foreground">{label}</p>
       </div>
-      <div className={cn("text-base font-black tabular-nums", toneClasses[tone])}>{value}</div>
-    </div>
-  );
-}
-
-function MetricPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-      <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground tabular-nums">{value}</p>
+      <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
@@ -232,5 +285,5 @@ function MetricPill({ label, value }: { label: string; value: string }) {
 function estimateMinutes(reviewCount: number) {
   if (reviewCount <= 0) return "0 phút";
   const minutes = Math.max(1, Math.round(reviewCount * 0.2));
-  return `${minutes} phút`;
+  return `~${minutes} phút`;
 }

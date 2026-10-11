@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { deleteVocabularySet } from "@/actions/vocab-sets/delete";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Database } from "@/types/database";
@@ -16,7 +24,12 @@ interface DeleteConfirmDialogProps {
   isPermanent: boolean;
 }
 
-export function DeleteConfirmDialog({ open, onOpenChange, vocabSet, isPermanent }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({
+  open,
+  onOpenChange,
+  vocabSet,
+  isPermanent,
+}: DeleteConfirmDialogProps) {
   const [isPending, setIsPending] = useState(false);
 
   const handleDelete = async () => {
@@ -25,7 +38,11 @@ export function DeleteConfirmDialog({ open, onOpenChange, vocabSet, isPermanent 
     try {
       const res = await deleteVocabularySet(vocabSet.id, isPermanent);
       if (res.success) {
-        toast.success(isPermanent ? "Đã xóa vĩnh viễn bộ từ vựng!" : "Đã chuyển bộ từ vựng vào Thùng rác.");
+        toast.success(
+          isPermanent
+            ? "Đã xóa vĩnh viễn bộ từ vựng!"
+            : "Đã chuyển bộ từ vựng vào thùng rác."
+        );
         onOpenChange(false);
       } else {
         toast.error(res.error || "Không thể thực hiện yêu cầu.");
@@ -38,25 +55,68 @@ export function DeleteConfirmDialog({ open, onOpenChange, vocabSet, isPermanent 
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => { if (!isPending) onOpenChange(val); }}>
-      <DialogContent className="max-w-md w-[95%] rounded-xl">
-        <DialogHeader>
-          <DialogTitle className="text-rose-600">
-            Xác nhận xóa vĩnh viễn
-          </DialogTitle>
-          <DialogDescription className="pt-2">
-            <span className="text-rose-500 font-medium block">
-              Cảnh báo: Hành động này sẽ xóa vĩnh viễn bộ từ vựng &ldquo;{vocabSet?.title}&rdquo; cùng với tất cả từ vựng, tiến trình học, lịch sử ôn tập và mọi dữ liệu liên quan. Không thể khôi phục lại.
-            </span>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        if (!isPending) onOpenChange(val);
+      }}
+    >
+      <DialogContent className="max-w-md w-[95%] rounded-xl border-border/80 p-6">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+              {isPermanent ? (
+                <AlertTriangle className="h-5 w-5" />
+              ) : (
+                <Trash2 className="h-5 w-5" />
+              )}
+            </div>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              {isPermanent ? "Xóa vĩnh viễn bộ từ vựng" : "Chuyển vào thùng rác"}
+            </DialogTitle>
+          </div>
+          <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+            {isPermanent ? (
+              <>
+                Bộ từ vựng{" "}
+                <span className="font-semibold text-foreground">
+                  &ldquo;{vocabSet?.title}&rdquo;
+                </span>{" "}
+                cùng toàn bộ từ vựng, lịch sử ôn tập và tiến độ SRS liên quan sẽ bị xóa vĩnh viễn và không thể khôi phục.
+              </>
+            ) : (
+              <>
+                Bộ từ vựng{" "}
+                <span className="font-semibold text-foreground">
+                  &ldquo;{vocabSet?.title}&rdquo;
+                </span>{" "}
+                sẽ được chuyển vào mục Đã xóa tạm thời. Bạn có thể khôi phục lại bất cứ lúc nào.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="pt-4 gap-2 sm:gap-0">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+        <DialogFooter className="pt-4 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
             Hủy
           </Button>
-          <Button type="button" variant="destructive" onClick={handleDelete} disabled={isPending}>
-            {isPending ? "Đang xử lý..." : "Xóa vĩnh viễn"}
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isPending}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            {isPending
+              ? "Đang xử lý..."
+              : isPermanent
+                ? "Xóa vĩnh viễn"
+                : "Chuyển vào thùng rác"}
           </Button>
         </DialogFooter>
       </DialogContent>

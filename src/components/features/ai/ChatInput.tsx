@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 
 interface ChatInputProps {
   onSendMessage: (text: string) => void;
+  disabled?: boolean;
 }
 
-export function ChatInput({ onSendMessage }: ChatInputProps) {
+export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
   const [inputText, setInputText] = useState("");
 
   const quickPrompts = [
@@ -20,8 +21,8 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-    onSendMessage(inputText);
+    if (!inputText.trim() || disabled) return;
+    onSendMessage(inputText.trim());
     setInputText("");
   };
 
@@ -33,8 +34,9 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
           <button
             key={idx}
             type="button"
+            disabled={disabled}
             onClick={() => onSendMessage(prompt)}
-            className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border/80 cursor-pointer transition-all shadow-sm active:scale-95 shrink-0"
+            className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border/80 cursor-pointer transition-all shadow-sm active:scale-95 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Sparkles className="h-3 w-3 text-primary animate-pulse" />
             {prompt}
@@ -47,11 +49,17 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
         <Input
           type="text"
           value={inputText}
+          disabled={disabled}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Hỏi trợ lý ảo về ngữ pháp, phát âm hoặc cách dùng từ..."
           className="flex-1 rounded-xl bg-card border-border h-11 text-sm shadow-sm focus-visible:ring-1"
         />
-        <Button type="submit" size="icon" className="h-11 w-11 rounded-xl cursor-pointer shadow-sm shrink-0">
+        <Button
+          type="submit"
+          size="icon"
+          disabled={disabled || !inputText.trim()}
+          className="h-11 w-11 rounded-xl cursor-pointer shadow-sm shrink-0"
+        >
           <Send className="h-4 w-4" />
         </Button>
       </form>

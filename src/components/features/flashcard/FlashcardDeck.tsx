@@ -4,9 +4,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Settings2, Star, Volume2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { RotateCw, Settings2, Star, Volume2 } from "lucide-react";
 import { FlashcardFrontMode } from "./FlashcardSettingsDialog";
 import { FlashcardRow, getPartOfSpeechLabel } from "./flashcard-utils";
+import { cn } from "@/lib/utils";
 
 interface FlashcardDeckProps {
   word: FlashcardRow | null;
@@ -40,63 +42,95 @@ export function FlashcardDeck({
   const pos = getPartOfSpeechLabel(word.part_of_speech);
   const synonyms = word.synonyms?.filter(Boolean) ?? [];
 
-  const renderTopBar = () => (
-    <div className="flex items-start justify-between gap-3">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={(event) => {
-          event.stopPropagation();
-          onOpenSettings();
-        }}
-        className="h-11 w-11 rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900"
-      >
-        <Settings2 className="h-4 w-4" />
-      </Button>
+  const renderTopBar = (sideLabel: string) => (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenSettings();
+          }}
+          className="rounded-lg text-muted-foreground hover:text-foreground"
+          aria-label="Cài đặt thẻ từ"
+          title="Cài đặt thẻ từ"
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
+        <Badge variant="secondary" className="text-[11px] font-medium">
+          {sideLabel}
+        </Badge>
+      </div>
 
       {!readOnly ? (
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="icon-sm"
           onClick={(event) => {
             event.stopPropagation();
             onToggleStar();
           }}
-          className={[
-            "h-11 w-11 rounded-full border shadow-sm transition-colors",
+          className={cn(
+            "rounded-lg transition-colors",
             isStarred
-              ? "border-amber-200 bg-amber-50 text-amber-500 hover:bg-amber-100"
-              : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-amber-500",
-          ].join(" ")}
-          aria-label="Toggle star"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15"
+              : "text-muted-foreground hover:text-amber-500 hover:border-amber-500/30"
+          )}
+          aria-label={isStarred ? "Bỏ đánh dấu sao" : "Đánh dấu sao"}
+          title={isStarred ? "Bỏ đánh dấu sao" : "Đánh dấu sao"}
         >
-          <Star className={["h-4 w-4", isStarred ? "fill-amber-400 text-amber-500" : ""].join(" ")} />
+          <Star
+            className={cn(
+              "h-4 w-4",
+              isStarred && "fill-amber-400 text-amber-500"
+            )}
+          />
         </Button>
       ) : (
-        <div className="h-11 w-11" />
+        <div className="h-8 w-8" />
       )}
     </div>
   );
 
-  const renderAudioControl = () => (
-    <div className="absolute bottom-4 right-4 flex items-center gap-2 sm:bottom-5 sm:right-5 md:bottom-6 md:right-6">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={(event) => {
-          event.stopPropagation();
-          onSpeak();
-        }}
-        className="h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 hover:text-sky-600"
-        aria-label="Speak"
-      >
-        <Volume2 className="h-4 w-4" />
-      </Button>
-      <div onClick={(event) => event.stopPropagation()}>
-        <Switch checked={autoSpeak} onChange={onToggleAutoSpeak} ariaLabel="Auto speak" />
+  const renderBottomBar = () => (
+    <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/60">
+      <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <RotateCw className="h-3.5 w-3.5 text-primary/80" />
+        <span>Nhấn vào thẻ hoặc bấm</span>
+        <kbd className="hidden sm:inline-flex">Space</kbd>
+        <span className="hidden sm:inline">để lật</span>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSpeak();
+          }}
+          className="h-8 gap-1.5 rounded-lg px-2.5 text-xs"
+          aria-label="Phát âm từ vựng"
+        >
+          <Volume2 className="h-3.5 w-3.5 text-primary" />
+          <span className="hidden sm:inline">Phát âm</span>
+        </Button>
+        <div
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          onClick={(event) => event.stopPropagation()}
+          title="Tự động phát âm khi chuyển thẻ"
+        >
+          <span className="hidden md:inline text-[11px]">Tự phát</span>
+          <Switch
+            checked={autoSpeak}
+            onChange={onToggleAutoSpeak}
+            ariaLabel="Tự động phát âm"
+          />
+        </div>
       </div>
     </div>
   );
@@ -105,15 +139,22 @@ export function FlashcardDeck({
     const title = frontMode === "definition" ? word.meaning : word.word;
 
     return (
-      <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-        <h2 className="text-[2.55rem] font-extrabold leading-[1.08] tracking-[-0.045em] text-slate-950 sm:text-[3.1rem] md:text-[3.35rem]">
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 text-center px-2">
+        <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl break-words max-w-full">
           {title}
         </h2>
-        <p className="text-[1.05rem] font-medium text-slate-500 sm:text-[1.1rem]">
-          <span className="capitalize">{pos || " "}</span>
-          {pos && word.ipa ? <span className="mx-2 text-slate-300">-</span> : null}
-          {word.ipa ? <span className="font-mono text-slate-500">{word.ipa}</span> : null}
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {pos && (
+            <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+              {pos}
+            </Badge>
+          )}
+          {word.ipa && (
+            <span className="font-mono text-sm sm:text-base text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60">
+              {word.ipa}
+            </span>
+          )}
+        </div>
       </div>
     );
   };
@@ -122,31 +163,48 @@ export function FlashcardDeck({
     const answer = frontMode === "definition" ? word.word : word.meaning;
 
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center px-2 py-2">
-        <div className="flex w-full flex-col items-center gap-5 text-center">
-          <section className="space-y-2">
-            <h2 className="text-[2.5rem] font-extrabold leading-[1.08] tracking-[-0.045em] text-slate-950 sm:text-[3rem] md:text-[3.25rem]">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center overflow-y-auto px-2 py-2">
+        <div className="flex w-full flex-col items-center gap-4 text-center">
+          <section className="space-y-2.5">
+            <h2 className="text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl md:text-4xl break-words">
               {answer}
             </h2>
-            <p className="text-[1.02rem] font-medium text-slate-500 sm:text-[1.08rem]">
-              <span className="capitalize">{pos || " "}</span>
-              {pos && word.ipa ? <span className="mx-2 text-slate-300">-</span> : null}
-              {word.ipa ? <span className="font-mono text-slate-500">{word.ipa}</span> : null}
-            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {pos && (
+                <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+                  {pos}
+                </Badge>
+              )}
+              {word.ipa && (
+                <span className="font-mono text-sm text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60">
+                  {word.ipa}
+                </span>
+              )}
+            </div>
           </section>
 
           {word.example ? (
-            <p className="max-w-2xl text-[1.05rem] italic leading-7 text-slate-600 sm:text-[1.1rem] sm:leading-8">
-              {word.example}
-            </p>
+            <div className="w-full max-w-xl rounded-xl border border-border/70 bg-muted/25 px-4 py-3 text-center space-y-1">
+              <p className="text-sm sm:text-base italic leading-relaxed text-foreground/90">
+                &ldquo;{word.example}&rdquo;
+              </p>
+              {word.example_translation && (
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  {word.example_translation}
+                </p>
+              )}
+            </div>
           ) : null}
 
-          {synonyms.length ? (
-            <div className="flex max-w-2xl flex-wrap justify-center gap-2 pt-1">
+          {synonyms.length > 0 ? (
+            <div className="flex max-w-xl flex-wrap items-center justify-center gap-1.5 pt-1">
+              <span className="text-[11px] font-medium text-muted-foreground mr-1">
+                Đồng nghĩa:
+              </span>
               {synonyms.slice(0, 6).map((synonym) => (
-                <span key={synonym} className="rounded-full bg-slate-50 px-3 py-1 text-sm font-medium text-slate-500">
+                <Badge key={synonym} variant="secondary" className="text-xs font-normal">
                   {synonym}
-                </span>
+                </Badge>
               ))}
             </div>
           ) : null}
@@ -156,10 +214,10 @@ export function FlashcardDeck({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[62rem]">
-      <div className="relative overflow-hidden rounded-[1.7rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+    <div className="mx-auto w-full max-w-4xl">
+      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
         <motion.div
-          className="relative h-[31.5rem] min-h-[31.5rem] w-full overflow-hidden rounded-[1.7rem] touch-pan-y bg-white max-md:h-[29rem] max-md:min-h-[29rem] max-sm:h-[calc(100dvh-13rem)] max-sm:min-h-[28rem]"
+          className="relative h-[26rem] sm:h-[28rem] md:h-[30rem] w-full overflow-hidden rounded-2xl touch-pan-y bg-card cursor-pointer select-none"
           style={{ willChange: "transform" }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
@@ -174,33 +232,43 @@ export function FlashcardDeck({
             className="relative h-full w-full"
             style={{ transformStyle: "preserve-3d", perspective: "1200px" }}
             animate={{ rotateY: flipped ? 180 : 0 }}
-            transition={{ type: "spring", stiffness: 132, damping: 20, mass: 0.95 }}
+            transition={{ type: "spring", stiffness: 150, damping: 22, mass: 0.9 }}
             onClick={onFlip}
           >
+            {/* Front Face */}
             <section
-              className="absolute inset-0 flex h-full w-full flex-col rounded-[1.7rem] p-5 sm:p-6 md:p-7"
+              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-5 sm:p-6 md:p-8"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 transform: "translateZ(0)",
               }}
             >
-              {renderTopBar()}
-              <div className="flex flex-1 items-center justify-center px-5 text-center">{renderFrontContent()}</div>
-              {renderAudioControl()}
+              {renderTopBar(
+                frontMode === "definition" ? "Mặt trước • Định nghĩa" : "Mặt trước • Thuật ngữ"
+              )}
+              <div className="flex flex-1 items-center justify-center py-4">
+                {renderFrontContent()}
+              </div>
+              {renderBottomBar()}
             </section>
 
+            {/* Back Face */}
             <section
-              className="absolute inset-0 flex h-full w-full flex-col rounded-[1.7rem] p-5 sm:p-6 md:p-7"
+              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-5 sm:p-6 md:p-8"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 transform: "rotateY(180deg) translateZ(0)",
               }}
             >
-              {renderTopBar()}
-              <div className="flex flex-1 overflow-hidden px-5 py-2">{renderBackContent()}</div>
-              {renderAudioControl()}
+              {renderTopBar(
+                frontMode === "definition" ? "Mặt sau • Thuật ngữ" : "Mặt sau • Nghĩa & Ví dụ"
+              )}
+              <div className="flex flex-1 overflow-hidden py-2">
+                {renderBackContent()}
+              </div>
+              {renderBottomBar()}
             </section>
           </motion.div>
         </motion.div>

@@ -68,13 +68,13 @@ export function LineChartCard({
                   tickFormatter={(value) => `${value}`}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "8px", border: "1px solid hsl(var(--border))" }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  contentStyle={{ backgroundColor: "var(--card)", borderRadius: "12px", border: "1px solid var(--border)" }}
+                  itemStyle={{ color: "var(--foreground)" }}
                 />
                 <Line
                   type="monotone"
                   dataKey={lineDataKey}
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--primary)"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}

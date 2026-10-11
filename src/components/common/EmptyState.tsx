@@ -20,16 +20,16 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-border rounded-2xl bg-muted/10 my-4">
-      <div className="rounded-2xl p-4 bg-muted/30 text-muted-foreground mb-4">
-        <Icon className="h-8 w-8 text-muted-foreground/80" />
+    <div className="flex flex-col items-center justify-center text-center px-6 py-12 border border-dashed border-border rounded-xl bg-muted/15 my-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground shadow-2xs mb-4">
+        <Icon className="h-6 w-6 text-muted-foreground/80" />
       </div>
       <h4 className="text-base font-semibold text-foreground mb-1">{title}</h4>
-      <p className="text-sm text-muted-foreground max-w-sm mb-6 leading-relaxed">
+      <p className="text-sm text-muted-foreground max-w-md mb-5 leading-relaxed">
         {description}
       </p>
       {actionText && onAction && (
-        <Button onClick={onAction} variant="outline" className="rounded-xl cursor-pointer">
+        <Button onClick={onAction} variant="outline" size="sm">
           {actionText}
         </Button>
       )}

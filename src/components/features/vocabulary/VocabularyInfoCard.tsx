@@ -1,7 +1,9 @@
 "use client";
 
 import React, { memo } from "react";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface VocabularyInfoCardProps {
   title: string;
@@ -21,35 +23,48 @@ function VocabularyInfoCardComponent({
   error,
 }: VocabularyInfoCardProps) {
   return (
-    <div className="w-full space-y-4 py-6 border-b border-border/40 select-none">
-      <div className="space-y-1">
-        <Label htmlFor="vocab-title" className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider">
-          Tiêu đề bộ thẻ
+    <div className="w-full rounded-xl border border-border/80 bg-card p-5 shadow-2xs space-y-4">
+      <div className="space-y-1.5">
+        <Label
+          htmlFor="vocab-title"
+          className="text-xs font-semibold text-foreground"
+        >
+          Tiêu đề bộ từ vựng <span className="text-destructive">*</span>
         </Label>
-        <input
+        <Input
           id="vocab-title"
           type="text"
-          placeholder="Ví dụ: 3000 từ vựng Oxford thông dụng..."
+          placeholder="Ví dụ: 3000 từ vựng Oxford thông dụng, IELTS Academic Band 7.0+..."
           value={title}
           onChange={(e) => onChangeTitle(e.target.value)}
           disabled={isPending}
-          className="w-full text-lg sm:text-xl font-bold tracking-tight bg-transparent text-foreground placeholder:text-muted-foreground/50 border-0 p-0 focus:ring-0 focus:outline-none"
+          aria-invalid={!!error}
+          className={cn(
+            "h-10 rounded-lg text-sm font-medium",
+            error && "border-destructive ring-1 ring-destructive/20"
+          )}
         />
-        {error && <p className="text-[11px] text-rose-500 font-semibold">{error}</p>}
+        {error && (
+          <p className="text-xs font-medium text-destructive">{error}</p>
+        )}
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="vocab-desc" className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider">
-          Mô tả ngắn
+      <div className="space-y-1.5">
+        <Label
+          htmlFor="vocab-desc"
+          className="text-xs font-semibold text-foreground"
+        >
+          Mô tả ngắn{" "}
+          <span className="font-normal text-muted-foreground">(Tùy chọn)</span>
         </Label>
-        <input
+        <Input
           id="vocab-desc"
           type="text"
-          placeholder="Mục đích hoặc tài liệu tham khảo..."
+          placeholder="Ghi chú mục tiêu học tập, chủ đề hoặc nguồn tài liệu tham khảo..."
           value={description}
           onChange={(e) => onChangeDescription(e.target.value)}
           disabled={isPending}
-          className="w-full text-sm font-medium bg-transparent text-muted-foreground placeholder:text-muted-foreground/40 border-0 p-0 focus:ring-0 focus:outline-none"
+          className="h-9 rounded-lg text-sm"
         />
       </div>
     </div>

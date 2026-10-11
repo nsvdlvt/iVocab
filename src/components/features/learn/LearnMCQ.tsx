@@ -36,15 +36,15 @@ export function LearnMCQ({
   const isSubmitted = answerState !== "unanswered";
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-4 select-none">
-      <div className="relative py-6 sm:py-8 px-4 border border-border/80 rounded-2xl bg-card shadow-xs">
-        <div className="absolute left-3 right-3 top-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1">
+    <div className="w-full max-w-2xl mx-auto space-y-4 select-none">
+      <div className="relative py-8 sm:py-10 px-6 border border-border/80 rounded-2xl bg-card shadow-xs">
+        <div className="absolute left-3.5 right-3.5 top-3.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
             {question.direction === "en-vi" && onSpeakPrompt && (
               <button
                 type="button"
                 onClick={onSpeakPrompt}
-                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900 inline-flex items-center justify-center"
+                className="h-8 w-8 rounded-lg bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground inline-flex items-center justify-center cursor-pointer"
                 title="Nghe phát âm"
               >
                 <Volume2 className="h-4 w-4" />
@@ -61,12 +61,12 @@ export function LearnMCQ({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {onEdit && (
               <button
                 type="button"
                 onClick={onEdit}
-                className="h-8 w-8 rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-900 inline-flex items-center justify-center"
+                className="h-8 w-8 rounded-lg bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground inline-flex items-center justify-center cursor-pointer"
                 title="Chỉnh sửa"
               >
                 <Pencil className="h-4 w-4" />
@@ -76,82 +76,84 @@ export function LearnMCQ({
               <button
                 type="button"
                 onClick={onToggleStar}
-                className={[
-                  "h-8 w-8 rounded-lg bg-transparent transition-all hover:bg-slate-100 inline-flex items-center justify-center",
+                className={cn(
+                  "h-8 w-8 rounded-lg bg-transparent transition-colors hover:bg-muted inline-flex items-center justify-center cursor-pointer",
                   isStarred
                     ? "text-amber-500 hover:text-amber-500"
-                    : "text-slate-500 hover:text-amber-500",
-                ].join(" ")}
+                    : "text-muted-foreground hover:text-amber-500"
+                )}
                 title={isStarred ? "Bỏ đánh dấu yêu thích" : "Đánh dấu yêu thích"}
               >
-                <Star className={["h-4 w-4", isStarred ? "fill-amber-400 text-amber-500" : ""].join(" ")} />
+                <Star className={cn("h-4 w-4", isStarred && "fill-amber-400 text-amber-500")} />
               </button>
             )}
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
-            Câu hỏi Trắc nghiệm
+        <div className="text-center pt-2">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
+            Chọn đáp án đúng ({question.direction === "en-vi" ? "Anh → Việt" : "Việt → Anh"})
           </p>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-snug px-2 line-clamp-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight leading-snug px-2 line-clamp-3 select-text">
             {question.prompt}
           </h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {question.options.map((option, idx) => {
           const isSelected = selectedOptionId === option.id;
           const isCorrectOption = option.id === question.correctOptionId;
           const isWrongSelected = isSelected && !isCorrectOption;
 
-          let btnClass = "border-border bg-card hover:bg-muted/50 cursor-pointer";
-          let badgeClass = "bg-muted/70 text-muted-foreground border-border";
+          let btnClass =
+            "border-border/80 bg-card hover:bg-accent/50 hover:border-primary/40 cursor-pointer text-foreground";
+          let kbdClass = "bg-muted/80 text-muted-foreground border-border";
 
           if (isSubmitted) {
             if (isCorrectOption) {
               btnClass =
-                "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 cursor-default";
-              badgeClass = "bg-emerald-500 text-white border-emerald-500";
+                "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 cursor-default ring-1 ring-emerald-500/30";
+              kbdClass = "bg-emerald-500 text-white border-emerald-500 shadow-none";
             } else if (isWrongSelected) {
               btnClass =
-                "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400 cursor-default";
-              badgeClass = "bg-rose-500 text-white border-rose-500";
+                "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-300 cursor-default ring-1 ring-rose-500/30";
+              kbdClass = "bg-rose-500 text-white border-rose-500 shadow-none";
             } else {
-              btnClass = "bg-muted/30 border-border/40 text-muted-foreground/40 cursor-default";
-              badgeClass = "bg-muted/30 text-muted-foreground/30 border-border/20";
+              btnClass = "bg-muted/20 border-border/40 text-muted-foreground/50 cursor-default";
+              kbdClass = "bg-muted/30 text-muted-foreground/40 border-border/30 shadow-none";
             }
           } else if (isSelected) {
             btnClass =
-              "border-indigo-500 bg-indigo-500/5 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 cursor-pointer";
-            badgeClass = "bg-indigo-500 text-white border-indigo-500";
+              "border-primary bg-primary/5 text-primary hover:bg-primary/10 cursor-pointer ring-1 ring-primary/20";
+            kbdClass = "bg-primary text-primary-foreground border-primary shadow-none";
           }
 
           return (
             <button
               key={option.id}
+              type="button"
               disabled={isSubmitted}
               onClick={() => onSelectOption(option.id)}
               className={cn(
-                "w-full text-left p-4 rounded-xl border font-semibold text-sm outline-none flex items-center justify-between transition-all duration-300 ease-in-out",
+                "w-full text-left p-4 rounded-xl border font-medium text-sm outline-none flex items-center justify-between gap-3 transition-all duration-150",
                 btnClass
               )}
             >
-              <div className="flex items-center gap-3">
-                <span
+              <div className="flex items-center gap-3 min-w-0">
+                <kbd
                   className={cn(
-                    "flex items-center justify-center h-6 w-6 rounded-full border text-[11px] font-bold shrink-0 font-mono transition-colors duration-300",
-                    badgeClass
+                    "h-6 w-6 rounded-md text-xs font-bold shrink-0 transition-colors",
+                    kbdClass
                   )}
                 >
-                  {String.fromCharCode(65 + idx)}
-                </span>
-                <span className="leading-snug">{option.text}</span>
+                  {idx + 1}
+                </kbd>
+                <span className="leading-snug break-words">{option.text}</span>
               </div>
 
               {isSubmitted && (isCorrectOption || isWrongSelected) && (
-                <div className="shrink-0 ml-2 animate-in fade-in duration-200">
+                <div className="shrink-0 animate-in fade-in duration-150">
                   {isCorrectOption ? (
                     <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   ) : (
@@ -165,12 +167,14 @@ export function LearnMCQ({
       </div>
 
       {!isSubmitted && onSkip && (
-        <div className="pt-2 flex justify-center">
+        <div className="pt-1 flex justify-center">
           <button
+            type="button"
             onClick={onSkip}
-            className="text-xs font-semibold text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-muted/60"
           >
-            Không biết (5)
+            <span>Không biết</span>
+            <kbd>5</kbd>
           </button>
         </div>
       )}

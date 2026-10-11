@@ -1,7 +1,6 @@
 "use client";
 
 import { Eye, EyeOff, Highlighter, MoreHorizontal, ZoomIn, ZoomOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +87,7 @@ export function ReadingToolbar({
                     className={cn(
                       "h-6 w-6 rounded-full border transition-all",
                       item.className,
-                      highlightColor === item.value ? "border-slate-950 ring-2 ring-slate-950/15" : "border-border/70"
+                      highlightColor === item.value ? "border-foreground ring-2 ring-primary/30" : "border-border/70"
                     )}
                   />
                 ))}
@@ -96,7 +95,7 @@ export function ReadingToolbar({
             ) : null}
           </div>
 
-          <div className="flex items-center gap-1 rounded-full border border-border bg-background px-1 py-1">
+          <div className="flex items-center gap-1 rounded-full border border-border bg-background px-1.5 py-1">
             <button
               type="button"
               onClick={onZoomOut}
@@ -110,7 +109,9 @@ export function ReadingToolbar({
             >
               <ZoomOut className="h-4 w-4" />
             </button>
-            <div className="h-5 w-px bg-border" />
+            <span className="px-1.5 text-xs font-mono font-semibold text-muted-foreground tabular-nums">
+              {readingFontSize}px
+            </span>
             <button
               type="button"
               onClick={onZoomIn}

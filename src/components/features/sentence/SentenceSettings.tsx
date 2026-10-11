@@ -59,45 +59,49 @@ export function SentenceSettings({ open, onOpenChange }: { open: boolean; onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false}>
+      <DialogContent showCloseButton={false} className="rounded-2xl max-w-md p-6 border border-border/80 bg-card">
         <DialogHeader>
-          <DialogTitle>Cài đặt chế độ luyện câu</DialogTitle>
-          <DialogDescription>Điều chỉnh các tùy chọn hiển thị và ngôn ngữ phản hồi.</DialogDescription>
+          <DialogTitle className="text-base font-bold text-foreground">Cài đặt chế độ luyện câu</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Điều chỉnh các tùy chọn hiển thị và ngôn ngữ phản hồi.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="flex items-center justify-between">
-            <span>Ngôn ngữ phản hồi</span>
+        <div className="space-y-3 py-2 text-sm">
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3">
+            <span className="font-medium text-foreground">Ngôn ngữ phản hồi</span>
             <select
               value={local.language}
               onChange={(e) => setLocal({ ...local, language: e.target.value })}
-              className="border rounded p-1"
+              className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-semibold text-foreground outline-none focus:ring-1 focus:ring-ring"
             >
-              <option value="Vietnamese">Vietnamese</option>
+              <option value="Vietnamese">Tiếng Việt</option>
               <option value="English">English</option>
             </select>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Tiếp tục tự động</span>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3">
+            <span className="font-medium text-foreground">Tiếp tục tự động</span>
             <Switch checked={local.autoContinue} onChange={() => toggle("autoContinue")} />
           </div>
-          <div className="flex items-center justify-between">
-            <span>Hiển thị câu viết lại (cải tiến)</span>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3">
+            <span className="font-medium text-foreground">Hiển thị câu viết lại (cải tiến)</span>
             <Switch checked={local.showAdvancedRewrite} onChange={() => toggle("showAdvancedRewrite")} />
           </div>
-          <div className="flex items-center justify-between">
-            <span>Hiển thị câu thay thế</span>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3">
+            <span className="font-medium text-foreground">Hiển thị câu thay thế</span>
             <Switch checked={local.showAlternatives} onChange={() => toggle("showAlternatives")} />
           </div>
-          <div className="flex items-center justify-between">
-            <span>Hiển thị giải thích AI</span>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-3">
+            <span className="font-medium text-foreground">Hiển thị giải thích AI</span>
             <Switch checked={local.showAIExplanation} onChange={() => toggle("showAIExplanation")} />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
             Hủy
           </Button>
-          <Button onClick={apply}>Áp dụng</Button>
+          <Button onClick={apply} className="rounded-xl">
+            Áp dụng
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

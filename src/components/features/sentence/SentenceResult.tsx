@@ -173,29 +173,27 @@ export function SentenceResult({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-6"
+      transition={{ duration: 0.3 }}
+      className="space-y-5"
     >
       {/* 1. Score Overview Card */}
-      <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-500 opacity-80" />
-        
+      <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
         {/* Large Circular Score */}
-        <div className="flex flex-col items-center justify-center shrink-0 w-full md:w-fit border-b md:border-b-0 md:border-r border-border/60 pb-6 md:pb-0 md:pr-10">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Overall Score</span>
-          <div className="relative w-36 h-36 flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center shrink-0 w-full md:w-fit border-b md:border-b-0 md:border-r border-border/60 pb-6 md:pb-0 md:pr-8">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Điểm tổng</span>
+          <div className="relative w-32 h-32 flex items-center justify-center">
             <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
               <path
-                className="text-muted/30"
+                className="text-muted/40"
                 fill="none"
                 strokeWidth="2.5"
                 stroke="currentColor"
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
               />
               <motion.path
-                className="text-blue-600 dark:text-blue-400"
+                className="text-primary"
                 fill="none"
                 strokeWidth="2.5"
                 strokeDasharray={`${animatedScore}, 100`}
@@ -206,8 +204,8 @@ export function SentenceResult({
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-4xl font-extrabold tracking-tight text-foreground">{animatedScore}</span>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Points</span>
+              <span className="text-3xl font-bold tabular-nums tracking-tight text-foreground">{animatedScore}</span>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">/ 100</span>
             </div>
           </div>
         </div>
@@ -216,7 +214,7 @@ export function SentenceResult({
         <div className="flex-1 space-y-4 w-full">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-pulse" />
+              <Sparkles className="h-4 w-4 text-primary" />
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Đánh giá tổng quát</h4>
             </div>
             {onRetry && (
@@ -224,22 +222,22 @@ export function SentenceResult({
                 variant="outline"
                 size="sm"
                 onClick={onRetry}
-                className="rounded-xl px-3 py-1 h-7 text-[11px] hover:bg-muted/80 gap-1 border-border/80 font-bold shrink-0"
+                className="rounded-xl px-3 h-8 text-xs hover:bg-muted/80 gap-1.5 border-border/80 font-semibold shrink-0 cursor-pointer"
               >
-                <RotateCcw className="h-3.5 w-3.5 text-indigo-500 animate-spin-hover" />
-                <span>Làm lại</span>
+                <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                <span>Viết lại</span>
               </Button>
             )}
           </div>
 
           <div className="space-y-4">
-            <section className="space-y-2">
-              <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Câu của bạn</span>
+            <section className="space-y-1.5">
+              <h5 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Câu của bạn
               </h5>
-              <div className="rounded-2xl border border-border/60 bg-slate-50/80 dark:bg-blue-500/[0.04] p-4 shadow-sm">
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3.5">
                 {hasUserSentence ? (
-                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90">
+                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
                     {userSentence}
                   </p>
                 ) : (
@@ -250,32 +248,33 @@ export function SentenceResult({
               </div>
             </section>
 
-            <section className="space-y-2">
-              <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Đánh giá tổng quát</span>
+            <section className="space-y-1.5">
+              <h5 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Nhận xét
               </h5>
-              <p className="text-sm text-foreground/80 leading-relaxed font-medium whitespace-pre-wrap break-words">
+              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
                 {feedback.feedback}
               </p>
             </section>
 
-              {feedback.correctedSentence && (
-              <section className="space-y-2">
-                <h5 className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>Câu đề xuất cải tiến</span>
+            {feedback.correctedSentence && (
+              <section className="space-y-1.5">
+                <h5 className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  Câu đề xuất cải tiến
                 </h5>
-                <div className="bg-blue-500/[0.03] border border-blue-500/10 rounded-2xl p-4 space-y-2 select-text relative">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3.5 select-text relative">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-foreground/90 leading-relaxed pr-6 whitespace-pre-wrap break-words">
+                    <p className="text-sm font-semibold text-foreground leading-relaxed pr-6 whitespace-pre-wrap break-words">
                       {feedback.correctedSentence}
                     </p>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleCopy(feedback.correctedSentence!)}
-                      className="h-6 w-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
+                      className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0 cursor-pointer"
+                      title="Sao chép"
                     >
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -285,9 +284,9 @@ export function SentenceResult({
         </div>
       </div>
 
-      {/* 2. Detailed Category Analysis (Notion style) */}
+      {/* 2. Detailed Category Analysis */}
       {parsedCategories.length > 0 && (
-        <div className="border border-border/80 bg-card rounded-3xl shadow-sm overflow-hidden">
+        <div className="border border-border/80 bg-card rounded-2xl shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection("categories")}

@@ -2,14 +2,36 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getMetadataOptions } from "@/constants/vocab-set";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
-import { MoreVertical, Edit2, Copy, Trash2, RotateCcw, ShieldAlert, ArrowRight, Share2, Lock, Globe } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit2,
+  Copy,
+  Trash2,
+  RotateCcw,
+  ShieldAlert,
+  ArrowRight,
+  Share2,
+  Lock,
+  Globe,
+  Link2,
+  Play,
+  Clock,
+  BookOpen,
+} from "lucide-react";
 import { duplicateVocabularySet } from "@/actions/vocab-sets/duplicate";
 import { toast } from "sonner";
 import { ShareSetDialog } from "./ShareSetDialog";
@@ -48,13 +70,55 @@ function formatRelativeTime(iso: string | null) {
   return `${Math.max(1, months)} tháng trước`;
 }
 
-export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: VocabSetCardProps) {
+function renderVisibilityBadge(visibility: string | null, isDeleted: boolean) {
+  if (isDeleted) {
+    return (
+      <Badge variant="destructive" className="gap-1">
+        Đã xóa
+      </Badge>
+    );
+  }
+  switch (visibility) {
+    case "public":
+      return (
+        <Badge variant="success" className="gap-1">
+          <Globe className="h-3 w-3" />
+          Công khai
+        </Badge>
+      );
+    case "unlisted":
+      return (
+        <Badge variant="warning" className="gap-1">
+          <Link2 className="h-3 w-3" />
+          Không công khai
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="secondary" className="gap-1">
+          <Lock className="h-3 w-3" />
+          Riêng tư
+        </Badge>
+      );
+  }
+}
+
+export function VocabSetCard({
+  set,
+  summary,
+  onEdit,
+  onDelete,
+  onRestore,
+}: VocabSetCardProps) {
   const [isPending, setIsPending] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const isDeleted = !!set.deleted_at;
   const shareLink = `${typeof window !== "undefined" ? window.location.origin : ""}${ROUTES.SHARE_VOCABULARY_DETAIL(set.id)}`;
 
-  const { color, LucideIcon } = getMetadataOptions(set.color || "blue", set.icon || "BookOpen");
+  const { color, LucideIcon } = getMetadataOptions(
+    set.color || "blue",
+    set.icon || "BookOpen"
+  );
 
   const handleDuplicate = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -80,7 +144,7 @@ export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: Voca
 
     try {
       await navigator.clipboard.writeText(shareLink);
-      toast.success("Đã sao chép liên kết.");
+      toast.success("Đã sao chép liên kết chia sẻ.");
     } catch {
       toast.error("Không thể sao chép liên kết.");
     }
@@ -92,78 +156,120 @@ export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: Voca
   const learningCount = summary?.learningWords ?? 0;
   const newCount = summary?.newWords ?? 0;
   const totalWords = summary?.totalWords ?? 0;
-  const masteredPercent = totalWords > 0 ? (masteredCount / totalWords) * 100 : 0;
-  const learningPercent = totalWords > 0 ? (learningCount / totalWords) * 100 : 0;
-  const newPercent = Math.max(0, 100 - masteredPercent - learningPercent);
+  const masteredPercent =
+    totalWords > 0 ? Math.round((masteredCount / totalWords) * 100) : 0;
+  const learningPercent =
+    totalWords > 0 ? Math.round((learningCount / totalWords) * 100) : 0;
   const lastStudiedLabel = formatRelativeTime(summary?.lastStudiedAt ?? null);
 
   const cardContent = (
-    <div className="flex h-full min-h-[228px] w-full flex-col p-5">
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
+    <div className="flex h-full min-h-[236px] w-full flex-col justify-between p-5">
+      {/* Top section */}
+      <div className="space-y-3.5">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border shrink-0", color.lightBg, color.border)}>
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform duration-200 group-hover:scale-105",
+                color.lightBg,
+                color.border
+              )}
+            >
               <LucideIcon className={cn("h-5 w-5", color.text)} />
             </div>
 
-            <div className="min-w-0">
-              <h3 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-1">
+            <div className="min-w-0 space-y-1">
+              <h3 className="line-clamp-1 text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-[15px]">
                 {set.title}
               </h3>
-              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>{(set.source_language || "en").toUpperCase()}</span>
-                <ArrowRight className="h-3 w-3 inline text-muted-foreground/60" />
-                <span>{(set.target_language || "vi").toUpperCase()}</span>
-                <span
-                  className={cn(
-                    "ml-1 inline-flex items-center justify-center rounded-full p-1",
-                    set.visibility === "public"
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                      : "bg-slate-500/10 text-slate-600 dark:text-slate-300"
-                  )}
-                  title={set.visibility === "public" ? "Công khai" : "Riêng tư"}
-                  aria-label={set.visibility === "public" ? "Công khai" : "Riêng tư"}
-                >
-                  {set.visibility === "public" ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span>{(set.source_language || "en").toUpperCase()}</span>
+                  <ArrowRight className="h-2.5 w-2.5 opacity-60" />
+                  <span>{(set.target_language || "vi").toUpperCase()}</span>
                 </span>
+                {renderVisibilityBadge(set.visibility, isDeleted)}
               </div>
             </div>
           </div>
 
-          <div className="shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <div
+            className="shrink-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted" disabled={isPending}>
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                    disabled={isPending}
+                    aria-label="Tùy chọn bộ từ"
+                  />
+                }
+              >
+                <MoreHorizontal className="h-4 w-4" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[160px] rounded-lg">
+              <DropdownMenuContent align="end" className="w-44 rounded-xl">
                 {!isDeleted ? (
                   <>
-                    <DropdownMenuItem onClick={() => onEdit(set)} className="gap-2 text-xs cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => onEdit(set)}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
                       <Edit2 className="h-3.5 w-3.5" />
                       Chỉnh sửa
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDuplicate} className="gap-2 text-xs cursor-pointer">
-                      <Copy className="h-3.5 w-3.5" />
-                      Nhân bản
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleShare} className="gap-2 text-xs cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={handleShare}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
                       <Share2 className="h-3.5 w-3.5" />
                       Chia sẻ
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete(set, true)} className="gap-2 text-rose-500 focus:text-rose-500 focus:bg-rose-500/10 text-xs cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={handleDuplicate}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Nhân bản
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(set, false)}
+                      className="gap-2 text-xs cursor-pointer text-muted-foreground focus:text-foreground"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
+                      Chuyển vào thùng rác
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDelete(set, true)}
+                      variant="destructive"
+                      className="gap-2 text-xs cursor-pointer"
+                    >
+                      <ShieldAlert className="h-3.5 w-3.5" />
                       Xóa vĩnh viễn
                     </DropdownMenuItem>
                   </>
                 ) : (
                   <>
-                    <DropdownMenuItem onClick={() => onRestore(set)} className="gap-2 text-xs cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => onRestore(set)}
+                      className="gap-2 text-xs cursor-pointer"
+                    >
                       <RotateCcw className="h-3.5 w-3.5" />
                       Khôi phục
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete(set, true)} className="gap-2 text-rose-600 focus:text-rose-600 focus:bg-rose-600/10 font-medium text-xs cursor-pointer">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(set, true)}
+                      variant="destructive"
+                      className="gap-2 text-xs cursor-pointer"
+                    >
                       <ShieldAlert className="h-3.5 w-3.5" />
                       Xóa vĩnh viễn
                     </DropdownMenuItem>
@@ -174,36 +280,74 @@ export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: Voca
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed min-h-[3.75rem]">
-          {set.description || <span className="italic opacity-60">Không có mô tả</span>}
+        <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-muted-foreground">
+          {set.description || (
+            <span className="italic opacity-60">Chưa có mô tả cho bộ từ này</span>
+          )}
         </p>
       </div>
 
-      <div className="mt-auto space-y-2 pt-3 border-t">
-        <div className="space-y-1">
-          <div className="flex h-2 overflow-hidden rounded-full bg-muted/70">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-700 ease-out"
-              style={{ width: `${masteredPercent}%` }}
-              title={`Đã thuộc: ${masteredCount}/${totalWords}`}
-            />
-            <div
-              className="h-full bg-amber-500 transition-all duration-700 ease-out"
-              style={{ width: `${learningPercent}%` }}
-              title={`Đang học: ${learningCount}/${totalWords}`}
-            />
-            <div
-              className="h-full bg-slate-200 transition-all duration-700 ease-out dark:bg-slate-700"
-              style={{ width: `${newPercent}%` }}
-              title={`Chưa học: ${newCount}/${totalWords}`}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-3 text-[10px] font-semibold text-muted-foreground">
-            <span className="min-w-0 whitespace-nowrap">
-              Đã thuộc: {masteredCount}/{totalWords}
+      {/* Bottom SRS Progress & Quick Study */}
+      <div className="mt-4 space-y-3 border-t border-border/70 pt-3.5">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-medium">
+            <span className="inline-flex items-center gap-1.5 text-foreground font-semibold tabular-nums">
+              <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+              {totalWords} từ vựng
             </span>
-            <span className="min-w-0 truncate text-right">Học lần cuối: {lastStudiedLabel}</span>
+            <span className="text-muted-foreground tabular-nums">
+              Đã thuộc{" "}
+              <strong className="font-semibold text-foreground">
+                {masteredCount}/{totalWords}
+              </strong>{" "}
+              ({masteredPercent}%)
+            </span>
           </div>
+
+          {/* Segmented Mastery Bar */}
+          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+              style={{ width: `${masteredPercent}%` }}
+              title={`Đã thuộc: ${masteredCount} từ`}
+            />
+            <div
+              className="h-full bg-amber-500 transition-all duration-500 ease-out"
+              style={{ width: `${learningPercent}%` }}
+              title={`Đang học: ${learningCount} từ`}
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-0.5 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-2.5 tabular-nums">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {masteredCount} thuộc
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {learningCount} đang học
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                {newCount} mới
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span className="truncate">{lastStudiedLabel}</span>
+          </span>
+
+          {!isDeleted && (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <Play className="h-3 w-3 fill-current" />
+              Học ngay
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -211,13 +355,20 @@ export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: Voca
 
   return (
     <>
-      <SectionCard hoverable className="p-0 overflow-hidden flex flex-col justify-between min-h-[228px] group border-border/80">
+      <SectionCard
+        hoverable={!isDeleted}
+        className={cn(
+          "group flex min-h-[236px] flex-col justify-between overflow-hidden rounded-xl border-border/80 p-0",
+          isDeleted && "bg-muted/20 opacity-85"
+        )}
+      >
         {isDeleted ? (
-          <div className="w-full h-full relative bg-muted/20">
-            {cardContent}
-          </div>
+          <div className="relative h-full w-full">{cardContent}</div>
         ) : (
-          <Link href={ROUTES.VOCABULARY_DETAIL(set.id)} className="flex w-full h-full">
+          <Link
+            href={ROUTES.VOCABULARY_DETAIL(set.id)}
+            className="flex h-full w-full focus-visible:outline-none"
+          >
             {cardContent}
           </Link>
         )}
@@ -227,7 +378,10 @@ export function VocabSetCard({ set, summary, onEdit, onDelete, onRestore }: Voca
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         shareLink={shareLink}
-        visibility={(set.visibility as "public" | "private" | "unlisted" | null) ?? "private"}
+        visibility={
+          (set.visibility as "public" | "private" | "unlisted" | null) ??
+          "private"
+        }
       />
     </>
   );

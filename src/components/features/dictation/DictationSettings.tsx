@@ -109,15 +109,15 @@ export function DictationSettingsDialog({
               className="grid grid-cols-3 gap-2"
             >
               <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
-                <RadioGroupItem id="speed-slow" value="0.75" className="text-indigo-600" />
+                <RadioGroupItem id="speed-slow" value="0.75" className="text-primary" />
                 <Label htmlFor="speed-slow" className="text-xs font-semibold cursor-pointer">Chậm (0.75x)</Label>
               </div>
               <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
-                <RadioGroupItem id="speed-normal" value="1" className="text-indigo-600" />
+                <RadioGroupItem id="speed-normal" value="1" className="text-primary" />
                 <Label htmlFor="speed-normal" className="text-xs font-semibold cursor-pointer">Thường (1.0x)</Label>
               </div>
               <div className="flex items-center gap-2 rounded-xl border p-3 bg-muted/20">
-                <RadioGroupItem id="speed-fast" value="1.25" className="text-indigo-600" />
+                <RadioGroupItem id="speed-fast" value="1.25" className="text-primary" />
                 <Label htmlFor="speed-fast" className="text-xs font-semibold cursor-pointer">Nhanh (1.25x)</Label>
               </div>
             </RadioGroup>
@@ -170,7 +170,7 @@ export function DictationSettingsDialog({
           </Button>
           <Button
             onClick={handleSave}
-            className="rounded-xl h-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer px-5"
+            className="rounded-xl h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs cursor-pointer px-5"
           >
             Lưu thay đổi
           </Button>

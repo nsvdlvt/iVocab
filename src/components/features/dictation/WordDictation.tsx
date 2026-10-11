@@ -53,37 +53,40 @@ export function WordDictation({
   };
 
   // Determine state borders and background colors matching LearnInput
-  let inputBorderClass = "focus-visible:ring-1 focus-visible:ring-indigo-500 border-border bg-card";
+  let inputBorderClass = "focus-visible:ring-1 focus-visible:ring-primary border-border/80 bg-card";
   if (isSubmitted) {
     if (answerState === "correct") {
-      inputBorderClass = "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-400 cursor-default";
+      inputBorderClass = "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 cursor-default";
     } else if (answerState === "near") {
-      inputBorderClass = "bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-400 cursor-default";
+      inputBorderClass = "bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-300 cursor-default";
     } else if (answerState === "unknown") {
-      inputBorderClass = "bg-zinc-500/10 border-zinc-400 text-zinc-600 dark:text-zinc-400 cursor-default";
+      inputBorderClass = "bg-muted/50 border-border text-muted-foreground cursor-default";
     } else {
-      inputBorderClass = "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-400 cursor-default";
+      inputBorderClass = "bg-rose-500/10 border-rose-500 text-rose-700 dark:text-rose-300 cursor-default";
     }
   }
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-4 select-none">
-      <div className="relative py-6 sm:py-8 px-4 border border-border/80 rounded-2xl bg-card shadow-xs">
-        <div className="text-center flex flex-col items-center justify-center gap-3">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            Nghe và viết lại từ
+    <div className="w-full max-w-2xl mx-auto space-y-4 select-none">
+      <div className="relative py-8 sm:py-10 px-6 border border-border/80 rounded-2xl bg-card shadow-xs">
+        <div className="text-center flex flex-col items-center justify-center gap-4">
+          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            Nghe và viết lại từ vựng
           </p>
           {onSpeakPrompt && (
             <button
+              type="button"
               onClick={onSpeakPrompt}
-              className="h-14 w-14 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer transition-all duration-300 shadow-md hover:scale-105 active:scale-95"
-              title="Nghe phát âm"
+              className="group h-16 w-16 rounded-2xl flex items-center justify-center bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground border border-primary/20 cursor-pointer transition-all duration-200 shadow-xs active:scale-95"
+              title="Nghe phát âm (Ctrl)"
             >
-              <Volume2 className="h-6 w-6 animate-pulse" />
+              <Volume2 className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
             </button>
           )}
-          <span className="text-xs font-bold text-muted-foreground">
-            Bấm nút để nghe lại (Ctrl)
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <span>Bấm nút hoặc phím</span>
+            <kbd>Ctrl</kbd>
+            <span>để nghe lại</span>
           </span>
         </div>
       </div>
@@ -98,28 +101,34 @@ export function WordDictation({
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           className={cn(
-            "rounded-xl h-12 text-sm px-4 font-medium transition-all duration-300",
+            "rounded-xl h-12 text-base px-4 font-medium transition-all duration-200",
             inputBorderClass
           )}
         />
 
         {!isSubmitted && (
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             {onSkip && (
               <Button
+                type="button"
                 variant="outline"
                 onClick={onSkip}
-                className="rounded-xl h-11 px-4 text-xs font-bold border-border/80 hover:bg-muted shrink-0 cursor-pointer"
+                className="rounded-xl h-11 px-4 text-xs font-semibold border-border/80 hover:bg-muted shrink-0 cursor-pointer gap-1.5"
               >
-                Không biết
+                <span>Không biết</span>
+                <kbd>Ctrl+I</kbd>
               </Button>
             )}
             <Button
+              type="button"
               disabled={!inputValue.trim()}
               onClick={onSubmit}
-              className="rounded-xl h-11 flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer select-none"
+              className="rounded-xl h-11 flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm cursor-pointer select-none gap-2"
             >
-              Kiểm tra đáp án (Enter)
+              <span>Kiểm tra đáp án</span>
+              <kbd className="border-primary-foreground/30 bg-primary-foreground/15 text-primary-foreground shadow-none">
+                Enter
+              </kbd>
             </Button>
           </div>
         )}

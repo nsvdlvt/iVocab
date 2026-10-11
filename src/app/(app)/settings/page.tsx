@@ -26,20 +26,20 @@ export default async function SettingsPage() {
       />
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 rounded-xl bg-muted/65 p-1 max-w-md border border-border">
-          <TabsTrigger value="profile" className="rounded-lg gap-1.5 text-xs md:text-sm cursor-pointer">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto rounded-xl bg-muted/65 p-1 max-w-lg border border-border gap-1">
+          <TabsTrigger value="profile" className="rounded-lg gap-1.5 py-2 text-xs md:text-sm cursor-pointer">
             <User className="h-4 w-4 shrink-0" />
             Hồ sơ
           </TabsTrigger>
-          <TabsTrigger value="goal" className="rounded-lg gap-1.5 text-xs md:text-sm cursor-pointer">
+          <TabsTrigger value="goal" className="rounded-lg gap-1.5 py-2 text-xs md:text-sm cursor-pointer">
             <Target className="h-4 w-4 shrink-0" />
             Mục tiêu
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="rounded-lg gap-1.5 text-xs md:text-sm cursor-pointer">
+          <TabsTrigger value="appearance" className="rounded-lg gap-1.5 py-2 text-xs md:text-sm cursor-pointer">
             <Monitor className="h-4 w-4 shrink-0" />
             Giao diện
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="rounded-lg gap-1.5 text-xs md:text-sm cursor-pointer">
+          <TabsTrigger value="notifications" className="rounded-lg gap-1.5 py-2 text-xs md:text-sm cursor-pointer">
             <Bell className="h-4 w-4 shrink-0" />
             Thông báo
           </TabsTrigger>

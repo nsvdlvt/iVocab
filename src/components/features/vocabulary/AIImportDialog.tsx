@@ -1,15 +1,35 @@
 "use client";
 
 import React, { useEffect, useState, useTransition } from "react";
-import { Sparkles, UploadCloud, X, FileImage, ClipboardList } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sparkles,
+  UploadCloud,
+  X,
+  FileImage,
+  ClipboardList,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { AIVocabItem } from "@/lib/ai/import-vocabulary";
 import { AIImportPreview } from "./AIImportPreview";
+import { cn } from "@/lib/utils";
 
 interface AIImportDialogProps {
   onImport: (newCards: AIVocabItem[]) => void;
@@ -30,17 +50,28 @@ const SUGGESTIONS = [
   "C1 Writing Task 2",
 ];
 
-const VALID_IMAGE_TYPES = new Set(["image/png", "image/jpg", "image/jpeg", "image/webp"]);
+const VALID_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpg",
+  "image/jpeg",
+  "image/webp",
+]);
 const MAX_IMAGE_DIMENSION = 1600;
 
-export function AIImportDialog({ onImport, existingWords, isPending }: AIImportDialogProps) {
+export function AIImportDialog({
+  onImport,
+  existingWords,
+  isPending,
+}: AIImportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
   const [chatPrompt, setChatPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [importedItems, setImportedItems] = useState<AIVocabItem[] | null>(null);
+  const [importedItems, setImportedItems] = useState<AIVocabItem[] | null>(
+    null
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPendingImport, startImportTransition] = useTransition();
 
@@ -55,16 +86,12 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   }, [imagePreview]);
 
   const handleSuggestionClick = (suggestion: string) => {
-    setChatPrompt(`Cho tôi từ vựng về chủ đề: ${suggestion}`);
-  };
-
-  const showInvalidImageMessage = () => {
-    toast.error("Chỉ chấp nhận ảnh PNG, JPG, JPEG, WEBP.");
+    setChatPrompt(`Cho tôi danh sách từ vựng về chủ đề: ${suggestion}`);
   };
 
   const handleFileSelection = async (file: File) => {
     if (!VALID_IMAGE_TYPES.has(file.type)) {
-      showInvalidImageMessage();
+      toast.error("Chỉ chấp nhận ảnh PNG, JPG, JPEG, WEBP.");
       return;
     }
 
@@ -111,7 +138,10 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
 
   const resizeImageIfNeeded = async (file: File): Promise<string> => {
     const imageBitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(imageBitmap.width, imageBitmap.height));
+    const scale = Math.min(
+      1,
+      MAX_IMAGE_DIMENSION / Math.max(imageBitmap.width, imageBitmap.height)
+    );
     const width = Math.max(1, Math.round(imageBitmap.width * scale));
     const height = Math.max(1, Math.round(imageBitmap.height * scale));
 
@@ -132,7 +162,9 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   const parseImportResponse = async (res: Response) => {
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new Error(data?.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại.");
+      throw new Error(
+        data?.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại."
+      );
     }
     return data;
   };
@@ -152,7 +184,11 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
     setIsProcessing(true);
     startImportTransition(async () => {
       try {
-        let responseData: { success?: boolean; data?: AIVocabItem[]; error?: string };
+        let responseData: {
+          success?: boolean;
+          data?: AIVocabItem[];
+          error?: string;
+        };
 
         if (activeTab === "chat") {
           const res = await fetch("/api/ai/import", {
@@ -174,16 +210,27 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
           responseData = await parseImportResponse(res);
         }
 
-        if (responseData.success && Array.isArray(responseData.data) && responseData.data.length > 0) {
+        if (
+          responseData.success &&
+          Array.isArray(responseData.data) &&
+          responseData.data.length > 0
+        ) {
           setImportedItems(responseData.data);
           toast.success("AI đã tạo và chuẩn hóa từ vựng thành công!");
           return;
         }
 
-        toast.error(responseData.error || "Không thể tạo danh sách từ vựng. Vui lòng thử lại.");
+        toast.error(
+          responseData.error ||
+            "Không thể tạo danh sách từ vựng. Vui lòng thử lại."
+        );
       } catch (err) {
         console.error(err);
-        toast.error(err instanceof Error ? err.message : "Lỗi kết nối máy chủ. Vui lòng thử lại.");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Lỗi kết nối máy chủ. Vui lòng thử lại."
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -193,13 +240,13 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   const triggerButton = (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="sm"
-      className="rounded-xl h-9 text-xs font-semibold gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5 transition-all cursor-pointer min-h-[44px] md:min-h-0"
+      className="h-9 gap-1.5 rounded-lg border-primary/25 bg-primary/5 px-3 text-xs font-semibold text-primary hover:bg-primary/10"
       disabled={isPending}
     >
       <Sparkles className="h-3.5 w-3.5" />
-      AI Import
+      <span>AI Import</span>
     </Button>
   );
 
@@ -211,27 +258,31 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   };
 
   const mainContent = (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       {isProcessing || isPendingImport ? (
-        <div className="flex-1 flex flex-col items-center justify-center space-y-6 py-12 select-none">
+        <div className="flex flex-1 flex-col items-center justify-center space-y-5 py-12 select-none">
           <div className="relative flex items-center justify-center">
-            <div className="animate-ping absolute inline-flex h-12 w-12 rounded-full bg-blue-400 opacity-25"></div>
-            <div className="relative rounded-full h-16 w-16 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 flex items-center justify-center">
-              <Sparkles className="h-8 w-8 text-blue-500 dark:text-blue-400 animate-pulse" />
+            <div className="absolute inline-flex h-12 w-12 animate-ping rounded-full bg-primary/25" />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+              <Sparkles className="h-6 w-6 animate-pulse" />
             </div>
           </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-sm font-bold text-foreground">AI đang xử lý từ vựng của bạn...</h3>
-            <p className="text-xs text-muted-foreground max-w-xs">
-              Quá trình này bao gồm trích xuất, chuẩn hoá và lọc trùng tự động.
+          <div className="space-y-1 text-center">
+            <h3 className="text-sm font-semibold text-foreground">
+              AI đang phân tích và chuẩn hóa từ vựng...
+            </h3>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              Tự động bổ sung phiên âm IPA, từ loại, ví dụ ngữ cảnh và từ đồng nghĩa.
             </p>
           </div>
-          <div className="w-full max-w-lg space-y-3 px-6 opacity-60">
+          <div className="w-full max-w-md space-y-2.5 px-6 opacity-60">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-4 border border-dashed border-border rounded-xl bg-card/50 flex flex-col gap-2">
-                <div className="h-4 bg-muted rounded-md w-1/3 animate-pulse"></div>
-                <div className="h-3 bg-muted rounded-md w-2/3 animate-pulse"></div>
-                <div className="h-3 bg-muted rounded-md w-1/2 animate-pulse"></div>
+              <div
+                key={i}
+                className="flex flex-col gap-2 rounded-xl border border-dashed border-border/80 bg-card/50 p-3.5"
+              >
+                <div className="h-3.5 w-1/3 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
               </div>
             ))}
           </div>
@@ -247,41 +298,58 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
           onCancel={() => setImportedItems(null)}
         />
       ) : (
-        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col gap-4">
-            <TabsList className="w-full grid grid-cols-2 rounded-xl h-10 select-none bg-muted/60 p-1 shrink-0">
-              <TabsTrigger value="chat" className="text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-0.5">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex flex-1 flex-col gap-4"
+          >
+            <TabsList className="grid h-10 w-full shrink-0 grid-cols-2 rounded-xl bg-muted/60 p-1 select-none">
+              <TabsTrigger
+                value="chat"
+                className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+              >
                 <ClipboardList className="h-3.5 w-3.5" />
-                AI Chat
+                <span>Tạo theo chủ đề (AI Prompt)</span>
               </TabsTrigger>
-              <TabsTrigger value="image" className="text-xs font-bold rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5">
+              <TabsTrigger
+                value="image"
+                className="flex items-center justify-center gap-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+              >
                 <FileImage className="h-3.5 w-3.5" />
-                Image Import
+                <span>Quét từ hình ảnh (OCR)</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="chat" className="flex-1 flex flex-col gap-4 focus-visible:outline-none">
-              <div className="space-y-2 select-none">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Bạn muốn học từ vựng gì hôm nay?</label>
+            <TabsContent
+              value="chat"
+              className="flex flex-1 flex-col gap-4 focus-visible:outline-none"
+            >
+              <div className="space-y-1.5 select-none">
+                <Label className="text-xs font-semibold text-foreground">
+                  Mô tả chủ đề hoặc dán đoạn văn tiếng Anh
+                </Label>
                 <textarea
                   value={chatPrompt}
                   onChange={(e) => setChatPrompt(e.target.value)}
-                  placeholder="Ví dụ: Cho tôi từ vựng IELTS về chủ đề Environment..."
-                  className="w-full min-h-[120px] p-3 text-xs bg-muted/30 hover:bg-muted/50 focus:bg-background rounded-xl border border-border/60 text-foreground placeholder:text-muted-foreground/45 transition-all focus:ring-1 focus:ring-primary/20 focus:outline-none resize-none"
+                  placeholder="Ví dụ: Cho tôi 15 từ vựng IELTS Band 7.5 chủ đề Environment & Climate Change..."
+                  className="min-h-[130px] w-full resize-none rounded-xl border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
                   disabled={isProcessing}
                 />
               </div>
 
               <div className="space-y-2 select-none">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Gợi ý chủ đề nhanh</label>
-                <div className="flex flex-wrap gap-2.5">
+                <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Gợi ý chủ đề phổ biến
+                </Label>
+                <div className="flex flex-wrap gap-2">
                   {SUGGESTIONS.map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
                       onClick={() => handleSuggestionClick(suggestion)}
                       disabled={isProcessing}
-                      className="px-3 py-1.5 text-[11px] font-semibold rounded-xl bg-muted/50 hover:bg-primary/5 hover:text-primary transition-all duration-200 cursor-pointer border border-border/20 text-muted-foreground disabled:opacity-50"
+                      className="rounded-lg border border-border/80 bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary cursor-pointer disabled:opacity-50"
                     >
                       {suggestion}
                     </button>
@@ -290,35 +358,60 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
               </div>
             </TabsContent>
 
-            <TabsContent value="image" className="flex-1 flex flex-col gap-4 focus-visible:outline-none">
+            <TabsContent
+              value="image"
+              className="flex flex-1 flex-col gap-4 focus-visible:outline-none"
+            >
               {!imagePreview ? (
                 <div
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
-                  className={`flex-1 min-h-[220px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-6 text-center select-none cursor-pointer transition-all duration-200 ${
-                    dragActive ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30 bg-muted/20"
-                  }`}
-                  onClick={() => document.getElementById("file-upload")?.click()}
+                  className={cn(
+                    "flex min-h-[230px] flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all cursor-pointer select-none",
+                    dragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-border/80 bg-muted/20 hover:border-primary/40 hover:bg-muted/35"
+                  )}
+                  onClick={() =>
+                    document.getElementById("file-upload")?.click()
+                  }
                 >
-                  <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                  <UploadCloud className="h-10 w-10 text-muted-foreground/60 mb-2" />
-                  <p className="text-xs font-bold text-foreground">Kéo thả ảnh vào đây hoặc bấm để chọn</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Hỗ trợ PNG, JPG, JPEG, WEBP</p>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-background text-muted-foreground">
+                    <UploadCloud className="h-5 w-5" />
+                  </div>
+                  <p className="text-xs sm:text-sm font-semibold text-foreground">
+                    Kéo thả hình ảnh vào đây hoặc nhấn để chọn tệp
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Hỗ trợ ảnh chụp trang sách, bảng từ vựng hoặc ghi chú (PNG, JPG, WEBP)
+                  </p>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 border border-border/60 bg-muted/10 rounded-2xl relative min-h-[220px]">
+                <div className="relative flex min-h-[230px] flex-1 flex-col items-center justify-center rounded-xl border border-border/80 bg-muted/15 p-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagePreview} alt="Preview" className="max-h-[200px] max-w-full rounded-lg object-contain shadow-sm" />
-                  <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-h-[220px] max-w-full rounded-lg object-contain shadow-xs"
+                  />
+                  <div className="absolute right-2.5 top-2.5">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon-xs"
                       onClick={handleRemoveImage}
-                      className="bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer h-7 w-7"
+                      className="h-7 w-7 rounded-full shadow-xs"
                       disabled={isProcessing}
+                      aria-label="Xóa ảnh"
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
@@ -328,24 +421,25 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
             </TabsContent>
           </Tabs>
 
-          <div className="shrink-0 flex items-center justify-end pt-4 border-t border-border/30 mt-4 gap-3">
+          <div className="mt-4 flex shrink-0 items-center justify-end gap-2 border-t border-border/80 pt-3.5">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
+              size="sm"
               onClick={resetAndClose}
-              className="rounded-xl h-9 text-xs font-semibold px-4 cursor-pointer text-muted-foreground hover:text-foreground"
               disabled={isProcessing}
             >
               Hủy
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={handleGenerate}
               disabled={isProcessing}
-              className="rounded-xl h-9 text-xs font-bold px-5 bg-blue-600 hover:bg-blue-500 text-white shadow-xs cursor-pointer active:scale-98 transition-all flex items-center gap-1.5 disabled:opacity-60"
+              className="gap-1.5 font-semibold"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Tạo từ vựng
+              <span>Phân tích & Tạo từ vựng</span>
             </Button>
           </div>
         </div>
@@ -357,11 +451,14 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger render={triggerButton} />
-        <SheetContent side="bottom" className="h-[95vh] rounded-t-2xl flex flex-col p-4 bg-background">
-          <SheetHeader className="shrink-0 border-b border-border/30 pb-3 mb-2">
-            <SheetTitle className="text-sm font-bold flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-blue-500" />
-              ✨ AI Vocabulary Import
+        <SheetContent
+          side="bottom"
+          className="flex h-[92vh] flex-col rounded-t-2xl border-border/80 bg-background p-4"
+        >
+          <SheetHeader className="mb-2 shrink-0 border-b border-border/80 pb-3">
+            <SheetTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>AI Vocabulary Import</span>
             </SheetTitle>
           </SheetHeader>
           {mainContent}
@@ -373,14 +470,14 @@ export function AIImportDialog({ onImport, existingWords, isPending }: AIImportD
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger render={triggerButton} />
-      <DialogContent className="max-w-[1000px] w-[95vw] h-[85vh] flex flex-col p-6 rounded-2xl shadow-xl gap-4 border border-border/60 overflow-hidden bg-background">
-        <DialogHeader className="shrink-0 border-b border-border/30 pb-3 select-none">
-          <DialogTitle className="text-base font-extrabold flex items-center gap-1.5 text-foreground">
-            <Sparkles className="h-4.5 w-4.5 text-blue-500 animate-pulse" />
-            ✨ AI Vocabulary Import
+      <DialogContent className="flex h-[85vh] w-[95vw] max-w-[960px] flex-col gap-4 overflow-hidden rounded-xl border border-border/80 bg-background p-6">
+        <DialogHeader className="shrink-0 border-b border-border/80 pb-3.5 select-none">
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>AI Vocabulary Import</span>
           </DialogTitle>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            Nhập nhanh danh sách từ vựng thông qua mô tả hoặc phân tích hình ảnh và chuẩn hóa tự động bằng AI.
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Tạo danh sách từ vựng theo chủ đề hoặc trích xuất OCR từ hình ảnh, tự động điền phiên âm, từ loại và ví dụ.
           </p>
         </DialogHeader>
         {mainContent}

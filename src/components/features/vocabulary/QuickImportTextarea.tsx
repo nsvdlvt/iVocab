@@ -15,21 +15,24 @@ export function QuickImportTextarea({
   isPending,
 }: QuickImportTextareaProps) {
   return (
-    <div className="space-y-1.5 flex-1 flex flex-col min-h-[220px]">
-      <Label htmlFor="import-area" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+    <div className="flex min-h-[210px] flex-1 flex-col space-y-1.5">
+      <Label
+        htmlFor="import-area"
+        className="text-xs font-semibold text-foreground"
+      >
         Dán dữ liệu nguồn vào đây
       </Label>
       <textarea
         id="import-area"
-        placeholder={`Ví dụ:\nability\tkhả năng\ncreative\tsáng tạo\nexperience\tkinh nghiệm`}
+        placeholder={`Ví dụ:\nability\tkhả năng\t/əˈbɪl.ə.ti/\tnoun\ncreative\tsáng tạo\t/kriˈeɪ.tɪv/\tadjective`}
         value={text}
         onChange={(e) => onChangeText(e.target.value)}
         disabled={isPending}
-        className="w-full flex-1 min-h-[180px] p-3 text-xs bg-muted/40 hover:bg-muted/70 focus:bg-background border-0 rounded-2xl focus:ring-1 focus:ring-primary/20 focus:outline-none transition-all resize-none font-mono leading-relaxed"
+        className="min-h-[175px] w-full flex-1 resize-none rounded-xl border border-input bg-background p-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
       />
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground/60 select-none px-1">
-        <span>Mỗi dòng tương ứng với 1 thẻ</span>
-        <span>Hỗ trợ Copy/Paste trực tiếp</span>
+      <div className="flex items-center justify-between px-1 text-[11px] text-muted-foreground select-none">
+        <span>Mỗi dòng tương ứng với 1 thẻ từ vựng</span>
+        <span>Hỗ trợ bảng Markdown, Excel, Quizlet</span>
       </div>
     </div>
   );

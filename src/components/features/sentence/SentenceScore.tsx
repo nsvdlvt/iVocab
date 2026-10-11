@@ -19,35 +19,37 @@ export function SentenceScore({ overallScore, categoryScores }: ScoreProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center">
-        {/* Simple circular score using CSS - fallback if no Circle component */}
         <div className="relative w-24 h-24">
-          <svg viewBox="0 0 36 36" className="w-full h-full">
+          <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
             <path
-              className="text-gray-200"
+              className="text-muted"
               fill="none"
               strokeWidth="3"
+              stroke="currentColor"
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
             />
             <path
               className="text-primary"
               fill="none"
               strokeWidth="3"
+              strokeLinecap="round"
+              stroke="currentColor"
               strokeDasharray={`${overallScore}, 100`}
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831"
             />
-            <text x="18" y="20.35" className="fill-current text-sm" textAnchor="middle">
-              {overallScore}%
-            </text>
           </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold tabular-nums text-foreground">{overallScore}%</span>
+          </div>
         </div>
       </div>
       {categoryScores && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {Object.entries(categoryScores).map(([cat, val]) => (
-            <div key={cat} className="flex items-center space-x-2">
-              <span className="w-24 capitalize">{cat}</span>
-              <Progress value={val} className="flex-1" />
-              <span className="w-12 text-right">{val}%</span>
+            <div key={cat} className="flex items-center gap-3 text-xs">
+              <span className="w-24 capitalize font-medium text-muted-foreground">{cat}</span>
+              <Progress value={val} className="flex-1 h-2" />
+              <span className="w-10 text-right font-semibold tabular-nums text-foreground">{val}%</span>
             </div>
           ))}
         </div>

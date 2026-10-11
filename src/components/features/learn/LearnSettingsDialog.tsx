@@ -175,7 +175,7 @@ export function LearnSettingsDialog({
           </Button>
           <Button
             onClick={handleSave}
-            className="rounded-xl h-10 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer px-5"
+            className="rounded-xl h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs cursor-pointer px-5"
           >
             Lưu thay đổi
           </Button>

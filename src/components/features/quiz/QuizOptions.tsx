@@ -40,17 +40,26 @@ export function QuizOptions({ options, correctIndex, onAnswer }: QuizOptionsProp
             variant="outline"
             onClick={() => handleSelect(idx)}
             className={cn(
-              "rounded-xl h-14 justify-start px-5 text-sm font-medium border-border transition-all cursor-pointer whitespace-normal text-left leading-relaxed",
-              showResult && isCorrect && "bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold",
-              showResult && isSelected && !isCorrect && "bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400 font-bold",
-              !showResult && "hover:bg-accent/40 hover:border-border/80 hover:scale-[1.01]"
+              "rounded-xl min-h-14 h-auto py-3.5 justify-start px-4 text-sm font-semibold border-border bg-card transition-all cursor-pointer whitespace-normal text-left leading-relaxed",
+              showResult && isCorrect && "bg-emerald-500/10 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 font-bold",
+              showResult && isSelected && !isCorrect && "bg-rose-500/10 border-rose-500/50 text-rose-700 dark:text-rose-300 font-bold",
+              !showResult && "hover:bg-primary/5 hover:border-primary/40"
             )}
             disabled={showResult}
           >
-            <span className="mr-3 font-mono text-xs text-muted-foreground bg-muted h-6 w-6 rounded-full flex items-center justify-center border border-border shrink-0">
+            <kbd
+              className={cn(
+                "mr-3 font-mono text-xs h-7 w-7 rounded-lg flex items-center justify-center border shrink-0",
+                showResult && isCorrect
+                  ? "bg-emerald-500 text-white border-emerald-500"
+                  : showResult && isSelected && !isCorrect
+                    ? "bg-rose-500 text-white border-rose-500"
+                    : "bg-muted text-muted-foreground border-border"
+              )}
+            >
               {String.fromCharCode(65 + idx)}
-            </span>
-            {option}
+            </kbd>
+            <span className="flex-1">{option}</span>
           </Button>
         );
       })}

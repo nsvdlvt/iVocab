@@ -16,25 +16,28 @@ export function MistakeCard({ mistake }: { mistake: SentenceFeedback["mistakes"]
   const explanation = parts[2] ?? "";
 
   return (
-    <div className="border rounded p-3 bg-white shadow-sm">
-      <div className="flex items-center space-x-2 mb-1">
-        <span className="font-medium">Original:</span>
-        <span className="text-gray-700">{original}</span>
+    <div className="border border-border/80 rounded-xl p-4 bg-card text-card-foreground shadow-xs space-y-1.5">
+      <div className="flex items-baseline gap-2 text-sm">
+        <span className="font-semibold text-muted-foreground shrink-0">Original:</span>
+        <span className="text-foreground line-through decoration-rose-500/60">{original}</span>
       </div>
       {suggestion && (
-        <div className="flex items-center space-x-2 mb-1">
-          <span className="font-medium">Suggestion:</span>
-          <span className="text-blue-600">{suggestion}</span>
+        <div className="flex items-baseline gap-2 text-sm">
+          <span className="font-semibold text-muted-foreground shrink-0">Suggestion:</span>
+          <span className="font-semibold text-primary">{suggestion}</span>
         </div>
       )}
       {explanation && (
-        <div className="flex items-center space-x-2 mb-1">
-          <span className="font-medium">Explanation:</span>
-          <span className="text-gray-500 text-sm">{explanation}</span>
+        <div className="flex items-baseline gap-2 text-sm">
+          <span className="font-semibold text-muted-foreground shrink-0">Explanation:</span>
+          <span className="text-muted-foreground">{explanation}</span>
         </div>
       )}
-      <div className="text-xs text-muted-foreground mt-1">
-        Confidence: <span className="badge bg-primary/10 text-primary px-1 py-0.5 rounded">{(confidence * 100).toFixed(0)}%</span>
+      <div className="text-xs text-muted-foreground pt-1 flex items-center gap-1.5">
+        <span>Confidence:</span>
+        <span className="inline-flex items-center bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-md">
+          {(confidence * 100).toFixed(0)}%
+        </span>
       </div>
     </div>
   );

@@ -16,7 +16,10 @@ export function QuickImportOptions({
   onChangeOptions,
   isPending,
 }: QuickImportOptionsProps) {
-  const setOption = <K extends keyof ParseOptions>(key: K, value: ParseOptions[K]) => {
+  const setOption = <K extends keyof ParseOptions>(
+    key: K,
+    value: ParseOptions[K]
+  ) => {
     onChangeOptions({
       ...options,
       [key]: value,
@@ -24,16 +27,16 @@ export function QuickImportOptions({
   };
 
   return (
-    <div className="space-y-4 py-1 text-xs select-none">
-      {/* 1. Term delimiter (between word and meaning) */}
+    <div className="grid grid-cols-1 gap-3.5 rounded-xl border border-border/80 bg-muted/20 p-3.5 text-xs select-none sm:grid-cols-2">
+      {/* 1. Term delimiter */}
       <div className="space-y-2">
-        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-          Ngăn cách giữa từ vựng và định nghĩa
+        <Label className="text-[11px] font-semibold text-muted-foreground">
+          Ngăn cách giữa các trường
         </Label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {[
-            { label: "Ký tự Tab", value: "tab" as const },
-            { label: "Dấu phẩy ( , )", value: "comma" as const },
+            { label: "Tab", value: "tab" as const },
+            { label: "Dấu phẩy (,)", value: "comma" as const },
             { label: "Tùy chỉnh", value: "custom" as const },
           ].map((item) => (
             <button
@@ -42,10 +45,10 @@ export function QuickImportOptions({
               disabled={isPending}
               onClick={() => setOption("termDelimiter", item.value)}
               className={cn(
-                "h-8 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all",
+                "h-7.5 rounded-lg border px-2.5 text-xs font-medium transition-all cursor-pointer",
                 options.termDelimiter === item.value
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-background text-muted-foreground border-[#E5E7EB] dark:border-border/60 hover:bg-muted/70"
+                  ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                  : "border-border/80 bg-background text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               )}
             >
               {item.label}
@@ -61,20 +64,20 @@ export function QuickImportOptions({
             value={options.customTermDelimiter}
             disabled={isPending}
             onChange={(e) => setOption("customTermDelimiter", e.target.value)}
-            className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background border-0 text-xs rounded-xl focus:ring-1 focus:ring-primary/25 focus:outline-none transition-all mt-1.5"
+            className="mt-1 h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
           />
         )}
       </div>
 
-      {/* 2. Card delimiter (between elements/lines) */}
+      {/* 2. Card delimiter */}
       <div className="space-y-2">
-        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-          Ngăn cách giữa các thẻ từ vựng
+        <Label className="text-[11px] font-semibold text-muted-foreground">
+          Ngăn cách giữa các thẻ
         </Label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {[
-            { label: "Xuống dòng (Enter)", value: "newline" as const },
-            { label: "Dấu chấm phẩy ( ; )", value: "semicolon" as const },
+            { label: "Xuống dòng", value: "newline" as const },
+            { label: "Chấm phẩy (;)", value: "semicolon" as const },
             { label: "Tùy chỉnh", value: "custom" as const },
           ].map((item) => (
             <button
@@ -83,10 +86,10 @@ export function QuickImportOptions({
               disabled={isPending}
               onClick={() => setOption("cardDelimiter", item.value)}
               className={cn(
-                "h-8 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all",
+                "h-7.5 rounded-lg border px-2.5 text-xs font-medium transition-all cursor-pointer",
                 options.cardDelimiter === item.value
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-background text-muted-foreground border-[#E5E7EB] dark:border-border/60 hover:bg-muted/70"
+                  ? "border-primary bg-primary text-primary-foreground shadow-2xs"
+                  : "border-border/80 bg-background text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               )}
             >
               {item.label}
@@ -102,7 +105,7 @@ export function QuickImportOptions({
             value={options.customCardDelimiter}
             disabled={isPending}
             onChange={(e) => setOption("customCardDelimiter", e.target.value)}
-            className="w-full h-8.5 px-3 bg-muted/40 hover:bg-muted/70 focus:bg-background border-0 text-xs rounded-xl focus:ring-1 focus:ring-primary/25 focus:outline-none transition-all mt-1.5"
+            className="mt-1 h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
           />
         )}
       </div>

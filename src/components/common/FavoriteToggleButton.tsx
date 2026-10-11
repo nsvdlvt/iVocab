@@ -47,13 +47,18 @@ export function FavoriteToggleButton({
       title={label ?? (isFavorite ? "Bỏ đánh dấu yêu thích" : "Đánh dấu yêu thích")}
       className={cn(
         sizeClass,
-        "rounded-lg bg-transparent text-slate-500 transition-all hover:bg-slate-100 hover:text-amber-500",
-        isFavorite && "text-amber-500",
+        "rounded-lg bg-transparent text-muted-foreground transition-all hover:bg-amber-500/10 hover:text-amber-500 dark:hover:bg-amber-500/15",
+        isFavorite && "text-amber-500 bg-amber-500/5",
         disabled && "opacity-60",
         className
       )}
     >
-      <Star className={cn("h-4 w-4 transition-transform duration-200", isFavorite && "fill-amber-400 text-amber-500 scale-110")} />
+      <Star
+        className={cn(
+          "h-4 w-4 transition-transform duration-200",
+          isFavorite && "fill-amber-400 text-amber-500 scale-110"
+        )}
+      />
     </Button>
   );
 }

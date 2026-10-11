@@ -9,13 +9,13 @@ interface SkeletonProps {
 
 export function Skeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn("animate-pulse rounded-md bg-muted/80", className)} />
+    <div className={cn("animate-pulse rounded-md bg-muted/70", className)} />
   );
 }
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border p-6 bg-card space-y-4 shadow-sm">
+    <div className="rounded-xl border border-border/80 p-5 md:p-6 bg-card space-y-4 shadow-xs">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-1/2" />
       <div className="space-y-2">
@@ -28,11 +28,11 @@ export function CardSkeleton() {
 
 export function TableSkeleton() {
   return (
-    <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm">
-      <div className="border-b border-border p-4 bg-muted/20">
+    <div className="border border-border/80 rounded-xl overflow-hidden bg-card shadow-xs">
+      <div className="border-b border-border/80 p-4 bg-muted/30">
         <Skeleton className="h-5 w-1/4" />
       </div>
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-border/60">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="p-4 flex justify-between gap-4 items-center">
             <Skeleton className="h-4 w-1/4" />

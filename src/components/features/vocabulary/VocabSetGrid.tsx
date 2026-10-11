@@ -15,9 +15,15 @@ interface VocabSetGridProps {
   onRestore: (set: VocabSetRow) => void;
 }
 
-export function VocabSetGrid({ sets, summaries, onEdit, onDelete, onRestore }: VocabSetGridProps) {
+export function VocabSetGrid({
+  sets,
+  summaries,
+  onEdit,
+  onDelete,
+  onRestore,
+}: VocabSetGridProps) {
   return (
-    <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+    <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5">
       {sets.map((set) => (
         <VocabSetCard
           key={set.id}

@@ -431,33 +431,41 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 select-none">
-      {/* Dynamic Top Progress Bar */}
-      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md py-3 border-b flex items-center justify-between select-none">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-muted/80">
-            <ArrowLeft className="h-5 w-5" />
+    <div className="mx-auto w-full max-w-6xl space-y-6 select-none">
+      {/* Clean Top Studio HUD Bar */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md py-3.5 border-b border-border/80 flex items-center justify-between gap-3 select-none">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onBack}
+            className="h-9 w-9 shrink-0 rounded-xl hover:bg-muted/80 cursor-pointer"
+            title="Quay lại (Esc)"
+          >
+            <ArrowLeft className="h-4.5 w-4.5" />
           </Button>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400">
-              Sentence Practice Mode
-            </span>
-            <h2 className="text-sm font-bold text-foreground truncate max-w-xs sm:max-w-md">
-              Bộ từ vựng: {setInfo.title}
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-foreground truncate max-w-xs sm:max-w-md">
+              {setInfo.title}
             </h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              Luyện viết câu AI • Từ {currentIdx + 1} / {words.length}
+            </p>
           </div>
         </div>
 
-        {/* Floating progress number and navigator */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-muted-foreground">
-            Từ {currentIdx + 1} / {words.length}
-          </span>
-          <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden hidden sm:block">
-            <div
-              style={{ width: `${((currentIdx + 1) / words.length) * 100}%` }}
-              className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-300"
-            />
+        {/* Progress bar and controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="hidden sm:flex items-center gap-2.5 mr-1">
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums">
+              {currentIdx + 1} / {words.length}
+            </span>
+            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                style={{ width: `${((currentIdx + 1) / words.length) * 100}%` }}
+                className="h-full bg-primary rounded-full transition-all duration-300"
+              />
+            </div>
           </div>
 
           {/* Word Navigator Popup Sheet */}
@@ -467,19 +475,19 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-xl h-10 w-10 hover:bg-muted/60"
+                  className="rounded-xl h-9 w-9 hover:bg-muted/60 cursor-pointer"
                   title="Danh sách từ vựng"
                 />
               }
             >
               <List className="h-4 w-4" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-[360px] sm:w-[420px] p-6 flex flex-col gap-4">
+            <SheetContent side="right" className="w-[340px] sm:w-[400px] p-6 flex flex-col gap-4">
               <SheetHeader>
                 <SheetTitle className="text-lg font-bold text-foreground">Danh sách từ vựng ({words.length})</SheetTitle>
               </SheetHeader>
               
-              <div className="relative my-2 select-text">
+              <div className="relative my-1 select-text">
                 <Input
                   placeholder="Tìm kiếm từ vựng..."
                   value={searchQuery}
@@ -502,36 +510,36 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                         jumpToWord(originalIndex);
                         setNavigatorOpen(false);
                       }}
-                      className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between transition-all duration-150 ${
+                      className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between transition-all duration-150 cursor-pointer ${
                         isCurrent
-                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold border-blue-500 pl-4 shadow-xs"
-                          : "border-border/60 hover:bg-muted/30 text-foreground/80 font-medium"
+                          ? "bg-primary/10 text-primary font-bold border-primary/50 shadow-xs"
+                          : "border-border/60 hover:bg-muted/40 text-foreground font-medium"
                       }`}
                     >
-                      <div className="flex flex-col gap-0.5 max-w-[200px]">
+                      <div className="flex flex-col gap-0.5 max-w-[210px]">
                         <span className="text-sm font-bold truncate leading-relaxed">{w.word}</span>
                         {w.meaning && (
-                          <span className="text-[11px] text-muted-foreground truncate leading-normal">
+                          <span className="text-xs text-muted-foreground truncate leading-normal">
                             {w.meaning}
                           </span>
                         )}
                         {w.attemptCount && w.attemptCount > 0 ? (
-                          <div className="text-[10px] text-muted-foreground/90 mt-1 flex flex-wrap gap-x-2 gap-y-0.5 font-medium select-none">
-                            <span className="bg-blue-500/10 text-blue-700 dark:text-blue-300 px-1.5 py-0.25 rounded-md font-bold">
+                          <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5 font-medium select-none tabular-nums">
+                            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
                               {w.latestScore}/100
                             </span>
-                            <span>Highest: {w.highestScore}</span>
-                            <span>Attempts: {w.attemptCount}</span>
+                            <span>Cao nhất: {w.highestScore}</span>
+                            <span>Lần thử: {w.attemptCount}</span>
                           </div>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/50 mt-1 italic">Chưa luyện tập</span>
+                          <span className="text-[11px] text-muted-foreground/60 mt-1 italic">Chưa luyện tập</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         {isStarred && (
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-500 shrink-0" />
+                          <Star className="h-4 w-4 fill-amber-400 text-amber-500 shrink-0" />
                         )}
-                        <span className="text-[10px] font-mono font-bold text-muted-foreground/80 bg-muted/60 px-1.5 py-0.5 rounded-md">
+                        <span className="text-xs font-mono font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
                           {originalIndex + 1}
                         </span>
                       </div>
@@ -550,117 +558,111 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
             variant="outline"
             size="icon"
             onClick={() => setSettingsOpen(true)}
-            className="rounded-xl h-10 w-10 hover:bg-muted/60"
+            className="rounded-xl h-9 w-9 hover:bg-muted/60 cursor-pointer"
+            title="Cài đặt"
           >
-            <Settings2 className="h-4.5 w-4.5" />
+            <Settings2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* 3-Column layout grid on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Side: Writing Card & Results (col-span-8) */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Top Hero Card */}
+      {/* 2-Column Writing Studio Layout on Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Side: Word Prompt Card, Writing Textarea & Evaluation Results (col-span-8) */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Clean Word Prompt Card */}
           <motion.div
             key={`hero-${currentWord.id}`}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative bg-card border border-border/80 rounded-3xl p-6 md:p-8 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-6"
+            className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
-            {/* Soft decorative gradient illustration on the right */}
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-blue-500/10 via-indigo-500/5 to-transparent pointer-events-none rounded-r-3xl hidden md:block" />
-            <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-gradient-to-br from-blue-600/10 to-indigo-600/10 blur-xl pointer-events-none hidden md:block" />
-
-            <div className="space-y-3 z-10 flex-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground select-text">
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground select-text">
                   {currentWord.word}
                 </h1>
                 {currentWord.partOfSpeech && (
-                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                  <span className="text-xs font-semibold capitalize px-2.5 py-0.5 rounded-md bg-primary/10 text-primary">
                     {currentWord.partOfSpeech}
                   </span>
                 )}
-              </div>
-
-              <div className="flex items-center gap-4 text-sm">
                 {currentWord.ipa && (
-                  <span className="font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                  <span className="font-mono text-xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
                     {currentWord.ipa}
                   </span>
                 )}
-                {currentWord.meaning && (
-                  <span className="font-medium text-foreground/80 select-text text-base">
-                    {currentWord.meaning}
-                  </span>
-                )}
               </div>
+
+              {currentWord.meaning && (
+                <p className="font-medium text-foreground/90 select-text text-base leading-snug">
+                  {currentWord.meaning}
+                </p>
+              )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 md:gap-3 z-10 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleReplay}
-                className="h-10 px-4 rounded-xl gap-2 font-bold hover:bg-muted/80 shadow-xs border-border/80 text-sm select-none"
+                className="h-9 px-3.5 rounded-xl gap-1.5 font-semibold hover:bg-muted/80 border-border/80 text-xs select-none cursor-pointer"
               >
-                <Volume2 className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                <span className="hidden sm:inline">Phát âm</span>
-                <span className="inline sm:hidden">Nghe</span>
+                <Volume2 className="h-4 w-4 text-primary" />
+                <span>Phát âm</span>
               </Button>
 
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   setHistoryOpen(true);
                   fetchHistory();
                 }}
-                className="h-10 px-4 rounded-xl gap-2 font-bold hover:bg-muted/80 shadow-xs border-border/80 text-sm select-none"
+                className="h-9 px-3.5 rounded-xl gap-1.5 font-semibold hover:bg-muted/80 border-border/80 text-xs select-none cursor-pointer"
               >
-                <History className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
-                <span className="hidden sm:inline">Lịch sử chấm điểm</span>
-                <span className="inline sm:hidden">Lịch sử</span>
+                <History className="h-4 w-4 text-muted-foreground" />
+                <span>Lịch sử</span>
               </Button>
             </div>
           </motion.div>
 
           {/* Interactive Writing Area / Evaluating loader / Results */}
-          <div className="relative min-h-[300px]">
+          <div className="relative">
             <AnimatePresence mode="wait">
               {evaluating ? (
-                /* Skeleton Loading State */
+                /* Clean Loading State */
                 <motion.div
                   key="skeleton-loading"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="bg-card border border-border/80 rounded-3xl p-8 shadow-sm space-y-6 flex flex-col items-center justify-center min-h-[350px] text-center"
+                  className="bg-card border border-border/80 rounded-2xl p-8 shadow-xs space-y-4 flex flex-col items-center justify-center min-h-[280px] text-center"
                 >
-                  {/* Premium Spinner Animation */}
-                  <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 rounded-full border-4 border-blue-500/10" />
-                    <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 border-r-blue-600 animate-spin" />
+                  <div className="relative w-12 h-12">
+                    <div className="absolute inset-0 rounded-full border-3 border-primary/15" />
+                    <div className="absolute inset-0 rounded-full border-3 border-t-primary border-r-primary animate-spin" />
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="font-extrabold text-lg text-foreground">AI Đang phân tích câu viết của bạn...</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm">
-                      Hệ thống đang kiểm tra từ vựng, ngữ pháp, độ tự nhiên và phân tích lỗi chi tiết của câu.
+                  <div className="space-y-1.5">
+                    <h3 className="font-bold text-base text-foreground">AI đang phân tích câu viết của bạn...</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                      Hệ thống đang kiểm tra từ vựng, ngữ pháp, độ tự nhiên và phân tích lỗi chi tiết.
                     </p>
                   </div>
                 </motion.div>
               ) : error ? (
-                /* Beautiful Error Alert Box */
+                /* Error Alert Box */
                 <motion.div
                   key="error-box"
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-rose-500/5 border border-rose-500/20 text-rose-700 dark:text-rose-400 p-6 rounded-3xl space-y-3 flex items-start gap-3"
+                  className="bg-rose-500/5 border border-rose-500/20 text-rose-700 dark:text-rose-300 p-5 rounded-2xl space-y-2 flex items-start gap-3"
                 >
-                  <AlertCircle className="h-6 w-6 shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-bold text-sm">Gặp lỗi trong quá trình đánh giá</h4>
-                    <p className="text-sm opacity-90 leading-relaxed">{error}</p>
-                    <Button variant="outline" onClick={() => setError(null)} className="mt-3 rounded-xl border-rose-500/20 hover:bg-rose-500/10 text-rose-700 dark:text-rose-400">
+                    <p className="text-xs opacity-90 leading-relaxed mt-0.5">{error}</p>
+                    <Button variant="outline" size="sm" onClick={() => setError(null)} className="mt-3 rounded-xl border-rose-500/20 hover:bg-rose-500/10 text-rose-700 dark:text-rose-300">
                       Thử lại câu khác
                     </Button>
                   </div>
@@ -671,18 +673,19 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                   key="target-word-warning"
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-amber-500/5 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-6 rounded-3xl space-y-3 flex items-start gap-3"
+                  className="bg-amber-500/5 border border-amber-500/20 text-amber-700 dark:text-amber-300 p-5 rounded-2xl space-y-2 flex items-start gap-3"
                 >
-                  <AlertCircle className="h-6 w-6 shrink-0 mt-0.5 text-amber-500" />
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-500" />
                   <div>
                     <h4 className="font-bold text-sm">Chưa sử dụng từ mục tiêu</h4>
-                    <p className="text-sm opacity-90 leading-relaxed">
+                    <p className="text-xs opacity-90 leading-relaxed mt-0.5">
                       {feedback.message || `Bạn chưa sử dụng từ "${currentWord.word}" trong câu của mình. Hãy thử đặt lại câu có chứa từ này.`}
                     </p>
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={handleRetry}
-                      className="mt-3 rounded-xl border-amber-500/20 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                      className="mt-3 rounded-xl border-amber-500/20 hover:bg-amber-500/10 text-amber-700 dark:text-amber-300"
                     >
                       Viết lại câu
                     </Button>
@@ -690,7 +693,7 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                 </motion.div>
               ) : feedback ? (
                 /* Evaluated Feedback Results Panel */
-              <SentenceResult
+                <SentenceResult
                   key="feedback-results"
                   feedback={feedback}
                   userSentence={submittedSentence}
@@ -723,11 +726,11 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
                     exampleLabel={exampleLabel}
                   />
 
-                  {/* Empty state visual illustration before first evaluate */}
-                  <div className="flex flex-col items-center justify-center p-8 mt-6 text-center select-none text-muted-foreground/60 border border-dashed rounded-3xl bg-muted/[0.05]">
-                    <PenTool className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                    <span className="text-sm font-semibold">
-                      Bắt đầu nhập câu viết của bạn ở trên để nhận phân tích chuyên sâu từ AI
+                  {/* Subtle helper prompt before first evaluate */}
+                  <div className="flex items-center gap-3 p-4 mt-4 rounded-2xl border border-dashed border-border/80 bg-muted/20 text-muted-foreground">
+                    <PenTool className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-xs font-medium leading-relaxed">
+                      Nhập câu tiếng Anh có chứa từ <strong>&ldquo;{currentWord.word}&rdquo;</strong> để nhận chấm điểm ngữ pháp, từ vựng, ngữ cảnh và gợi ý diễn đạt tự nhiên từ AI.
                     </span>
                   </div>
                 </motion.div>
@@ -737,109 +740,105 @@ export function SentenceViewer({ initialWords, setInfo, onBack, readOnly = false
         </div>
 
         {/* Right Side: Informative Dynamic Sidebar (col-span-4) */}
-        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-          <div className="space-y-4">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground/80 flex items-center gap-1.5">
-              <Info className="h-4 w-4 text-blue-500" />
-              <span>Trợ lý &amp; Ghi chú từ vựng</span>
-            </h3>
+        <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-20">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 px-1">
+            <Info className="h-3.5 w-3.5 text-primary" />
+            <span>Trợ lý &amp; Ghi chú từ vựng</span>
+          </h3>
 
-            {/* Quick Hint Card */}
-            <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-sm space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 uppercase">
-                <Lightbulb className="h-4 w-4 text-amber-500" />
-                <span>Gợi ý nhanh</span>
-              </div>
-              <div className="text-sm text-foreground/80 leading-relaxed min-h-[40px] flex items-center">
-                {helperLoading["hint"] ? (
-                  <span className="text-muted-foreground animate-pulse">Đang tải gợi ý từ AI...</span>
-                ) : hint ? (
-                  <span>{hint}</span>
-                ) : (
-                  <span className="text-muted-foreground/60 italic text-xs">
-                    {"Bấm chip \"💡 Hint\" bên cạnh để xem gợi ý."}
-                  </span>
-                )}
-              </div>
+          {/* Quick Hint Card */}
+          <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-xs space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+              <span>Gợi ý nhanh</span>
             </div>
+            <div className="text-sm text-foreground/90 leading-relaxed min-h-[36px] flex items-center">
+              {helperLoading["hint"] ? (
+                <span className="text-xs text-muted-foreground animate-pulse">Đang tải gợi ý từ AI...</span>
+              ) : hint ? (
+                <span className="text-xs leading-relaxed">{hint}</span>
+              ) : (
+                <span className="text-muted-foreground/70 italic text-xs">
+                  Bấm nút &ldquo;Hint&rdquo; trong khung viết để xem gợi ý.
+                </span>
+              )}
+            </div>
+          </div>
 
-            {/* Example Card */}
-            <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-sm space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase">
-                <BookOpen className="h-4 w-4 text-indigo-500" />
-                <span>Câu ví dụ</span>
-              </div>
-              <div className="text-sm text-foreground/80 leading-relaxed min-h-[40px] flex items-center">
-                {helperLoading["example"] || helperLoading["another-example"] ? (
-                  <span className="text-muted-foreground animate-pulse">Đang tải câu ví dụ...</span>
-                ) : example ? (
-                  <span>{example}</span>
-                ) : (
-                  <span className="text-muted-foreground/60 italic text-xs">
-                    {"Câu ví dụ sẽ hiển thị ở đây..."}
-                  </span>
-                )}
-              </div>
+          {/* Example Card */}
+          <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-xs space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wide">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <span>Câu ví dụ mẫu</span>
             </div>
+            <div className="text-sm text-foreground/90 leading-relaxed min-h-[36px] flex items-center">
+              {helperLoading["example"] || helperLoading["another-example"] ? (
+                <span className="text-xs text-muted-foreground animate-pulse">Đang tải câu ví dụ...</span>
+              ) : example ? (
+                <span className="text-xs leading-relaxed select-text">{example}</span>
+              ) : (
+                <span className="text-muted-foreground/70 italic text-xs">
+                  Bấm nút &ldquo;Example&rdquo; để tham khảo câu mẫu.
+                </span>
+              )}
+            </div>
+          </div>
 
-            {/* Usage Notes / Tips Card */}
-            <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-sm space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-700 dark:text-teal-300 uppercase">
-                <HelpCircle className="h-4 w-4 text-teal-500" />
-                <span>Cẩm nang đặt câu</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{getWordTips()}</p>
+          {/* Usage Notes / Tips Card */}
+          <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-xs space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+              <HelpCircle className="h-4 w-4 text-emerald-500" />
+              <span>Cẩm nang đặt câu</span>
             </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">{getWordTips()}</p>
           </div>
         </div>
       </div>
 
       {/* Sticky Bottom navigation controls bar */}
-      <div className="sticky bottom-0 left-0 right-0 z-50 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3.5 bg-background/90 dark:bg-zinc-950/90 backdrop-blur-md border-t border-border/80 shadow-lg select-none pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex justify-center md:justify-between items-center gap-6 md:gap-4">
+      <div className="sticky bottom-0 left-0 right-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-background/95 backdrop-blur-md border-t border-border/80 select-none pb-[calc(0.75rem+env(safe-area-inset-bottom))] flex justify-between items-center gap-4">
         {/* Previous navigation button */}
         <Button
           variant="outline"
           onClick={handlePrevious}
           aria-label="Previous"
-          className="h-11 w-11 md:h-11 md:w-auto md:px-6 rounded-full md:rounded-xl hover:bg-muted/80 gap-2 border-border/80 text-sm font-semibold flex justify-center items-center select-none"
+          className="h-10 px-4 rounded-xl hover:bg-muted/80 gap-2 border-border/80 text-xs sm:text-sm font-semibold cursor-pointer"
         >
-          <ArrowLeft className="h-4.5 w-4.5" />
-          <span className="hidden md:inline">Previous</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Từ trước</span>
         </Button>
 
         {/* Bookmark utility button (Center) */}
         <div className="flex justify-center">
-          <motion.div whileTap={{ scale: 0.95 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
-            {!readOnly && (
-              <Button
-                variant="outline"
-                onClick={toggleBookmark}
-                aria-label="Star vocabulary"
-                className={`h-11 w-11 md:h-11 md:w-auto md:px-6 rounded-full md:rounded-xl gap-2 font-semibold transition-all duration-200 select-none flex justify-center items-center ${
-                  bookmarks[currentWord.id]
-                    ? "border-yellow-400 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10"
-                    : "border-gray-200 dark:border-border/80 text-foreground/80 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+          {!readOnly && (
+            <Button
+              variant="outline"
+              onClick={toggleBookmark}
+              aria-label="Star vocabulary"
+              className={`h-10 px-4 rounded-xl gap-2 text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
+                bookmarks[currentWord.id]
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15"
+                  : "border-border/80 text-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Star
+                className={`h-4 w-4 ${
+                  bookmarks[currentWord.id] ? "fill-amber-400 text-amber-500" : ""
                 }`}
-              >
-                <Star
-                  className={`h-4.5 w-4.5 transition-transform duration-200 ${
-                    bookmarks[currentWord.id] ? "fill-yellow-400 text-yellow-500 scale-110" : ""
-                  }`}
-                />
-                <span className="hidden md:inline">Đánh dấu sao</span>
-              </Button>
-            )}
-          </motion.div>
+              />
+              <span className="hidden sm:inline">Đánh dấu sao</span>
+            </Button>
+          )}
         </div>
 
         {/* Continue / Next navigation button */}
         <Button
           onClick={handleContinue}
           aria-label="Continue"
-          className="h-11 w-11 md:h-11 md:w-auto md:px-7 rounded-full md:rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-none font-bold text-white shadow-md shadow-blue-500/25 cursor-pointer gap-2 flex justify-center items-center select-none"
+          className="h-10 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs sm:text-sm shadow-xs cursor-pointer gap-2"
         >
-          <span className="hidden md:inline">Continue</span>
-          <ArrowRight className="h-4.5 w-4.5" />
+          <span className="hidden sm:inline">Từ tiếp theo</span>
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
 

@@ -57,17 +57,18 @@ export function AdminSidebar() {
         isCollapsed ? "w-[80px]" : "w-[280px]"
       )}
     >
-      <div className="flex h-14 items-center border-b px-4 py-4 sticky top-0 shrink-0">
-        <Link href="/admin" className="flex items-center gap-2 font-semibold">
-          <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl">
+      <div className="flex h-14 items-center justify-between border-b px-3 py-3 sticky top-0 shrink-0 bg-card z-10">
+        <Link href="/admin" className="flex items-center gap-2.5 font-semibold min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-base shrink-0">
             V
           </div>
-          {!isCollapsed && <span className="text-xl tracking-tight">Admin</span>}
+          {!isCollapsed && <span className="text-base font-bold tracking-tight truncate">Vocabee Admin</span>}
         </Link>
         <Button
           variant="ghost"
           size="icon"
-          className="absolute -right-4 top-4 h-8 w-8 rounded-full border bg-background"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="h-8 w-8 rounded-lg border border-border/60 bg-background shrink-0 hover:bg-muted"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

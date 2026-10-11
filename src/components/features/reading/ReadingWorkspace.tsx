@@ -19,22 +19,19 @@ export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
   const [highlightEnabled, setHighlightEnabled] = React.useState(false);
   const [highlightColor, setHighlightColor] = React.useState<HighlightColor>("yellow");
   const [highlights, setHighlights] = React.useState<ReadingHighlight[]>([]);
-  const [readingFontSize, setReadingFontSize] = React.useState(DEFAULT_FONT_SIZE);
-
-  const showTranslation = !hideMeaning;
-
-  React.useEffect(() => {
+  const [readingFontSize, setReadingFontSize] = React.useState(() => {
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (!stored) return;
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
+      if (!stored) return DEFAULT_FONT_SIZE;
       const parsed = Number(stored);
-      if (Number.isFinite(parsed)) {
-        setReadingFontSize(Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, parsed)));
-      }
+      if (Number.isFinite(parsed)) return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, parsed));
     } catch {
       // Ignore storage issues and fall back to the default size.
     }
-  }, []);
+    return DEFAULT_FONT_SIZE;
+  });
+
+  const showTranslation = !hideMeaning;
 
   React.useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, String(readingFontSize));

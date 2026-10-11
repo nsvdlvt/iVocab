@@ -2,33 +2,71 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 const testimonials = [
-  { name: "Lan", role: "Người học IELTS", comment: "Giao diện nhìn vào là hiểu ngay, và cảm giác học rất có động lực." },
-  { name: "Minh", role: "Tự học mỗi ngày", comment: "Mọi thứ có nhịp hơn hẳn, không còn cảm giác ứng dụng bị rời rạc." },
-  { name: "An", role: "Học sinh cấp 3", comment: "Flashcard và SRS làm mình muốn quay lại mỗi ngày." },
+  {
+    name: "Khánh Lan",
+    role: "Học viên IELTS 7.5",
+    comment:
+      "Nhờ lịch ôn SRS và bài tập điền từ theo ngữ cảnh AI, mình không còn quên từ học thuật sau vài ngày như lúc chép giấy nữa. Điểm Reading tăng từ 6.5 lên 8.0 sau 2 tháng.",
+  },
+  {
+    name: "Hoàng Minh",
+    role: "Kỹ sư phần mềm",
+    comment:
+      "Mình dùng tính năng nhập từ nhanh từ các tài liệu chuyên ngành và đọc song ngữ mỗi tối 15 phút. Giao diện tối ưu, có chế độ tối rất dịu mắt khi học ban đêm.",
+  },
+  {
+    name: "Phương An",
+    role: "Sinh viên Đại học Ngoại thương",
+    comment:
+      "Thẻ flashcard có sẵn phiên âm IPA, từ đồng nghĩa và ví dụ sát thực tế. Mỗi ngày vào nhìn biểu đồ dự báo ôn tập và giữ chuỗi Streak thực sự rất cuốn.",
+  },
 ];
 
 export function Testimonials() {
   return (
-    <section className="bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.35em] text-blue-700">Đánh giá</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">Người học cảm nhận sự khác biệt ngay từ cái nhìn đầu tiên</h2>
+    <section className="border-b border-border/80 bg-muted/30">
+      <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 lg:px-8 lg:py-20">
+        <div className="max-w-3xl space-y-3">
+          <p className="text-xs font-bold uppercase tracking-[0.28em] text-primary">
+            Chia sẻ từ người học
+          </p>
+          <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
+            Được đồng hành cùng hàng nghìn người học nghiêm túc mỗi ngày
+          </h2>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Từ học sinh luyện thi chứng chỉ quốc tế đến người đi làm bận rộn, Vocabee giúp việc duy trì kỷ luật học từ vựng trở nên nhẹ nhàng và hiệu quả.
+          </p>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
           {testimonials.map((item) => (
-            <motion.div key={item.name} whileHover={{ y: -4 }} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">{item.name.slice(0, 1)}</div>
+            <motion.div
+              key={item.name}
+              whileHover={{ y: -4 }}
+              className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-6 shadow-xs"
+            >
+              <div>
+                <div className="flex items-center gap-1 text-amber-500">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                <p className="mt-4 text-sm leading-relaxed text-foreground/90">
+                  &ldquo;{item.comment}&rdquo;
+                </p>
+              </div>
+              <div className="mt-6 flex items-center gap-3 border-t border-border/60 pt-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  {item.name.slice(0, 1)}
+                </div>
                 <div>
-                  <div className="font-black text-slate-950">{item.name}</div>
-                  <div className="text-xs text-slate-500">{item.role}</div>
+                  <div className="text-sm font-bold text-foreground">{item.name}</div>
+                  <div className="text-xs text-muted-foreground">{item.role}</div>
                 </div>
               </div>
-              <div className="mt-4 flex text-amber-500">★★★★★</div>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{item.comment}</p>
             </motion.div>
           ))}
         </div>
@@ -36,4 +74,3 @@ export function Testimonials() {
     </section>
   );
 }
-

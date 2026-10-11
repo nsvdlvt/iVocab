@@ -3,9 +3,24 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, List, Search, Plus } from "lucide-react";
+import {
+  LayoutGrid,
+  List,
+  Search,
+  Plus,
+  Trash2,
+  ArrowUpDown,
+  Globe,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FilterBarProps {
   onAddClick: () => void;
@@ -19,132 +34,197 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
   const currentVisibility = searchParams.get("visibility") || "all";
   const currentSort = searchParams.get("sort") || "updated_at_desc";
   const currentView = searchParams.get("view") || "grid";
+  const isTrashView = currentVisibility === "deleted";
 
   const visibilityLabelMap: Record<string, string> = {
-    all: "Tất cả",
+    all: "Tất cả trạng thái",
     private: "Riêng tư",
     unlisted: "Không công khai",
     public: "Công khai",
-    deleted: "Đã xóa tạm thời",
+    deleted: "Thùng rác",
   };
 
   const sortLabelMap: Record<string, string> = {
-    updated_at_desc: "Mới nhất",
-    updated_at_asc: "Cũ nhất",
-    title_asc: "Tên bộ từ A-Z",
-    title_desc: "Tên bộ từ Z-A",
+    updated_at_desc: "Cập nhật mới nhất",
+    updated_at_asc: "Cập nhật cũ nhất",
+    title_asc: "Tên bộ từ A → Z",
+    title_desc: "Tên bộ từ Z → A",
   };
 
-  // State declaration
   const [searchVal, setSearchVal] = useState(currentSearch);
   const [prevSearch, setPrevSearch] = useState(currentSearch);
 
-  // Sync state with URL search parameters changes (e.g. browser navigation back/forward)
   if (currentSearch !== prevSearch) {
     setSearchVal(currentSearch);
     setPrevSearch(currentSearch);
   }
 
-  // Declared at the top to satisfy declaration order
-  const updateParams = React.useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "all" && value !== "") {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    if (key !== "page") {
-      params.delete("page");
-    }
-    router.push(`/vocabulary?${params.toString()}`, { scroll: false });
-  }, [searchParams, router]);
+  const updateParams = React.useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value && value !== "all" && value !== "") {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      if (key !== "page") {
+        params.delete("page");
+      }
+      router.push(`/vocabulary?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router]
+  );
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchVal !== currentSearch) {
         updateParams("search", searchVal);
       }
-    }, 400);
+    }, 350);
 
     return () => clearTimeout(timer);
   }, [searchVal, currentSearch, updateParams]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center py-2">
-      {/* Left side: Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1 max-w-2xl">
+    <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between">
+      {/* Left: Search & Filter Controls */}
+      <div className="flex flex-1 flex-col gap-2.5 sm:flex-row sm:items-center">
         {/* Search Input */}
-        <div className="relative w-full sm:flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground animate-pulse" />
+        <div className="relative flex-1 sm:max-w-xs md:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Tìm kiếm bộ từ vựng theo tên hoặc mô tả..."
+            placeholder="Tìm bộ từ theo tên hoặc mô tả..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="pl-9 h-9.5 text-xs rounded-lg w-full"
+            className="h-9 w-full rounded-lg pl-9 pr-8 text-xs sm:text-sm"
           />
+          {searchVal && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchVal("");
+                updateParams("search", "");
+              }}
+              aria-label="Xóa tìm kiếm"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Visibility Filter */}
-        <div className="w-full sm:w-[160px] shrink-0">
-          <Select defaultValue={currentVisibility} onValueChange={(val) => updateParams("visibility", val || "all")}>
-            <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
-              {visibilityLabelMap[currentVisibility] ?? "Tất cả"}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Visibility Filter */}
+          <Select
+            value={currentVisibility}
+            onValueChange={(val) => updateParams("visibility", val || "all")}
+          >
+            <SelectTrigger className="h-9 w-[155px] rounded-lg text-xs font-medium">
+              <span className="flex items-center gap-1.5 truncate">
+                <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {visibilityLabelMap[currentVisibility] ?? "Tất cả trạng thái"}
+                </span>
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả</SelectItem>
+              <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="private">Riêng tư</SelectItem>
               <SelectItem value="unlisted">Không công khai</SelectItem>
               <SelectItem value="public">Công khai</SelectItem>
-              <SelectItem value="deleted">Đã xóa tạm thời</SelectItem>
+              <SelectItem value="deleted">Thùng rác</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        {/* Sort select */}
-        <div className="w-full sm:w-[180px] shrink-0">
-          <Select defaultValue={currentSort} onValueChange={(val) => updateParams("sort", val || "updated_at_desc")}>
-            <SelectTrigger className="h-9.5 text-xs rounded-lg w-full">
-              {sortLabelMap[currentSort] ?? "Mới nhất"}
+          {/* Sort Select */}
+          <Select
+            value={currentSort}
+            onValueChange={(val) =>
+              updateParams("sort", val || "updated_at_desc")
+            }
+          >
+            <SelectTrigger className="h-9 w-[170px] rounded-lg text-xs font-medium">
+              <span className="flex items-center gap-1.5 truncate">
+                <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {sortLabelMap[currentSort] ?? "Cập nhật mới nhất"}
+                </span>
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="updated_at_desc">Mới nhất</SelectItem>
-              <SelectItem value="updated_at_asc">Cũ nhất</SelectItem>
-              <SelectItem value="title_asc">Tên bộ từ A-Z</SelectItem>
-              <SelectItem value="title_desc">Tên bộ từ Z-A</SelectItem>
+              <SelectItem value="updated_at_desc">Cập nhật mới nhất</SelectItem>
+              <SelectItem value="updated_at_asc">Cập nhật cũ nhất</SelectItem>
+              <SelectItem value="title_asc">Tên bộ từ A → Z</SelectItem>
+              <SelectItem value="title_desc">Tên bộ từ Z → A</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Trash / Archive Quick Toggle */}
+          <Button
+            type="button"
+            variant={isTrashView ? "secondary" : "outline"}
+            size="sm"
+            onClick={() =>
+              updateParams("visibility", isTrashView ? "all" : "deleted")
+            }
+            className={cn(
+              "h-9 gap-1.5 rounded-lg px-3 text-xs font-medium",
+              isTrashView &&
+                "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15"
+            )}
+            title={isTrashView ? "Quay lại bộ từ đang học" : "Xem thùng rác"}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline">Thùng rác</span>
+          </Button>
         </div>
       </div>
 
-      {/* Right side: View Toggle & Add Button */}
-      <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-end">
-        {/* Grid/List Toggle */}
-        <div className="flex border rounded-lg overflow-hidden shrink-0">
-          <Button
+      {/* Right: View Toggle & Primary Create Action */}
+      <div className="flex items-center justify-between gap-2.5 border-t border-border/60 pt-2.5 sm:justify-end lg:border-t-0 lg:pt-0">
+        {/* Segmented Grid/List Toggle */}
+        <div
+          className="inline-flex items-center rounded-lg border border-border/80 bg-muted/50 p-0.5"
+          role="group"
+          aria-label="Chế độ hiển thị"
+        >
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
             onClick={() => updateParams("view", "grid")}
-            className={`h-9 w-9 rounded-none border-r ${currentView === "grid" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            aria-label="Dạng lưới"
+            title="Dạng lưới"
+            className={cn(
+              "inline-flex h-7.5 w-8 items-center justify-center rounded-md transition-all cursor-pointer",
+              currentView === "grid"
+                ? "bg-background text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
             onClick={() => updateParams("view", "list")}
-            className={`h-9 w-9 rounded-none ${currentView === "list" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            aria-label="Dạng danh sách"
+            title="Dạng danh sách"
+            className={cn(
+              "inline-flex h-7.5 w-8 items-center justify-center rounded-md transition-all cursor-pointer",
+              currentView === "list"
+                ? "bg-background text-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            <List className="h-4 w-4" />
-          </Button>
+            <List className="h-3.5 w-3.5" />
+          </button>
         </div>
 
-        {/* Add new button */}
-        <Button onClick={onAddClick} className="gap-1.5 font-semibold text-xs py-2.5 h-9.5 shadow-sm rounded-lg sm:w-auto w-full">
+        {/* Primary Add Button */}
+        <Button
+          onClick={onAddClick}
+          className="h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-semibold shadow-xs"
+        >
           <Plus className="h-4 w-4" />
-          Thêm bộ từ
+          <span>Tạo bộ từ mới</span>
         </Button>
       </div>
     </div>

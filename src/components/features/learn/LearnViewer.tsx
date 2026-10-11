@@ -612,39 +612,58 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const accuracyValue = totalDone > 0 ? Math.round((correctCount / totalDone) * 100) : 100;
 
   return (
-    <div className="w-full space-y-6 max-w-4xl mx-auto pb-10">
-      {/* Header bar actions */}
-      <div className="flex items-center justify-between gap-3 border-b pb-4">
+    <div className="w-full space-y-5 max-w-4xl mx-auto pb-10">
+      {/* Cohesive Learning HUD Header */}
+      <div className="flex items-center justify-between gap-3 border-b border-border/80 pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={() => setExitPromptOpen(true)}
             className="h-9 w-9 shrink-0 rounded-xl hover:bg-muted/80 cursor-pointer"
+            title="Quay lại (Esc)"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4.5 w-4.5" />
           </Button>
           <div className="min-w-0">
-            <h1 className="max-w-sm truncate text-lg font-bold text-foreground sm:max-w-md">
+            <h1 className="max-w-xs truncate text-base sm:text-lg font-bold text-foreground sm:max-w-md">
               {setInfo.title}
             </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">Adaptive Learning</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Chế độ Học thích ứng • Lượt #{totalQuestions + 1}
+            </p>
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setSettingsOpened(true)}
-          className="h-9 w-9 shrink-0 rounded-xl cursor-pointer hover:bg-muted/80"
-          title="Cấu hình thiết lập"
-        >
-          <Settings className="h-4.5 w-4.5" />
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-border/80 bg-muted/30 px-3 py-1.5 text-xs font-semibold text-muted-foreground tabular-nums">
+            <span>Đúng: <strong className="text-emerald-600 dark:text-emerald-400">{correctCount}</strong></span>
+            <span>•</span>
+            <span>Sai: <strong className="text-rose-600 dark:text-rose-400">{wrongCount}</strong></span>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSettingsOpened(true)}
+            className="h-9 w-9 shrink-0 rounded-xl cursor-pointer hover:bg-muted/80"
+            title="Cấu hình thiết lập"
+          >
+            <Settings className="h-4.5 w-4.5" />
+          </Button>
+        </div>
       </div>
 
+      {/* Progress meter status details in HUD */}
+      <StudyProgress
+        totalWords={initialWords.length}
+        masteredCount={masteredCount}
+        learningCount={learningCount}
+        remainingCount={remainingCount}
+        accuracy={accuracyValue}
+      />
+
       {/* Main Study components triggers */}
-      <div className="py-2 space-y-6">
+      <div className="py-1 space-y-5">
         {currentQuestion && (
           <>
             {currentQuestion.type === "mcq" ? (
@@ -699,15 +718,6 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
           </>
         )}
       </div>
-
-      {/* Progress meter status details */}
-      <StudyProgress
-        totalWords={initialWords.length}
-        masteredCount={masteredCount}
-        learningCount={learningCount}
-        remainingCount={remainingCount}
-        accuracy={accuracyValue}
-      />
 
       {/* Learn Configuration Overlay Modal */}
       <LearnSettingsDialog

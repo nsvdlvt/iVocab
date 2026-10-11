@@ -40,15 +40,15 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
 
   return (
     <div className="space-y-8">
-      <section className="space-y-4 rounded-[32px] border border-border/60 bg-card px-6 py-7 shadow-sm">
+      <section className="space-y-4 rounded-2xl border border-border/60 bg-card px-6 py-7 shadow-sm">
         <div className="max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
             <Sparkles className="h-3.5 w-3.5" />
             Reading Library
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Reading</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Reading</h1>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">
-            Đọc, hiểu và mở rộng vốn từ qua những bài viết được chọn lọc.
+            Đọc, hiểu và mở rộng vốn từ qua những bài viết song ngữ được chọn lọc.
           </p>
         </div>
 
@@ -59,24 +59,24 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Tìm bài đọc..."
-              className="h-12 rounded-2xl pl-10"
+              className="h-11 rounded-xl pl-10"
             />
           </label>
-          <select value={level} onChange={(event) => setLevel(event.target.value as typeof level)} className="h-12 rounded-2xl border border-input bg-background px-4 text-sm">
+          <select value={level} onChange={(event) => setLevel(event.target.value as typeof level)} className="h-11 rounded-xl border border-input bg-background px-4 text-sm text-foreground">
             {levelOptions.map((option) => (
-              <option key={option} value={option}>{option === "All" ? "Tất cả chủ đề" : option}</option>
+              <option key={option} value={option}>{option === "All" ? "Tất cả trình độ" : option}</option>
             ))}
           </select>
-          <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className="h-12 rounded-2xl border border-input bg-background px-4 text-sm">
+          <select value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className="h-11 rounded-xl border border-input bg-background px-4 text-sm text-foreground">
             {statusOptions.map((option) => (
-              <option key={option} value={option}>{option === "All" ? "Tất cả" : option}</option>
+              <option key={option} value={option}>{option === "All" ? "Tất cả trạng thái" : option}</option>
             ))}
           </select>
         </div>
       </section>
 
       {filtered.length === 0 ? (
-        <div className="rounded-[28px] border border-dashed border-border bg-card px-6 py-16 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center text-muted-foreground">
           Không tìm thấy bài đọc phù hợp.
         </div>
       ) : (
@@ -85,9 +85,9 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
             <Link
               key={article.slug}
               href={`/reading/${article.slug}`}
-              className="group overflow-hidden rounded-[28px] border border-border/60 bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+              className="group overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500">
+              <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-600">
                 {article.coverImageUrl ? (
                   <Image
                     src={article.coverImageUrl}
@@ -98,7 +98,7 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
                     unoptimized
                   />
                 ) : (
-                  <div className={cn("flex h-full w-full items-end p-5", "bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500")}>
+                  <div className={cn("flex h-full w-full items-end p-5", "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-600")}>
                     <div className="max-w-[80%] text-left text-white/90">
                       <div className="text-xs font-semibold uppercase tracking-[0.26em] text-white/70">{article.topic}</div>
                       <div className="mt-2 text-2xl font-semibold leading-tight">{article.level}</div>
@@ -118,7 +118,7 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
                 </div>
 
                 <div className="space-y-2">
-                  <h2 className="line-clamp-2 min-h-[3.5rem] text-xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-sky-700">
+                  <h2 className="line-clamp-2 min-h-[3.5rem] text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
                     {article.title}
                   </h2>
                   <p className="line-clamp-2 min-h-[3rem] text-sm leading-6 text-muted-foreground">
@@ -126,7 +126,7 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground tabular-nums">
                   <span className="inline-flex items-center gap-1.5"><Clock3 className="h-4 w-4" /> {article.estimatedReadingMinutes} phút đọc</span>
                   <span className="inline-flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {article.vocabularyCount} từ</span>
                 </div>
@@ -136,7 +136,7 @@ export function ReadingLibraryClient({ articles }: { articles: ReadingCard[] }) 
                     <div className="text-sm font-medium text-foreground">{article.statusLabel}</div>
                     {typeof article.progress === "number" ? (
                       <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${article.progress}%` }} />
+                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${article.progress}%` }} />
                       </div>
                     ) : null}
                   </div>

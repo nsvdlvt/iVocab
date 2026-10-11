@@ -115,11 +115,15 @@ export function InlineDictionaryPopup({ word, sentence, x, y, onClose }: InlineD
         exit={{ opacity: 0, y: 10, scale: 0.95 }}
         transition={{ duration: 0.15, ease: "easeOut" }}
         style={{ top: position.top, left: position.left }}
-        className="fixed z-50 w-80 max-h-[400px] overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/5"
+        className="fixed z-50 w-[min(20rem,calc(100vw-2rem))] max-h-[380px] overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/10"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-popover/80 px-4 py-2 backdrop-blur-sm">
-          <span className="font-semibold">{word}</span>
-          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted text-muted-foreground transition-colors">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-popover/90 px-4 py-2.5 backdrop-blur-md">
+          <span className="font-bold text-sm text-foreground">{word}</span>
+          <button
+            onClick={onClose}
+            aria-label="Close dictionary popup"
+            className="rounded-lg p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -134,35 +138,45 @@ export function InlineDictionaryPopup({ word, sentence, x, y, onClose }: InlineD
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
-              <AlertCircle className="mb-2 h-6 w-6 text-rose-500/50" />
-              <p>Dictionary info not found</p>
+              <AlertCircle className="mb-2 h-6 w-6 text-rose-500/60" />
+              <p>Không tìm thấy thông tin từ điển</p>
             </div>
           ) : data ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-black text-primary">{data.word}</h3>
-                {data.ipa && <span className="text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{data.ipa}</span>}
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-lg font-black text-primary">{data.word}</h3>
+                {data.ipa && (
+                  <span className="text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded-md text-xs">
+                    {data.ipa}
+                  </span>
+                )}
                 {data.audio && (
-                  <button onClick={playAudio} className="rounded-full p-1.5 text-blue-500 hover:bg-blue-500/10 transition-colors">
+                  <button
+                    onClick={playAudio}
+                    aria-label="Play pronunciation"
+                    className="rounded-full p-1.5 text-primary hover:bg-primary/10 transition-colors"
+                  >
                     <Volume2 className="h-4 w-4" />
                   </button>
                 )}
               </div>
 
               {detectedPos ? (
-                <div className="inline-flex rounded-full border border-primary/50 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold italic text-primary">
-                  Detected Part of Speech: {detectedPos}
+                <div className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  Từ loại trong câu: {detectedPos}
                 </div>
-              ) : data.partOfSpeech && (
-                <div className="inline-flex rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-semibold italic text-muted-foreground">
+              ) : data.partOfSpeech ? (
+                <div className="inline-flex rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                   {data.partOfSpeech}
                 </div>
-              )}
+              ) : null}
 
               {data.vietnameseMeaning && (
-                <div className="rounded-lg bg-blue-500/10 p-3 text-blue-700 dark:text-blue-300">
-                  <span className="font-semibold block mb-1 text-xs uppercase tracking-wider opacity-80">Vietnamese Meaning</span>
-                  {data.vietnameseMeaning}
+                <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-foreground">
+                  <span className="font-bold block mb-1 text-[11px] uppercase tracking-wider text-primary">
+                    Nghĩa tiếng Việt
+                  </span>
+                  <span className="font-semibold text-sm">{data.vietnameseMeaning}</span>
                 </div>
               )}
 

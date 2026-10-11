@@ -2,12 +2,16 @@
 
 import React from "react";
 import Link from "next/link";
-import { BookOpen, ChevronLeft, GraduationCap } from "lucide-react";
+import { ChevronLeft, GraduationCap } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
+import { SectionHeader } from "@/components/common/SectionHeader";
 import { StudyModes } from "@/components/features/vocabulary/StudyModes";
+import { Skeleton } from "@/components/common/LoadingSkeleton";
+import { cn } from "@/lib/utils";
 
 type ReviewSession = {
   id: string;
@@ -42,19 +46,28 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
       setError(null);
 
       try {
-        const response = await fetch(`/api/review-sessions/${encodeURIComponent(sessionId)}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/review-sessions/${encodeURIComponent(sessionId)}`,
+          {
+            signal: controller.signal,
+          }
+        );
         const data = (await response.json()) as ReviewSessionResponse;
 
         if (!response.ok || !data.success) {
-          throw new Error("error" in data ? data.error : "Không thể tải dữ liệu phiên ôn tập.");
+          throw new Error(
+            "error" in data ? data.error : "Không thể tải dữ liệu phiên ôn tập."
+          );
         }
 
         setSession(data.session);
       } catch (loadError) {
         if ((loadError as Error).name === "AbortError") return;
-        setError(loadError instanceof Error ? loadError.message : "Không thể tải dữ liệu phiên ôn tập.");
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Không thể tải dữ liệu phiên ôn tập."
+        );
       } finally {
         setLoading(false);
       }
@@ -67,12 +80,14 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
   if (loading) {
     return (
       <PageContainer className="space-y-6">
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="flex flex-col items-center gap-4 rounded-3xl border bg-card px-8 py-10 shadow-sm">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p className="text-sm font-medium text-muted-foreground animate-pulse">Đang tải dữ liệu...</p>
-          </div>
+        <Skeleton className="h-8 w-36 rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
         </div>
+        <Skeleton className="h-64 w-full rounded-xl" />
       </PageContainer>
     );
   }
@@ -83,18 +98,22 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
         <div>
           <Link
             href="/review"
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "-ml-3 gap-1 rounded-xl cursor-pointer inline-flex items-center",
-            })}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2")}
           >
             <ChevronLeft className="h-4 w-4" />
-            Quay lại ôn tập
+            <span>Quay lại trung tâm ôn tập</span>
           </Link>
         </div>
-        <SectionCard className="space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">{error ?? "Không tìm thấy phiên ôn tập."}</p>
+        <SectionCard className="py-10 text-center space-y-3">
+          <p className="text-sm font-medium text-foreground">
+            {error ?? "Không tìm thấy phiên ôn tập."}
+          </p>
+          <Link
+            href="/review"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Về trang ôn tập
+          </Link>
         </SectionCard>
       </PageContainer>
     );
@@ -105,14 +124,10 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
       <div>
         <Link
           href="/review"
-          className={buttonVariants({
-            variant: "ghost",
-            size: "sm",
-            className: "-ml-3 gap-1 rounded-xl cursor-pointer inline-flex items-center",
-          })}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2")}
         >
           <ChevronLeft className="h-4 w-4" />
-          Quay lại ôn tập
+          <span>Quay lại trung tâm ôn tập</span>
         </Link>
       </div>
 
@@ -120,26 +135,41 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
         title={session.title}
         description={session.description}
         action={
-          <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <GraduationCap className="mr-1 inline-block h-3.5 w-3.5" />
-            Phiên ôn tập
-          </div>
+          <Badge variant="default" className="gap-1.5 px-3 py-1 h-7">
+            <GraduationCap className="h-3.5 w-3.5" />
+            <span>Phiên ôn tập ({session.words.length} từ)</span>
+          </Badge>
         }
       />
 
       <StudyModes setId={sessionId} basePath="/review/session" />
 
       <SectionCard className="space-y-4">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4.5 w-4.5 text-primary" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Danh sách từ ôn</h2>
-        </div>
+        <SectionHeader
+          title="Danh sách từ vựng trong phiên"
+          description={`Gồm ${session.words.length} từ đến hạn cần củng cố`}
+          action={
+            <Badge variant="secondary" className="tabular-nums">
+              {session.words.length} từ
+            </Badge>
+          }
+        />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {session.words.map((word) => (
-            <div key={word.id} className="rounded-2xl border bg-background/70 p-4 shadow-sm">
+          {session.words.map((word, idx) => (
+            <div
+              key={word.id}
+              className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/15 p-3.5 transition-colors hover:border-border"
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold tabular-nums text-muted-foreground">
+                {idx + 1}
+              </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-foreground">{word.word}</p>
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{word.meaning}</p>
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {word.word}
+                </p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {word.meaning}
+                </p>
               </div>
             </div>
           ))}

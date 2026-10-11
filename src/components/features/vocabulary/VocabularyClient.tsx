@@ -10,7 +10,7 @@ import { RestoreConfirmDialog } from "./RestoreConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderOpen, Plus, RotateCcw } from "lucide-react";
 import type { VocabSetProgressSummary } from "@/lib/statistics/vocab-set-summary.service";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
@@ -23,7 +23,13 @@ interface VocabularyClientProps {
   itemsPerPage: number;
 }
 
-export function VocabularyClient({ sets, summaries, totalCount, currentPage, itemsPerPage }: VocabularyClientProps) {
+export function VocabularyClient({
+  sets,
+  summaries,
+  totalCount,
+  currentPage,
+  itemsPerPage,
+}: VocabularyClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,6 +41,7 @@ export function VocabularyClient({ sets, summaries, totalCount, currentPage, ite
   const [isPermanentDelete, setIsPermanentDelete] = useState(false);
 
   const currentView = searchParams.get("view") || "grid";
+  const isTrashView = searchParams.get("visibility") === "deleted";
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handleEdit = (set: VocabSetRow) => {
@@ -58,10 +65,17 @@ export function VocabularyClient({ sets, summaries, totalCount, currentPage, ite
     router.push(`/vocabulary?${params.toString()}`, { scroll: false });
   };
 
-  const hasFilters = searchParams.has("search") || searchParams.has("visibility") || searchParams.has("sort");
+  const handleResetFilters = () => {
+    router.push("/vocabulary", { scroll: false });
+  };
+
+  const hasFilters =
+    searchParams.has("search") ||
+    searchParams.has("visibility") ||
+    searchParams.has("sort");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <FilterBar onAddClick={() => router.push("/vocabulary/new")} />
 
       {sets.length > 0 ? (
@@ -85,48 +99,74 @@ export function VocabularyClient({ sets, summaries, totalCount, currentPage, ite
           )}
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4">
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={currentPage <= 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-                className="h-8 w-8 rounded-lg"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-xs text-muted-foreground font-medium px-2">
-                Trang {currentPage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                disabled={currentPage >= totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-                className="h-8 w-8 rounded-lg"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center justify-between border-t border-border/60 pt-4">
+              <p className="text-xs text-muted-foreground tabular-nums">
+                Tổng cộng <strong className="font-semibold text-foreground">{totalCount}</strong> bộ từ vựng
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  aria-label="Trang trước"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-xs font-medium text-muted-foreground tabular-nums">
+                  Trang <strong className="text-foreground">{currentPage}</strong> / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  aria-label="Trang sau"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 px-4 border border-dashed rounded-xl bg-muted/5 space-y-4">
-          <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-muted-foreground/60">
-            <Inbox className="h-6 w-6 animate-bounce" />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card/50 px-4 py-16 text-center space-y-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted/60 text-muted-foreground">
+            <FolderOpen className="h-6 w-6" />
           </div>
-          <div className="text-center space-y-1 max-w-sm">
-            <h4 className="font-bold text-sm">
-              {hasFilters ? "Không tìm thấy bộ từ vựng" : "Chưa có bộ từ vựng nào"}
+          <div className="max-w-sm space-y-1.5">
+            <h4 className="text-sm font-semibold text-foreground">
+              {isTrashView
+                ? "Thùng rác đang trống"
+                : hasFilters
+                  ? "Không tìm thấy bộ từ vựng phù hợp"
+                  : "Chưa có bộ từ vựng nào"}
             </h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {hasFilters
-                ? "Thử thay đổi từ khóa hoặc bộ lọc để hiển thị kết quả mong muốn."
-                : "Tạo bộ từ vựng đầu tiên của bạn để bắt đầu lưu trữ và ôn tập từ vựng."}
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {isTrashView
+                ? "Không có bộ từ vựng nào bị xóa tạm thời."
+                : hasFilters
+                  ? "Thử thay đổi từ khóa tìm kiếm hoặc xóa bộ lọc hiện tại để xem tất cả bộ từ."
+                  : "Tạo bộ từ vựng đầu tiên của bạn để bắt đầu lưu trữ, phân loại và ôn tập thông minh với SRS."}
             </p>
           </div>
-          {!hasFilters && (
-            <Button onClick={() => router.push("/vocabulary/new")} className="text-xs font-semibold rounded-lg h-9">
+          {hasFilters ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              className="gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Xóa bộ lọc
+            </Button>
+          ) : (
+            <Button
+              onClick={() => router.push("/vocabulary/new")}
+              size="sm"
+              className="gap-1.5 font-semibold"
+            >
+              <Plus className="h-4 w-4" />
               Tạo bộ từ mới
             </Button>
           )}

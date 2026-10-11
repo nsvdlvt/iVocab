@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import type { BilingualParagraph, ReadingHighlight } from "./reading-types";
 
 const highlightClassMap: Record<ReadingHighlight["color"], string> = {
-  yellow: "bg-amber-200/90 text-foreground",
-  green: "bg-emerald-200/90 text-foreground",
-  blue: "bg-sky-200/90 text-foreground",
-  pink: "bg-pink-200/90 text-foreground",
-  purple: "bg-violet-200/90 text-foreground",
+  yellow: "bg-amber-200/90 text-slate-900 dark:bg-amber-500/30 dark:text-amber-100",
+  green: "bg-emerald-200/90 text-slate-900 dark:bg-emerald-500/30 dark:text-emerald-100",
+  blue: "bg-sky-200/90 text-slate-900 dark:bg-sky-500/30 dark:text-sky-100",
+  pink: "bg-pink-200/90 text-slate-900 dark:bg-pink-500/30 dark:text-pink-100",
+  purple: "bg-violet-200/90 text-slate-900 dark:bg-violet-500/30 dark:text-violet-100",
 };
 
 function normalizeText(value: string) {
@@ -134,13 +134,13 @@ function TranslationParagraph({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
-          className="overflow-hidden border-l-2 border-slate-200 pl-4"
+          className="overflow-hidden border-l-2 border-primary/30 pl-4"
         >
-          <div className="mb-1 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">
-            <Languages className="h-3.5 w-3.5" />
+          <div className="mb-1 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <Languages className="h-3.5 w-3.5 text-primary" />
             Dịch nghĩa
           </div>
-          <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-7 text-slate-600" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
+          <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-7 text-muted-foreground" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
             {renderHighlightedText(paragraph.translation ?? "", highlights, paragraph.id, "vi")}
           </p>
         </motion.div>
@@ -172,7 +172,7 @@ export function ReadingSection({
     <div className={cn("px-5 py-5 md:px-7 md:py-6", index > 0 && "border-t border-border/60")}>
       <div className="grid gap-6 md:hidden">
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Paragraph {index + 1}</div>
           <EnglishParagraph
             paragraph={paragraph}
             highlights={highlights}
@@ -198,12 +198,12 @@ export function ReadingSection({
           layout
           transition={{ duration: 0.25, ease: "easeOut" }}
           className={cn(
-            "grid gap-x-8 lg:gap-x-12",
+            "grid gap-x-8 lg:gap-x-10",
             showTranslation ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-1"
           )}
         >
           <div className="min-w-0 pr-1">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Paragraph {index + 1}</div>
             <EnglishParagraph
               paragraph={paragraph}
               highlights={highlights}
@@ -220,10 +220,10 @@ export function ReadingSection({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="min-w-0 pl-1"
+              className="min-w-0 border-l border-border/60 pl-6 lg:pl-8"
             >
-              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Paragraph {index + 1}</div>
-              <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-8 text-foreground select-text" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Bản dịch #{index + 1}</div>
+              <p className="break-words whitespace-pre-wrap text-justify hyphens-auto leading-8 text-muted-foreground select-text" style={{ fontSize: `${Math.max(12, fontSize - 1)}px` }}>
                 {renderHighlightedText(paragraph.translation ?? "", highlights, paragraph.id, "vi")}
               </p>
             </motion.div>

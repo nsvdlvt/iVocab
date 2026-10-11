@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { LucideIcon } from "lucide-react";
 import { SectionCard } from "./SectionCard";
@@ -41,9 +39,10 @@ export function StatCard({
     <SectionCard
       className={cn(
         "flex flex-col justify-between transition-all duration-200",
-        compactOnMobile && "rounded-xl p-3 md:rounded-2xl md:p-6",
-        interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
-        active && "border-primary/40 bg-primary/5 shadow-sm",
+        compactOnMobile && "p-3.5 md:p-5",
+        interactive &&
+          "cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30",
+        active && "border-primary/50 bg-primary/[0.04] ring-1 ring-primary/20 shadow-xs",
         className
       )}
       onClick={onClick}
@@ -64,48 +63,86 @@ export function StatCard({
       {compactOnMobile && compactTitle && (
         <div className="flex flex-col items-center gap-1.5 xl:hidden">
           {Icon && (
-            <div className={cn("rounded-xl p-2 bg-muted/50 text-muted-foreground", iconClassName)}>
-              <Icon className="h-5 w-5" />
+            <div
+              className={cn(
+                "rounded-lg p-2 bg-muted/60 text-muted-foreground",
+                iconClassName
+              )}
+            >
+              <Icon className="h-4 w-4" />
             </div>
           )}
-          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{compactTitle}</span>
-          <div className="text-2xl font-bold tracking-tight">{value}</div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {compactTitle}
+          </span>
+          <div className="text-xl font-bold tracking-tight tabular-nums text-foreground">
+            {value}
+          </div>
         </div>
       )}
 
-      {/* Desktop / non-compact: original layout */}
+      {/* Desktop / non-compact layout */}
       <div className={cn(compactOnMobile && compactTitle && "hidden xl:block")}>
-        <div className={cn("flex items-center justify-between", compactOnMobile && "justify-center md:justify-between")}>
-          <span className={cn("text-sm font-medium text-muted-foreground", compactOnMobile && !compactTitle && "hidden xl:block")}>{title}</span>
+        <div
+          className={cn(
+            "flex items-center justify-between gap-2",
+            compactOnMobile && "justify-center md:justify-between"
+          )}
+        >
+          <span
+            className={cn(
+              "text-xs font-medium text-muted-foreground",
+              compactOnMobile && !compactTitle && "hidden xl:block"
+            )}
+          >
+            {title}
+          </span>
           {Icon && (
             <div
               className={cn(
-                "rounded-xl p-2 bg-muted/50 text-muted-foreground",
+                "rounded-lg p-2 bg-muted/60 text-muted-foreground shrink-0",
                 compactOnMobile && "mx-auto xl:mx-0",
                 iconClassName
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
             </div>
           )}
         </div>
-        <div className={cn("mt-4 space-y-1", compactOnMobile && "mt-2 text-center xl:text-left")}>
-          <div className={cn("text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/90 bg-clip-text", compactOnMobile && "text-2xl xl:text-3xl")}>
+        <div
+          className={cn(
+            "mt-3 space-y-1",
+            compactOnMobile && "mt-2 text-center xl:text-left"
+          )}
+        >
+          <div
+            className={cn(
+              "text-2xl md:text-3xl font-bold tracking-tight tabular-nums text-foreground",
+              compactOnMobile && "text-2xl xl:text-3xl"
+            )}
+          >
             {value}
           </div>
           {(description || trend) && (
-            <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", compactOnMobile && "hidden xl:flex")}>
+            <div
+              className={cn(
+                "flex items-center gap-1.5 text-xs text-muted-foreground",
+                compactOnMobile && "hidden xl:flex"
+              )}
+            >
               {trend && (
                 <span
                   className={cn(
                     "font-semibold",
-                    trend.isPositive ? "text-emerald-500" : "text-rose-500"
+                    trend.isPositive
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-rose-600 dark:text-rose-400"
                   )}
                 >
                   {trend.value}
                 </span>
               )}
-              {description && <span>{description}</span>}
+              {description && <span className="truncate">{description}</span>}
             </div>
           )}
         </div>

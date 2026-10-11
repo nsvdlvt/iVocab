@@ -3,12 +3,15 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, Layers3, Shuffle, X, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Layers3, Settings2, Shuffle, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { FlashcardDeck } from "../flashcard/FlashcardDeck";
-import { FlashcardSettingsDialog, FlashcardSettingsState } from "../flashcard/FlashcardSettingsDialog";
+import {
+  FlashcardSettingsDialog,
+  FlashcardSettingsState,
+} from "../flashcard/FlashcardSettingsDialog";
 import { FlashcardRow } from "../flashcard/flashcard-utils";
 import { usePreserveScrollPosition } from "@/hooks/use-preserve-scroll-position";
 import { notifyStudyActivityUpdated } from "@/lib/events/study-events";
@@ -18,6 +21,7 @@ import {
   FlashcardReviewAction,
   FlashcardReviewQueueState,
 } from "../flashcard/flashcard-review-queue";
+import { cn } from "@/lib/utils";
 
 interface ReviewFlashcardSessionProps {
   words: FlashcardRow[];
@@ -68,7 +72,9 @@ function shuffleWords(words: FlashcardRow[]) {
 
 function orderWordsByIds(words: FlashcardRow[], orderIds: string[]) {
   const byId = new Map(words.map((word) => [word.id, word]));
-  return orderIds.map((id) => byId.get(id)).filter((word): word is FlashcardRow => Boolean(word));
+  return orderIds
+    .map((id) => byId.get(id))
+    .filter((word): word is FlashcardRow => Boolean(word));
 }
 
 function loadShuffleState(reviewSessionId: string, words: FlashcardRow[]) {
@@ -82,7 +88,9 @@ function loadShuffleState(reviewSessionId: string, words: FlashcardRow[]) {
 
     const parsed = JSON.parse(raw) as Partial<ReviewFlashcardShuffleState>;
     const enabled = Boolean(parsed.enabled);
-    const queue = parsed.orderIds?.length ? orderWordsByIds(words, parsed.orderIds) : words;
+    const queue = parsed.orderIds?.length
+      ? orderWordsByIds(words, parsed.orderIds)
+      : words;
 
     return { enabled, queue: queue.length > 0 ? queue : words };
   } catch {
@@ -90,15 +98,31 @@ function loadShuffleState(reviewSessionId: string, words: FlashcardRow[]) {
   }
 }
 
-export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessionId }: ReviewFlashcardSessionProps) {
+export function ReviewFlashcardSession({
+  words,
+  setInfo,
+  onBackHref,
+  reviewSessionId,
+}: ReviewFlashcardSessionProps) {
   const router = useRouter();
-  const initialShuffleState = React.useMemo(() => loadShuffleState(reviewSessionId, words), [reviewSessionId, words]);
-  const [queueState, setQueueState] = React.useState<FlashcardReviewQueueState>(() => createFlashcardReviewQueue(initialShuffleState.queue));
-  const [shuffleEnabled, setShuffleEnabled] = React.useState<boolean>(() => initialShuffleState.enabled);
-  const [settings, setSettings] = React.useState<FlashcardSettingsState>(loadDefaultSettings);
+  const initialShuffleState = React.useMemo(
+    () => loadShuffleState(reviewSessionId, words),
+    [reviewSessionId, words]
+  );
+  const [queueState, setQueueState] = React.useState<FlashcardReviewQueueState>(() =>
+    createFlashcardReviewQueue(initialShuffleState.queue)
+  );
+  const [shuffleEnabled, setShuffleEnabled] = React.useState<boolean>(
+    () => initialShuffleState.enabled
+  );
+  const [settings, setSettings] = React.useState<FlashcardSettingsState>(
+    loadDefaultSettings
+  );
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [flipped, setFlipped] = React.useState(false);
-  const [activeAction, setActiveAction] = React.useState<FlashcardReviewAction | null>(null);
+  const [activeAction, setActiveAction] = React.useState<FlashcardReviewAction | null>(
+    null
+  );
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const actionTimerRef = React.useRef<number | null>(null);
   const knownIdsRef = React.useRef<Set<string>>(new Set());
@@ -106,7 +130,8 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
 
   const currentWord = queueState.queue[0] ?? null;
   const totalDue = queueState.knownCount + queueState.queue.length;
-  const progress = totalDue > 0 ? Math.round((queueState.knownCount / totalDue) * 100) : 0;
+  const progress =
+    totalDue > 0 ? Math.round((queueState.knownCount / totalDue) * 100) : 0;
   const finished = totalDue > 0 && queueState.queue.length === 0;
   usePreserveScrollPosition(currentWord?.id ?? (finished ? "finished" : "ready"));
 
@@ -142,17 +167,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
 
   const enqueueSave = React.useCallback(
     (payload: { vocabularyId: string; answerResult: "correct" | "wrong" }) => {
-      console.log("[ReviewFlashcardSession] enqueueSave", {
-        reviewSessionId,
-        vocabularyId: payload.vocabularyId,
-        answerResult: payload.answerResult,
-      });
       const nextSave = saveQueueRef.current.then(async () => {
-        console.log("[ReviewFlashcardSession] save start", {
-          reviewSessionId,
-          vocabularyId: payload.vocabularyId,
-          answerResult: payload.answerResult,
-        });
         const response = await fetch("/api/srs/result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -163,14 +178,6 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             reviewSessionId,
           }),
           keepalive: true,
-        });
-
-        console.log("[ReviewFlashcardSession] save response", {
-          reviewSessionId,
-          vocabularyId: payload.vocabularyId,
-          answerResult: payload.answerResult,
-          ok: response.ok,
-          status: response.status,
         });
 
         if (!response.ok) {
@@ -193,7 +200,7 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     try {
       await saveQueueRef.current;
     } catch {
-      // Individual request errors are logged in enqueueSave.
+      // Handled in enqueueSave
     }
   }, []);
 
@@ -204,7 +211,10 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
       enabled: shuffleEnabled,
       orderIds: queueState.queue.map((word) => word.id),
     };
-    window.localStorage.setItem(getShuffleStorageKey(reviewSessionId), JSON.stringify(nextState));
+    window.localStorage.setItem(
+      getShuffleStorageKey(reviewSessionId),
+      JSON.stringify(nextState)
+    );
   }, [queueState.queue, reviewSessionId, shuffleEnabled, words]);
 
   const applyShuffle = React.useCallback(
@@ -230,35 +240,46 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
     [words]
   );
 
-  const submitAction = React.useCallback((action: FlashcardReviewAction) => {
-    if (!currentWord || activeAction || finished) return;
+  const submitAction = React.useCallback(
+    (action: FlashcardReviewAction) => {
+      if (!currentWord || activeAction || finished) return;
 
-    setActiveAction(action);
-    if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
+      setActiveAction(action);
+      if (actionTimerRef.current) window.clearTimeout(actionTimerRef.current);
 
-    actionTimerRef.current = window.setTimeout(() => {
-      const isKnown = action === "known";
-      const isLastWord = isKnown && queueState.queue.length === 1;
+      actionTimerRef.current = window.setTimeout(() => {
+        const isKnown = action === "known";
+        const isLastWord = isKnown && queueState.queue.length === 1;
 
-      if (action === "known" && currentWord) {
-        knownIdsRef.current.add(currentWord.id);
-      }
+        if (action === "known" && currentWord) {
+          knownIdsRef.current.add(currentWord.id);
+        }
 
-      setQueueState((prev) => advanceFlashcardReviewQueue(prev, action));
-      setFlipped(false);
-      setActiveAction(null);
+        setQueueState((prev) => advanceFlashcardReviewQueue(prev, action));
+        setFlipped(false);
+        setActiveAction(null);
 
-      if (isKnown && currentWord) {
-        void enqueueSave({
-          vocabularyId: currentWord.id,
-          answerResult: "correct",
-        }).then(async () => {
-          if (!isLastWord) return;
-          router.push(`/review/session/${reviewSessionId}/complete`);
-        });
-      }
-    }, 180);
-  }, [activeAction, currentWord, finished, queueState.queue.length, reviewSessionId, router, enqueueSave, flushSaveQueue]);
+        if (isKnown && currentWord) {
+          void enqueueSave({
+            vocabularyId: currentWord.id,
+            answerResult: "correct",
+          }).then(async () => {
+            if (!isLastWord) return;
+            router.push(`/review/session/${reviewSessionId}/complete`);
+          });
+        }
+      }, 180);
+    },
+    [
+      activeAction,
+      currentWord,
+      finished,
+      queueState.queue.length,
+      reviewSessionId,
+      router,
+      enqueueSave,
+    ]
+  );
 
   const handleLeaveReview = React.useCallback(async () => {
     await flushSaveQueue();
@@ -311,17 +332,23 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   if (words.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <div className="flex items-center gap-3 border-b border-border/50 pb-4">
-          <Button variant="ghost" size="icon" onClick={() => void handleLeaveReview()} className="rounded-xl">
-            <ArrowLeft />
+        <div className="flex items-center gap-3 border-b border-border/80 pb-4">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => void handleLeaveReview()}
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-lg font-bold text-foreground">{setInfo.title}</h1>
             <p className="text-xs text-muted-foreground">Hiện chưa có thẻ nào cần ôn.</p>
           </div>
         </div>
-        <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">Bạn đã hoàn thành phiên ôn tập này.</p>
+        <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center shadow-xs">
+          <p className="text-sm text-muted-foreground">
+            Bạn đã hoàn thành phiên ôn tập này.
+          </p>
         </div>
       </div>
     );
@@ -329,30 +356,36 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
 
   if (finished) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6 text-center">
-        <div className="rounded-3xl border bg-card p-10 shadow-sm space-y-5">
+      <div className="mx-auto max-w-xl py-8 text-center">
+        <div className="rounded-xl border border-border/80 bg-card p-8 shadow-xs space-y-5">
           <div className="flex justify-center">
-            <div className="rounded-full bg-emerald-500/10 p-4">
-              <Sparkles className="h-10 w-10 text-emerald-500" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+              <Sparkles className="h-6 w-6" />
             </div>
           </div>
           <div>
-            <h2 className="text-3xl font-black text-foreground">Hoàn thành ôn tập</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Bạn đã ôn xong toàn bộ từ cần ôn trong phiên này.</p>
+            <h2 className="text-2xl font-bold text-foreground">Hoàn thành ôn tập</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Bạn đã ôn xong toàn bộ từ cần ôn trong phiên này.
+            </p>
           </div>
-          <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-            <div className="rounded-2xl bg-emerald-500/10 p-4">
-              <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{queueState.knownCount}</div>
-              <p className="text-xs text-muted-foreground">Đã thuộc</p>
+          <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3.5">
+              <div className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {queueState.knownCount}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Đã thuộc</p>
             </div>
-            <div className="rounded-2xl bg-muted/30 p-4">
-              <div className="text-2xl font-extrabold text-foreground">{totalDue}</div>
-              <p className="text-xs text-muted-foreground">Thẻ cần ôn</p>
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5">
+              <div className="text-2xl font-bold tabular-nums text-foreground">
+                {totalDue}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Thẻ đã ôn</p>
             </div>
           </div>
-          <Button onClick={() => void handleLeaveReview()} variant="outline" className="rounded-xl gap-2">
+          <Button onClick={() => void handleLeaveReview()}>
             <Sparkles className="h-4 w-4" />
-            Quay lại trang ôn tập
+            <span>Quay lại trang ôn tập</span>
           </Button>
         </div>
       </div>
@@ -360,46 +393,66 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-x-hidden pb-24 sm:pb-10">
-      <div className="flex flex-col gap-4 border-b border-border/50 pb-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.push(onBackHref)} className="mt-0.5 rounded-xl">
-            <ArrowLeft />
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 overflow-x-hidden pb-16 sm:pb-10">
+      {/* Header HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() => void handleLeaveReview()}
+            aria-label="Quay lại"
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground sm:text-2xl">{setInfo.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Phiên ôn tập SRS với luồng Đã thuộc / Chưa thuộc.</p>
+            <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              {setInfo.title}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Phiên ôn tập SRS • Đánh giá Đã thuộc / Chưa thuộc
+            </p>
           </div>
         </div>
 
-        <Badge variant="outline" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-          {queueState.knownCount} / {totalDue}
-        </Badge>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-          <span>Tiến độ</span>
-          <span>
-            {queueState.knownCount} / {totalDue}
-          </span>
+        <div className="flex items-center gap-2">
+          <Badge variant="default" className="tabular-nums font-semibold px-2.5 py-1">
+            Đã thuộc {queueState.knownCount} / {totalDue}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Tùy chỉnh</span>
+          </Button>
         </div>
-        <Progress value={progress} className="h-2 rounded-full" />
       </div>
 
+      {/* Progress */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Tiến độ phiên ôn tập</span>
+          <span className="font-semibold tabular-nums text-foreground">{progress}%</span>
+        </div>
+        <Progress value={progress} className="h-1.5 rounded-full" />
+      </div>
+
+      {/* Card Stage */}
       {currentWord && (
         <AnimatePresence mode="wait">
           <motion.div
             key={currentWord.id}
-            initial={{ opacity: 0, y: 18, scale: 0.97 }}
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
             animate={{
               opacity: 1,
               y: 0,
-              scale: activeAction ? 0.98 : 1,
-              x: activeAction === "known" ? 220 : activeAction === "not-yet" ? -220 : 0,
-              rotate: activeAction === "known" ? 8 : activeAction === "not-yet" ? -8 : 0,
+              scale: activeAction ? 0.985 : 1,
+              x: activeAction === "known" ? 180 : activeAction === "not-yet" ? -180 : 0,
+              rotate: activeAction === "known" ? 6 : activeAction === "not-yet" ? -6 : 0,
             }}
-            exit={{ opacity: 0, y: -12, scale: 0.96 }}
+            exit={{ opacity: 0, y: -10, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
             drag={activeAction ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
@@ -412,7 +465,6 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
             }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="pt-2"
           >
             <FlashcardDeck
               word={currentWord}
@@ -424,93 +476,81 @@ export function ReviewFlashcardSession({ words, setInfo, onBackHref, reviewSessi
               onFlip={() => setFlipped((prev) => !prev)}
               onSpeak={handleSpeak}
               onOpenSettings={() => setSettingsOpen(true)}
-              onToggleAutoSpeak={() => persistSettings({ ...settings, autoSpeak: !settings.autoSpeak })}
+              onToggleAutoSpeak={() =>
+                persistSettings({ ...settings, autoSpeak: !settings.autoSpeak })
+              }
               onToggleStar={() => {}}
             />
           </motion.div>
         </AnimatePresence>
       )}
 
-      <div className="mx-auto flex w-full max-w-[62rem] flex-col gap-3 px-1 pt-2">
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-sm text-slate-500">
-          <span className="font-medium">Phím tắt:</span>
-          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">←</kbd>
-          <span>Chưa thuộc</span>
-          <span className="text-slate-300">•</span>
-          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">→</kbd>
-          <span>Đã thuộc</span>
-          <span className="text-slate-300">•</span>
-          <kbd className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 shadow-sm">Space</kbd>
-          <span>lật thẻ</span>
-        </div>
-
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      {/* Review Controls */}
+      <div className="flex flex-col gap-3 pt-1">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border border-border/80 bg-card p-3 shadow-xs">
           <div className="flex justify-start">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled
-              className="group relative inline-flex h-12 items-center justify-center gap-2 rounded-full border border-indigo-200 bg-indigo-600 px-4 text-white shadow-sm disabled:cursor-default disabled:opacity-100"
-              aria-label="Progress mode locked"
-            >
-              <Layers3 className="h-4 w-4 text-white" />
-              <span className="text-sm font-medium">Tiến độ</span>
-            </Button>
+            <Badge variant="secondary" className="gap-1.5 px-2.5 py-1 h-8">
+              <Layers3 className="h-3.5 w-3.5 text-primary" />
+              <span className="hidden sm:inline">Còn {queueState.queue.length} thẻ</span>
+              <span className="sm:hidden">{queueState.queue.length}</span>
+            </Badge>
           </div>
 
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2.5">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
+              size="lg"
               onClick={() => submitAction("not-yet")}
               disabled={!!activeAction}
-              className="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition-all duration-200 hover:bg-rose-100 disabled:opacity-40"
+              className="border-rose-500/30 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300"
               aria-label="Chưa thuộc"
             >
               <X className="h-4 w-4" />
-              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                Chưa thuộc
-              </span>
+              <span>Chưa thuộc</span>
+              <kbd className="hidden md:inline-flex ml-1 bg-background/60">←</kbd>
             </Button>
-
-            <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
-              Thẻ {queueState.knownCount + 1} / {totalDue}
-            </div>
 
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
+              size="lg"
               onClick={() => submitAction("known")}
               disabled={!!activeAction}
-              className="group relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition-all duration-200 hover:bg-emerald-100 disabled:opacity-40"
+              className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
               aria-label="Đã thuộc"
             >
               <Check className="h-4 w-4" />
-              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                Đã thuộc
-              </span>
+              <span>Đã thuộc</span>
+              <kbd className="hidden md:inline-flex ml-1 bg-background/60">→</kbd>
             </Button>
           </div>
 
           <div className="flex justify-end">
             <Button
               type="button"
-              variant="ghost"
+              variant={shuffleEnabled ? "default" : "outline"}
+              size="sm"
               onClick={() => applyShuffle(!shuffleEnabled)}
-              className={[
-                "group relative inline-flex h-12 w-12 items-center justify-center rounded-full border shadow-sm transition-all duration-200",
-                shuffleEnabled
-                  ? "border-indigo-200 bg-indigo-600 text-white hover:bg-indigo-500"
-                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-              ].join(" ")}
-              aria-label="Shuffle cards"
+              aria-label="Trộn thẻ"
+              title="Trộn thứ tự thẻ"
             >
-              <Shuffle className={["h-4 w-4 transition-transform", shuffleEnabled ? "rotate-12 text-white" : "text-slate-500"].join(" ")} />
-              <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                Trộn thẻ
-              </span>
+              <Shuffle className={cn("h-3.5 w-3.5", shuffleEnabled && "rotate-12")} />
+              <span className="hidden sm:inline">Trộn thẻ</span>
             </Button>
           </div>
+        </div>
+
+        <div className="hidden sm:flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <span>Phím tắt:</span>
+          <kbd>←</kbd>
+          <span>Chưa thuộc (lặp lại)</span>
+          <span>•</span>
+          <kbd>→</kbd>
+          <span>Đã thuộc</span>
+          <span>•</span>
+          <kbd>Space</kbd>
+          <span>lật thẻ</span>
         </div>
       </div>
 

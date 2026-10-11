@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed:reading": "node scripts/seed-reading.mjs"
+    "seed:reading": "node scripts/seed-reading.mjs",
+    "browser:check": "node scripts/browser-check.mjs",
+    "browser:live": "node scripts/browser-check.mjs --headed"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -41,6 +43,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/mcp": "^0.0.83",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

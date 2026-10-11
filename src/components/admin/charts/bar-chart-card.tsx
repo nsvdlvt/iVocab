@@ -68,10 +68,10 @@ export function BarChartCard({
                   tickFormatter={(value) => `${value}`}
                 />
                 <Tooltip
-                  cursor={{ fill: "hsl(var(--muted))" }}
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "8px", border: "1px solid hsl(var(--border))" }}
+                  cursor={{ fill: "var(--muted)" }}
+                  contentStyle={{ backgroundColor: "var(--card)", borderRadius: "12px", border: "1px solid var(--border)" }}
                 />
-                <Bar dataKey={barDataKey} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={barDataKey} fill="var(--primary)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
