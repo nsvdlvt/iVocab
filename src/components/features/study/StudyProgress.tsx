@@ -23,8 +23,8 @@ export function StudyProgress({
   const remainingPercent = Math.max(0, 100 - masteredPercent - learningPercent);
 
   return (
-    <div className="w-full max-w-2xl mx-auto rounded-2xl border border-border/80 bg-card px-4 py-3.5 shadow-xs select-none">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold mb-2.5">
+    <div className="w-full max-w-2xl mx-auto rounded-2xl border border-border/80 bg-card px-3.5 py-2.5 sm:px-4 sm:py-3.5 shadow-xs select-none">
+      <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold mb-2">
         <div className="flex items-center gap-4">
           <span className="inline-flex items-center gap-1.5 text-foreground">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />

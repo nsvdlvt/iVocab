@@ -1,6 +1,8 @@
 import React from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { AppMain } from "@/components/layout/AppMain";
 import { perfEnd, perfStart } from "@/lib/perf";
 
 interface AppLayoutProps {
@@ -15,10 +17,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <Navbar />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+          <AppMain>
             {children}
-          </main>
+          </AppMain>
         </div>
+        <BottomNav />
       </div>
     );
   } finally {

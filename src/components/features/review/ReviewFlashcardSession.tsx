@@ -393,9 +393,9 @@ export function ReviewFlashcardSession({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 overflow-x-hidden pb-16 sm:pb-10">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 sm:gap-5 overflow-x-hidden pb-4 sm:pb-10">
       {/* Header HUD */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-border/80 pb-2.5 sm:pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"
@@ -496,14 +496,14 @@ export function ReviewFlashcardSession({
             </Badge>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5">
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
             <Button
               type="button"
               variant="outline"
               size="lg"
               onClick={() => submitAction("not-yet")}
               disabled={!!activeAction}
-              className="border-2 border-b-[4px] border-rose-500/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs"
+              className="border-2 border-b-[4px] border-rose-500/40 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs px-2.5 sm:px-4 text-xs sm:text-sm"
               aria-label="Chưa thuộc"
             >
               <X className="h-4 w-4" />
@@ -517,7 +517,7 @@ export function ReviewFlashcardSession({
               size="lg"
               onClick={() => submitAction("known")}
               disabled={!!activeAction}
-              className="border-2 border-b-[4px] border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs"
+              className="border-2 border-b-[4px] border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300 font-semibold active:translate-y-[2px] active:border-b-2 cursor-pointer shadow-xs px-2.5 sm:px-4 text-xs sm:text-sm"
               aria-label="Đã thuộc"
             >
               <Check className="h-4 w-4" />

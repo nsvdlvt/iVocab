@@ -142,7 +142,11 @@ export function StatCard({
                   {trend.value}
                 </span>
               )}
-              {description && <span className="truncate">{description}</span>}
+              {description && (
+                <span className="line-clamp-2 leading-tight text-[11px] sm:text-xs">
+                  {description}
+                </span>
+              )}
             </div>
           )}
         </div>

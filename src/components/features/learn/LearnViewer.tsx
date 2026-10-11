@@ -269,7 +269,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
 
       return nextSave;
     },
-    [flushSaveQueue, reviewSessionId, router]
+    [reviewSessionId, router]
   );
 
   // Debounce saver hook
@@ -416,8 +416,6 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     elapsedTime,
     settings,
     saveSessionState,
-    reviewSessionId,
-    router,
     enqueueSave,
   ]);
 
@@ -612,9 +610,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const accuracyValue = totalDone > 0 ? Math.round((correctCount / totalDone) * 100) : 100;
 
   return (
-    <div className="w-full space-y-5 max-w-4xl mx-auto pb-10">
+    <div className="w-full space-y-3 sm:space-y-5 max-w-4xl mx-auto pb-4 sm:pb-10">
       {/* Cohesive Learning HUD Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-border/80 pb-4">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-border/80 pb-2.5 sm:pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"

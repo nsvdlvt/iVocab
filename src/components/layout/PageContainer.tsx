@@ -10,7 +10,7 @@ export function PageContainer({ children, className = "" }: PageContainerProps) 
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-7xl overflow-x-hidden px-4 py-6 sm:px-6 md:py-8 lg:px-8",
+        "mx-auto w-full max-w-7xl overflow-x-hidden px-3.5 py-4 sm:px-6 sm:py-6 md:py-8 lg:px-8",
         className
       )}
     >

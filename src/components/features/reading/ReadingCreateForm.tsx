@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { readingCreateSchema, readingLevels, readingTopics, parseParagraphDrafts, slugifyReadingTitle } from "@/lib/reading/reading-editor";
 
 const STORAGE_BUCKET = "reading-covers";
@@ -123,7 +122,7 @@ export function ReadingCreateForm() {
     try {
       const slug = slugifyReadingTitle(parsed.data.title);
       const english_content = {
-        paragraphs: englishParagraphs.map((paragraph, index) => ({
+        paragraphs: englishParagraphs.map((paragraph) => ({
           id: paragraph.id,
           text: paragraph.text,
         })),

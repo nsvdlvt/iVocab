@@ -407,9 +407,9 @@ export function FlashcardStudy({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 overflow-x-hidden pb-10">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 sm:gap-5 overflow-x-hidden pb-4 sm:pb-10">
       {/* Study Header HUD */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-b border-border/80 pb-2.5 sm:pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"

@@ -36,8 +36,8 @@ export function LearnMCQ({
   const isSubmitted = answerState !== "unanswered";
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4 select-none">
-      <div className="relative py-8 sm:py-10 px-6 border border-border/80 rounded-2xl bg-card shadow-xs">
+    <div className="w-full max-w-2xl mx-auto space-y-2.5 sm:space-y-4 select-none">
+      <div className="relative py-4 sm:py-9 px-3.5 sm:px-6 border border-border/80 rounded-2xl bg-card shadow-xs">
         <div className="absolute left-3.5 right-3.5 top-3.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             {question.direction === "en-vi" && onSpeakPrompt && (
@@ -136,7 +136,7 @@ export function LearnMCQ({
               disabled={isSubmitted}
               onClick={() => onSelectOption(option.id)}
               className={cn(
-                "w-full text-left p-4 rounded-xl border font-medium text-sm outline-none flex items-center justify-between gap-3 transition-all duration-150",
+                "w-full text-left min-h-[46px] p-2.5 sm:p-4 rounded-xl border font-medium text-xs sm:text-sm outline-none flex items-center justify-between gap-2.5 sm:gap-3 transition-all duration-150",
                 btnClass
               )}
             >

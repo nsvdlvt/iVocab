@@ -113,13 +113,13 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:flex sm:flex-wrap">
           {/* Visibility Filter */}
           <Select
             value={currentVisibility}
             onValueChange={(val) => updateParams("visibility", val || "all")}
           >
-            <SelectTrigger className="h-9 w-[155px] rounded-lg text-xs font-medium">
+            <SelectTrigger className="h-9 w-full sm:w-[155px] rounded-lg text-xs font-medium">
               <span className="flex items-center gap-1.5 truncate">
                 <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">
@@ -143,7 +143,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
               updateParams("sort", val || "updated_at_desc")
             }
           >
-            <SelectTrigger className="h-9 w-[170px] rounded-lg text-xs font-medium">
+            <SelectTrigger className="h-9 w-full sm:w-[170px] rounded-lg text-xs font-medium">
               <span className="flex items-center gap-1.5 truncate">
                 <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="truncate">
@@ -221,7 +221,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
         {/* Primary Add Button */}
         <Button
           onClick={onAddClick}
-          className="h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-semibold shadow-xs"
+          className="h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-semibold shadow-xs flex-1 sm:flex-initial"
         >
           <Plus className="h-4 w-4" />
           <span>Tạo bộ từ mới</span>

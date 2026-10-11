@@ -84,7 +84,7 @@ export function DailyStreak({ streak, weeklyActivity }: DailyStreakProps) {
             >
               {streak} ngày
             </div>
-            <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5">{subtitle}</p>
           </div>
         </div>
       </div>

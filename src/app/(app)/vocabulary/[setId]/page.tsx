@@ -157,31 +157,33 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
           </div>
 
           {/* Primary Actions */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <ShareSetTriggerButton
-              setId={setId}
-              visibility={
-                (set.visibility as "public" | "private" | "unlisted" | null) ??
-                "private"
-              }
-            />
-
-            <Link
-              href={`/vocabulary/${setId}/edit`}
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-medium"
-              )}
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-              <span>Chỉnh sửa</span>
-            </Link>
-
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 w-full sm:w-auto">
             <StartReviewDialog
               vocabularySetId={setId}
               triggerLabel="Ôn tập ngay"
-              className="h-9 rounded-lg px-4 text-xs sm:text-sm font-semibold"
+              className="h-9 w-full sm:w-auto rounded-lg px-4 text-xs sm:text-sm font-semibold order-first sm:order-last justify-center"
             />
+
+            <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:w-auto">
+              <ShareSetTriggerButton
+                setId={setId}
+                visibility={
+                  (set.visibility as "public" | "private" | "unlisted" | null) ??
+                  "private"
+                }
+              />
+
+              <Link
+                href={`/vocabulary/${setId}/edit`}
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-medium justify-center"
+                )}
+              >
+                <Edit2 className="h-3.5 w-3.5" />
+                <span>Chỉnh sửa</span>
+              </Link>
+            </div>
           </div>
         </div>
 

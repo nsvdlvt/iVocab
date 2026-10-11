@@ -140,7 +140,7 @@ export function FlashcardDeck({
 
     return (
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 text-center px-2">
-        <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl break-words max-w-full">
+        <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl break-words max-w-full">
           {title}
         </h2>
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -217,7 +217,7 @@ export function FlashcardDeck({
     <div className="mx-auto w-full max-w-4xl">
       <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
         <motion.div
-          className="relative h-[26rem] sm:h-[28rem] md:h-[30rem] w-full overflow-hidden rounded-2xl touch-pan-y bg-card cursor-pointer select-none"
+          className="relative h-[42vh] min-h-[250px] max-h-[340px] sm:h-[28rem] md:h-[30rem] w-full overflow-hidden rounded-2xl touch-pan-y bg-card cursor-pointer select-none"
           style={{ willChange: "transform" }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
@@ -237,7 +237,7 @@ export function FlashcardDeck({
           >
             {/* Front Face */}
             <section
-              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-5 sm:p-6 md:p-8"
+              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-4 sm:p-6 md:p-8"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
@@ -247,7 +247,7 @@ export function FlashcardDeck({
               {renderTopBar(
                 frontMode === "definition" ? "Mặt trước • Định nghĩa" : "Mặt trước • Thuật ngữ"
               )}
-              <div className="flex flex-1 items-center justify-center py-4">
+              <div className="flex flex-1 items-center justify-center py-2 sm:py-4">
                 {renderFrontContent()}
               </div>
               {renderBottomBar()}
@@ -255,7 +255,7 @@ export function FlashcardDeck({
 
             {/* Back Face */}
             <section
-              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-5 sm:p-6 md:p-8"
+              className="absolute inset-0 flex h-full w-full flex-col justify-between rounded-2xl bg-card p-4 sm:p-6 md:p-8"
               style={{
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",

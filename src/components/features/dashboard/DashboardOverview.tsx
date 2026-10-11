@@ -80,25 +80,25 @@ export function DashboardOverview({
       />
 
       {/* Quick Actions Bar */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2.5 grid-cols-2 lg:grid-cols-4 sm:gap-3">
         {QUICK_ACTIONS.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="group flex items-center gap-3 rounded-xl border border-border/80 bg-card p-3.5 shadow-2xs transition-all duration-150 hover:border-primary/35 hover:shadow-sm hover:-translate-y-0.5"
+              className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-2xs transition-all duration-150 hover:border-primary/35 hover:shadow-sm hover:-translate-y-0.5"
             >
               <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${item.iconColor}`}
+                className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg border ${item.iconColor}`}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                <p className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-tight">
                   {item.title}
                 </p>
-                <p className="text-[11px] text-muted-foreground truncate hidden sm:block mt-0.5">
+                <p className="text-[11px] text-muted-foreground truncate hidden lg:block mt-0.5">
                   {item.description}
                 </p>
               </div>
