@@ -115,6 +115,20 @@ export async function POST(request: Request) {
       ? await ReviewRepository.getDueReviewsBySetId(user.id, vocabularySetId)
       : await ReviewRepository.getDueReviews(user.id);
     const words = reviewItems.map((item) => item.vocabulary);
+
+    if (words.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Hiện tại không có từ vựng nào đến hạn ôn tập.",
+          details: null,
+          code: "NO_DUE_WORDS",
+          operation: "POST /api/review-sessions",
+        },
+        { status: 400 }
+      );
+    }
+
     const session = await ReviewSessionStore.create(user.id, words, {
       vocabularySetId,
       title: vocabularySetId ? "Ôn tập bộ từ vựng" : "Ôn tập hôm nay",

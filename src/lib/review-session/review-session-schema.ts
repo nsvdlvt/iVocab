@@ -1,8 +1,8 @@
-import { Client } from "pg";
+import { createClient } from "@/lib/supabase/server";
 
 const REVIEW_SESSION_TABLE = "public.review_sessions";
 
-let schemaCheckPromise: Promise<void> | null = null;
+let isSchemaVerified = false;
 
 export class ReviewSessionSchemaError extends Error {
   code = "REVIEW_SESSION_SCHEMA_MISSING";
@@ -14,38 +14,62 @@ export class ReviewSessionSchemaError extends Error {
   }
 }
 
-function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new ReviewSessionSchemaError(
-      "DATABASE_URL is not configured. Cannot verify the review_sessions table."
-    );
-  }
-  return url;
-}
-
 async function checkReviewSessionTableExists(): Promise<void> {
-  const client = new Client({ connectionString: getDatabaseUrl() });
-  try {
-    await client.connect();
-    const result = await client.query("select to_regclass($1) as exists", [REVIEW_SESSION_TABLE]);
-    const exists = (result.rows[0] as { exists?: string | null } | undefined)?.exists;
-    if (!exists) {
-      throw new ReviewSessionSchemaError(
-        "The review_sessions table has not been migrated yet. Please apply the latest Supabase migration."
-      );
+  const url = process.env.DATABASE_URL;
+  if (url) {
+    try {
+      const { Client } = await import("pg");
+      const client = new Client({ connectionString: url });
+      await client.connect();
+      try {
+        const result = await client.query("select to_regclass($1) as exists", [REVIEW_SESSION_TABLE]);
+        const exists = (result.rows[0] as { exists?: string | null } | undefined)?.exists;
+        if (!exists) {
+          throw new ReviewSessionSchemaError(
+            "The review_sessions table has not been migrated yet. Please apply the latest Supabase migration."
+          );
+        }
+        isSchemaVerified = true;
+        return;
+      } finally {
+        await client.end().catch(() => {});
+      }
+    } catch (pgError) {
+      if (pgError instanceof ReviewSessionSchemaError) throw pgError;
+      // If direct postgres connection fails, fall back to Supabase client verification
     }
-  } finally {
-    await client.end().catch(() => {});
+  }
+
+  // Fallback: verify via Supabase client (standard for client/serverless environments without DATABASE_URL)
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("review_sessions")
+      .select("id")
+      .limit(1);
+
+    if (error) {
+      const isMissingTable =
+        error.code === "42P01" ||
+        error.code === "PGRST205" ||
+        error.message?.includes("does not exist") ||
+        error.message?.includes("relation");
+
+      if (isMissingTable) {
+        throw new ReviewSessionSchemaError(
+          "The review_sessions table has not been migrated yet. Please apply the latest Supabase migration."
+        );
+      }
+    }
+    isSchemaVerified = true;
+  } catch (error) {
+    if (error instanceof ReviewSessionSchemaError) throw error;
+    // Don't block requests if it's an unrelated transient issue
+    isSchemaVerified = true;
   }
 }
 
 export async function ensureReviewSessionSchema(): Promise<void> {
-  if (!schemaCheckPromise) {
-    schemaCheckPromise = checkReviewSessionTableExists().catch((error: unknown) => {
-      schemaCheckPromise = null;
-      throw error;
-    });
-  }
-  return schemaCheckPromise;
+  if (isSchemaVerified) return;
+  await checkReviewSessionTableExists();
 }

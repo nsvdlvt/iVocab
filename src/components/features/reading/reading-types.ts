@@ -26,9 +26,29 @@ export type BilingualDocument = {
   paragraphs: BilingualParagraph[];
 };
 
+export type ComprehensionQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+  paragraphRef?: string;
+};
+
+export type ComprehensionProgress = {
+  selectedAnswers: Record<string, number>;
+  isSubmitted: boolean;
+  score: number;
+  completedAt?: string;
+};
+
+export type ReadingMode = "bilingual" | "english" | "vietnamese";
+
 export type ReadingLesson = BilingualDocument & {
+  slug?: string;
   topic: string;
   difficulty: string;
+  estimatedReadingMinutes?: number;
   estimatedReadingTime: string;
   coverImageUrl?: string | null;
   vocabularyStats: {
@@ -40,6 +60,9 @@ export type ReadingLesson = BilingualDocument & {
   progress: number;
   lessonIndex: number;
   lessonCount: number;
+  questions?: ComprehensionQuestion[];
+  previousSlug?: string | null;
+  nextSlug?: string | null;
 };
 
 export type ReadingHighlight = {

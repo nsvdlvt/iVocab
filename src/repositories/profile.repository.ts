@@ -40,18 +40,20 @@ export const ProfileRepository = {
 
   async getPublicProfile(userId: string): Promise<Pick<ProfileRow, "id" | "display_name" | "avatar_url"> | null> {
     try {
-      return await queryProfileById(userId);
+      const direct = await queryProfileById(userId);
+      if (direct) return direct;
     } catch {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
+      // ignore
     }
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
   },
 
   async updateProfile(userId: string, updates: Partial<Database["public"]["Tables"]["profiles"]["Update"]>): Promise<void> {

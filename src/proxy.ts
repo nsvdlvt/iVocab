@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/reading/translate")) {
+  if (request.nextUrl.pathname.startsWith("/api/reading")) {
     return NextResponse.next();
   }
 
