@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { CommunityVocabularyPage } from "@/components/admin/community-vocabulary/community-vocabulary-page";
 import { requirePermission } from "@/lib/auth/admin";
 import { CommunityVocabularyRepository } from "@/repositories/admin/community-vocabulary.repository";
+
+export const metadata: Metadata = {
+  title: "Đề xuất cộng đồng",
+  description: "Kiểm duyệt và quản lý các bộ từ vựng đề xuất từ cộng đồng Vocabee.",
+};
 
 export default async function CommunityVocabularyAdminPage({
   searchParams,

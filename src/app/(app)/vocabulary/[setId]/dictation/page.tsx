@@ -6,8 +6,17 @@ import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DictationViewer } from "@/components/features/dictation/DictationViewer";
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "Chính tả");
+  return { title };
 }
 
 export default async function DictationPage({ params }: PageProps) {

@@ -1,7 +1,13 @@
 import React from "react";
+import type { Metadata } from "next";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { VocabularyClient } from "@/components/features/vocabulary/VocabularyClient";
+
+export const metadata: Metadata = {
+  title: "Kho từ vựng",
+  description: "Quản lý và ôn luyện các bộ từ vựng tiếng Anh cá nhân của bạn.",
+};
 import { requireUser } from "@/lib/auth/require-user";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabSetSummaryService } from "@/lib/statistics/vocab-set-summary.service";

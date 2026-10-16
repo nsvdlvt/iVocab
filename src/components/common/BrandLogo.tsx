@@ -20,18 +20,20 @@ export function BrandLogo({
   textClassName,
 }: BrandLogoProps) {
   return (
-    <div className={cn("inline-flex items-center gap-2.5 select-none", className)}>
-      <Image
-        src="/Vocabee.png"
-        alt="Vocabee logo"
-        width={160}
-        height={160}
-        priority
-        className={cn(
-          "h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10",
-          imageClassName
-        )}
-      />
+    <div className={cn("group inline-flex items-center gap-2.5 select-none", className)}>
+      <div className="relative shrink-0 transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-rotate-6">
+        <Image
+          src="/Vocabee.png"
+          alt="Vocabee logo"
+          width={160}
+          height={160}
+          priority
+          className={cn(
+            "h-9 w-9 object-contain drop-shadow-xs sm:h-10 sm:w-10",
+            imageClassName
+          )}
+        />
+      </div>
 
       <div
         className={cn(
@@ -40,7 +42,7 @@ export function BrandLogo({
           textClassName
         )}
       >
-        <span className="text-foreground">Voca</span>
+        <span className="text-foreground transition-colors group-hover:text-primary">Voca</span>
         <span className="text-amber-500 dark:text-amber-400">bee</span>
       </div>
     </div>

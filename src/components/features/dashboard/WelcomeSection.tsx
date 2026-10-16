@@ -5,7 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
-import { VocabeeMascot } from "@/components/common/VocabeeMascot";
+import { BeeMascot } from "@/components/mascot/BeeMascot";
 import type { Database } from "@/types/database";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
@@ -56,25 +56,33 @@ export function WelcomeSection({
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <VocabeeMascot
-              mood={dueToday > 0 ? "encourage" : "celebrate"}
-              size="sm"
-              speech=""
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-1">
+            <BeeMascot
+              state={dueToday > 0 ? "reading" : "celebrating"}
+              size="md"
+              showAura
+              interactive
+              bubble={
+                dueToday > 0
+                  ? "Sẵn sàng ôn bài nào! 🐝"
+                  : "Mục tiêu hôm nay đã hoàn thành! 🎉"
+              }
+              bubblePosition="right"
               className="shrink-0"
             />
-            <h1 className="text-xl sm:text-2xl md:text-[1.7rem] font-bold tracking-tight text-foreground">
-              {getGreeting()}, <span className="text-primary">{displayName}</span>
-            </h1>
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-foreground">
+                {getGreeting()}, <span className="text-primary">{displayName}</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                {dueToday > 0
+                  ? `Bạn có ${dueToday} từ vựng đến hạn ôn tập theo chu kỳ ghi nhớ ngắt quãng (SRS). Hãy hoàn thành lượt ôn để củng cố trí nhớ dài hạn.`
+                  : recentSet
+                    ? `Tiếp tục rèn luyện bộ từ "${recentSet.title}" hoặc khám phá bài đọc song ngữ mới hôm nay.`
+                    : "Bắt đầu hành trình chinh phục từ vựng tiếng Anh thông minh với Flashcard, SRS và trợ lý AI."}
+              </p>
+            </div>
           </div>
-
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {dueToday > 0
-              ? `Bạn có ${dueToday} từ vựng đến hạn ôn tập theo chu kỳ ghi nhớ ngắt quãng (SRS). Hãy hoàn thành lượt ôn để củng cố trí nhớ dài hạn.`
-              : recentSet
-                ? `Tiếp tục rèn luyện bộ từ "${recentSet.title}" hoặc khám phá bài đọc song ngữ mới hôm nay.`
-                : "Bắt đầu hành trình chinh phục từ vựng tiếng Anh thông minh với Flashcard, SRS và trợ lý AI."}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">

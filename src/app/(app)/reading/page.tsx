@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ReadingLibraryClient } from "@/components/features/reading/ReadingLibraryClient";
 import { ReadingRepository } from "@/repositories/reading.repository";
 import { BookOpen, Plus } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { BeeMascot } from "@/components/mascot/BeeMascot";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  title: "Đọc hiểu song ngữ",
+  description: "Luyện đọc hiểu song ngữ Anh - Việt theo cấp độ CEFR, chạm tra từ tức thì và lưu trữ thẻ nhớ.",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +33,14 @@ export default async function ReadingPage() {
       </div>
 
       {articles.length === 0 ? (
-        <section className="rounded-[32px] border border-dashed border-border bg-card px-6 py-16 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-            <BookOpen className="h-6 w-6 text-muted-foreground" />
+        <section className="rounded-3xl border border-dashed border-border/80 bg-card px-6 py-16 text-center shadow-xs flex flex-col items-center justify-center space-y-4">
+          <BeeMascot state="thinking" size="lg" showAura interactive />
+          <div className="space-y-1.5 max-w-md">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Chưa có bài đọc nào</h1>
+            <p className="mx-auto text-sm leading-relaxed text-muted-foreground">
+              Tổ ong đang được chuẩn bị thêm nhiều bài đọc song ngữ thú vị. Hãy quay lại sớm nhé! 🐝
+            </p>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Chưa có bài đọc nào</h1>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">
-            Khi admin publish bài Reading đầu tiên, thư viện sẽ tự động hiển thị ở đây.
-          </p>
         </section>
       ) : (
         <ReadingLibraryClient

@@ -27,11 +27,40 @@ import { getMetadataOptions } from "@/constants/vocab-set";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
+import type { Metadata } from "next";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
 }
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const set = await VocabSetRepository.getVocabSetById(setId, user.id);
+      if (set?.title) {
+        return {
+          title: set.title,
+          description: set.description || `Bộ từ vựng ${set.title} trên Vocabee`,
+        };
+      }
+    }
+    const publicSet = await VocabSetRepository.getPublicVocabSetById(setId);
+    if (publicSet?.title) {
+      return {
+        title: publicSet.title,
+        description: publicSet.description || `Bộ từ vựng ${publicSet.title} trên Vocabee`,
+      };
+    }
+  } catch {}
+  return {
+    title: "Bộ từ vựng",
+  };
+}
 
 export default async function VocabSetDetailPage({ params }: PageProps) {
   const { setId } = await params;

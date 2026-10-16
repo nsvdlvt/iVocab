@@ -4,6 +4,7 @@ import { buildSystemPrompt, buildUserPrompt, PromptOptions } from "@/lib/ai/prom
 import { LRUCache } from "@/lib/utils/lruCache";
 import { sentenceFeedbackSchema, SentenceFeedback } from "@/lib/ai/schemas/sentence-feedback";
 import { AIValidationError, AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
+import { extractJsonPayload } from "@/lib/ai/json-response";
 
 /**
  * In‑memory LRU cache for recent feedback results.
@@ -84,7 +85,7 @@ export async function evaluateWriting(
 
   while (attempt < maxAttempts) {
     attempt++;
-    console.log(`evaluateWriting: [4] OpenAI request attempt ${attempt}/${maxAttempts}`);
+    console.log(`evaluateWriting: [4] AI request attempt ${attempt}/${maxAttempts}`);
     try {
       const rawResponse = await responsesRequest<{ content?: string; [key: string]: unknown }>(payload, abortSignal);
       console.log(`evaluateWriting: Responses API returned response. Type: ${typeof rawResponse}`);
@@ -99,7 +100,8 @@ export async function evaluateWriting(
 
       // Parse and validate JSON using the shared Zod schema.
       console.log("evaluateWriting: [5] Parsing and validating raw response with Zod");
-      const parsed = sentenceFeedbackSchema.safeParse(JSON.parse(rawContent));
+      const jsonObject = extractJsonPayload(rawContent);
+      const parsed = sentenceFeedbackSchema.safeParse(jsonObject);
       if (parsed.success) {
         console.log("evaluateWriting: Validation succeeded. Storing to cache.");
         cache.set(cacheKey, parsed.data);

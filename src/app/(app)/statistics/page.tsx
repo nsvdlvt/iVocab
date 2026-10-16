@@ -1,5 +1,11 @@
 import React from "react";
+import type { Metadata } from "next";
 import { CheckCircle2, GraduationCap, Clock, Flame, BookOpen, Library, BarChart3 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Thống kê học tập",
+  description: "Báo cáo chi tiết hiệu suất học tập, độ ghi nhớ và thời gian luyện từ vựng.",
+};
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";

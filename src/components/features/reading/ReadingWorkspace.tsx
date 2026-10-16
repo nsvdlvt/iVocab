@@ -11,6 +11,10 @@ import { ReadingNavigation } from "./ReadingNavigation";
 import { ReadingComprehension } from "./ReadingComprehension";
 import { VocabularyHighlight } from "./VocabularyHighlight";
 import { ReadingVocabularyModal } from "./ReadingVocabularyModal";
+import { motion } from "framer-motion";
+import { MascotBanner } from "@/components/mascot/MascotBanner";
+import { MascotCompanion } from "@/components/mascot/MascotCompanion";
+import { fadeInUp, EASING } from "@/lib/motion";
 import type {
   BilingualParagraph,
   ComprehensionQuestion,
@@ -456,29 +460,50 @@ export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
         onOpenSettings={() => {}}
       />
 
+      {/* Welcome Mascot Guide Banner */}
+      <MascotBanner
+        state="reading"
+        size="sm"
+        title="Chào mừng bạn đến với bài đọc song ngữ!"
+        description="Nhấp vào các từ vựng in đậm để xem nhanh giải nghĩa và phát âm chuẩn. Bạn có thể bật tắt chế độ song ngữ hoặc dùng bút dạ quang để đánh dấu các câu trọng tâm."
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+              🎯 Mục tiêu: Hoàn thành bài đọc & {questions.length} câu hỏi trắc nghiệm
+            </span>
+          </div>
+        }
+      />
+
       {/* Main Bilingual Passage Card */}
-      <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
-        {paragraphs.map((paragraph, index) => (
-          <ReadingSection
-            key={paragraph.id}
-            paragraph={paragraph}
-            index={index}
-            showTranslation={showTranslation}
-            mode={mode}
-            highlights={highlights}
-            onCreateHighlight={handleCreateHighlight}
-            onUpdateHighlightColor={handleUpdateHighlightColor}
-            onDeleteHighlight={handleDeleteHighlight}
-            onVocabClick={setActiveWord}
-            onTranslateParagraph={handleTranslateParagraph}
-            translationLoading={Boolean(translatingMap[paragraph.id])}
-            translationError={translationErrors[paragraph.id]}
-            highlightEnabled={highlightEnabled}
-            highlightColor={highlightColor}
-            fontSize={readingFontSize}
-          />
-        ))}
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: EASING.smooth }}
+      >
+        <Card className="overflow-hidden border-border/70 bg-card shadow-sm hover:shadow-md transition-shadow duration-200">
+          {paragraphs.map((paragraph, index) => (
+            <ReadingSection
+              key={paragraph.id}
+              paragraph={paragraph}
+              index={index}
+              showTranslation={showTranslation}
+              mode={mode}
+              highlights={highlights}
+              onCreateHighlight={handleCreateHighlight}
+              onUpdateHighlightColor={handleUpdateHighlightColor}
+              onDeleteHighlight={handleDeleteHighlight}
+              onVocabClick={setActiveWord}
+              onTranslateParagraph={handleTranslateParagraph}
+              translationLoading={Boolean(translatingMap[paragraph.id])}
+              translationError={translationErrors[paragraph.id]}
+              highlightEnabled={highlightEnabled}
+              highlightColor={highlightColor}
+              fontSize={readingFontSize}
+            />
+          ))}
+        </Card>
+      </motion.div>
 
       {/* Reading Comprehension Quiz Section */}
       <ReadingComprehension
@@ -520,6 +545,9 @@ export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
         words={allVocabWords}
         articleTitle={lesson.title}
       />
+
+      {/* Floating Mascot Learning Companion */}
+      <MascotCompanion />
     </div>
   );
 }

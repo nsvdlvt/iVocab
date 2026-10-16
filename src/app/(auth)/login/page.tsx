@@ -1,6 +1,12 @@
 import React from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/features/auth/LoginForm";
+
+export const metadata: Metadata = {
+  title: "Đăng nhập",
+  description: "Đăng nhập vào Vocabee để tiếp tục học từ vựng và ôn tập thông minh.",
+};
 
 type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

@@ -7,8 +7,24 @@ import { ProfileRepository } from "@/repositories/profile.repository";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { ROUTES } from "@/constants/routes";
 
+import type { Metadata } from "next";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  try {
+    const set = await VocabSetRepository.getPublicVocabSetById(setId);
+    if (set?.title) {
+      return {
+        title: `${set.title} (Chia sẻ)`,
+        description: set.description || `Bộ từ vựng chia sẻ "${set.title}" trên Vocabee`,
+      };
+    }
+  } catch {}
+  return { title: "Bộ từ chia sẻ" };
 }
 
 export default async function SharedVocabSetDetailPage({ params }: PageProps) {

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { DashboardGrid } from "@/components/admin/dashboard/dashboard-grid";
 import { DashboardChartsWidget } from "@/components/admin/dashboard/widgets/dashboard-charts-widget";
 import { Plus, DatabaseZap, Megaphone, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Tổng quan quản trị",
+  description: "Bảng điều khiển quản trị hệ thống Vocabee.",
+};
 
 export default function AdminDashboardPage() {
   return (

@@ -1,5 +1,11 @@
 import React from "react";
+import type { Metadata } from "next";
 import { User, Target, Monitor, Bell, Save } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Cài đặt",
+  description: "Cấu hình tài khoản, giao diện và tùy chọn học tập trên Vocabee.",
+};
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";

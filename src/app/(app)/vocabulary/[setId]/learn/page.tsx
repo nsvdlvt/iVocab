@@ -6,11 +6,20 @@ import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { LearnViewer } from "@/components/features/learn/LearnViewer";
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
 }
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "Luyện tập");
+  return { title };
+}
 
 export default async function LearnPage({ params }: PageProps) {
   const { setId } = await params;

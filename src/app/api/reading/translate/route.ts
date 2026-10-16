@@ -4,9 +4,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const FALLBACK_MODELS = [
-  "gemini-2.5-flash",
+  "gemini-3.8-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-flash-latest",
-  "gemini-2.5-flash-lite",
 ];
 
 async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promise<string | null> {

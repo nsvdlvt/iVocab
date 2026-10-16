@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -7,6 +8,26 @@ import { ReadingRepository } from "@/repositories/reading.repository";
 import { getQuestionsForArticle } from "@/lib/reading/reading-questions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const article = await ReadingRepository.getBySlug(slug);
+    if (!article) {
+      return { title: "Không tìm thấy bài đọc" };
+    }
+    return {
+      title: article.title,
+      description: article.topic ? `${article.topic} - Đọc hiểu song ngữ trên Vocabee` : undefined,
+    };
+  } catch {
+    return { title: "Đọc hiểu song ngữ" };
+  }
+}
 
 function toLesson(
   article: NonNullable<Awaited<ReturnType<typeof ReadingRepository.getBySlug>>>,

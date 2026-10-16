@@ -6,8 +6,17 @@ import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
 import { ROUTES } from "@/constants/routes";
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "Flashcard");
+  return { title };
 }
 
 export default async function SharedFlashcardPage({ params }: PageProps) {

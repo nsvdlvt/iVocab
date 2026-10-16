@@ -8,7 +8,7 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "403 - Không có quyền truy cập | Vocabee",
+  title: "403 - Không có quyền truy cập",
 };
 
 export default function ForbiddenPage() {

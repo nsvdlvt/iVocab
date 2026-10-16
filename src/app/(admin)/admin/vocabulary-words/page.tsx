@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { AdminVocabularyRepository } from "@/repositories/admin/vocabulary.repository";
 import { AdminDataTable } from "@/components/admin/tables/data-table";
 import { columns } from "./columns";
 import { requirePermission } from "@/lib/auth/admin";
 import { Button } from "@/components/ui/button";
 import { VocabWordRow } from "./columns";
+
+export const metadata: Metadata = {
+  title: "Quản lý từ vựng",
+  description: "Duyệt và quản lý toàn bộ dữ liệu từ vựng trong hệ thống Vocabee.",
+};
 
 export default async function AdminVocabularyWordsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   await requirePermission("manageVocabulary");

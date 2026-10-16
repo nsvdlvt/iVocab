@@ -8,7 +8,7 @@ import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
-  title: "Ngoại tuyến | Vocabee",
+  title: "Ngoại tuyến",
   description: "Bạn đang ngoại tuyến. Vocabee sẽ sẵn sàng trở lại khi có kết nối.",
 };
 

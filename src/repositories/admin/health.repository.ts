@@ -70,10 +70,24 @@ export class AdminHealthRepository {
   }
 
   static async checkAiProvider(): Promise<SystemHealthResult> {
-    // We would ping the OpenAI / Google AI / Anthropic API here.
-    // For now, since we don't have a direct health endpoint readily accessible in the repo,
-    // we'll return unknown unless we can actually hit it.
-    return { service: "AI Provider", status: "unknown", message: "Health check not implemented yet" };
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      return { service: "Gemini AI", status: "unhealthy", message: "Missing GEMINI_API_KEY" };
+    }
+
+    const start = performance.now();
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      const latencyMs = Math.round(performance.now() - start);
+      if (res.ok) {
+        return { service: "Gemini AI", status: "healthy", latencyMs };
+      }
+      return { service: "Gemini AI", status: "degraded", latencyMs, message: `Status code: ${res.status}` };
+    } catch (e: unknown) {
+      return { service: "Gemini AI", status: "unhealthy", message: e instanceof Error ? e.message : String(e) };
+    }
   }
 
   static async checkDictionaryApi(): Promise<SystemHealthResult> {

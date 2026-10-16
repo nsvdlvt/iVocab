@@ -58,9 +58,10 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
           type="submit"
           size="icon"
           disabled={disabled || !inputText.trim()}
+          aria-label="Gửi tin nhắn"
           className="h-11 w-11 rounded-xl cursor-pointer shadow-sm shrink-0"
         >
-          <Send className="h-4 w-4" />
+          <Send className="h-4 w-4" strokeWidth={2} />
         </Button>
       </form>
     </div>

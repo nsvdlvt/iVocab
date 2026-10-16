@@ -47,7 +47,12 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/reset-password") ||
     path.startsWith("/auth/callback");
 
-  const isPublicPage = path === "/" || path.startsWith("/share") || isAuthPage;
+  const isPublicPage =
+    path === "/" ||
+    path.startsWith("/share") ||
+    path === "/403" ||
+    path === "/offline" ||
+    isAuthPage;
 
   if (!user && !isPublicPage) {
     url.pathname = "/login";

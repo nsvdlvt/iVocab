@@ -22,6 +22,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { BeeMascot } from "@/components/mascot/BeeMascot";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -768,31 +769,43 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
 
         {/* Empty State vs Data List */}
         {pageWords.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/80 bg-muted/15 py-14 text-center">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-muted/60 text-muted-foreground">
-              <FolderOpen className="h-5 w-5" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border/80 bg-muted/15 py-14 px-6 text-center">
+            <BeeMascot
+              state={hasFilters ? "thinking" : "encouraging"}
+              size="lg"
+              showAura
+              interactive
+            />
+            <div className="space-y-1.5 max-w-sm">
+              <p className="text-base font-bold text-foreground">
                 {hasFilters
                   ? "Không tìm thấy từ vựng phù hợp"
-                  : "Thư viện từ vựng đang trống"}
+                  : "Tổ ong từ vựng đang chờ bạn"}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {hasFilters
-                  ? "Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm."
-                  : "Tạo bộ từ vựng đầu tiên để bắt đầu xây dựng kho từ vựng cá nhân."}
+                  ? "Hãy thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm để khám phá thêm."
+                  : "Bắt đầu tạo bộ từ vựng đầu tiên hoặc tra cứu để xây dựng kho tri thức riêng của bạn nhé! 🐝"}
               </p>
             </div>
-            {hasFilters && (
+            {hasFilters ? (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleResetFilters}
-                className="gap-1.5"
+                className="rounded-full gap-1.5 text-xs"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>Xóa bộ lọc</span>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => router.push("/vocabulary/new")}
+                className="rounded-full gap-1.5 text-xs font-semibold px-4"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Tạo bộ từ ngay</span>
               </Button>
             )}
           </div>

@@ -29,6 +29,7 @@ const DEFAULT_GEMINI_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
+  "gemini-flash-latest",
 ];
 
 const SYSTEM_INSTRUCTION = `Bạn là Trợ lý học tập AI thông minh của ứng dụng học từ vựng tiếng Anh iVocab.

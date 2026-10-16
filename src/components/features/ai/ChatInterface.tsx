@@ -62,7 +62,7 @@ export function ChatInterface() {
       const replyContent =
         response.ok && data?.success && data.reply
           ? data.reply
-          : `⚠️ ${data?.error || "Không thể nhận phản hồi từ Gemini AI. Vui lòng thử lại."}`;
+          : data?.error || "Không thể nhận phản hồi từ Gemini AI. Vui lòng thử lại.";
 
       msgCounterRef.current += 1;
       const aiMsg: Message = {
@@ -78,7 +78,7 @@ export function ChatInterface() {
       const errorMsg: Message = {
         id: `ai-err-${msgCounterRef.current}`,
         role: "assistant",
-        content: "⚠️ Lỗi kết nối tới máy chủ AI. Vui lòng kiểm tra mạng và thử lại.",
+        content: "Lỗi kết nối tới máy chủ AI. Vui lòng kiểm tra mạng và thử lại.",
         timestamp: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, errorMsg]);

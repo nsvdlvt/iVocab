@@ -4,14 +4,24 @@ import { ArrowRight, GraduationCap, Home } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionCard } from "@/components/common/SectionCard";
+import { MascotCelebration } from "@/components/mascot/MascotCelebration";
 import { VocabeeMascot } from "@/components/common/VocabeeMascot";
 import { requireUser } from "@/lib/auth/require-user";
 import { ReviewSessionStore } from "@/lib/review-session/review-session-store";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { cn } from "@/lib/utils";
 
+import type { Metadata } from "next";
+import { getReviewSessionMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ sessionId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { sessionId } = await params;
+  const title = await getReviewSessionMetadataTitle(sessionId, "Hoàn thành");
+  return { title };
 }
 
 export default async function ReviewSessionCompletePage({ params }: PageProps) {
@@ -25,7 +35,8 @@ export default async function ReviewSessionCompletePage({ params }: PageProps) {
 
   return (
     <PageContainer className="py-12">
-      <SectionCard className="mx-auto max-w-lg p-8 sm:p-10 text-center space-y-6">
+      <SectionCard className="relative overflow-hidden mx-auto max-w-lg p-8 sm:p-10 text-center space-y-6">
+        <MascotCelebration active particleCount={48} />
         <div className="flex justify-center">
           <VocabeeMascot
             mood="celebrate"

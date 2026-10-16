@@ -1,7 +1,13 @@
 import React from "react";
+import type { Metadata } from "next";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QuizClient } from "@/components/features/quiz/QuizClient";
+
+export const metadata: Metadata = {
+  title: "AI Quiz",
+  description: "Kiểm tra và củng cố vốn từ vựng thông qua bài trắc nghiệm khách quan do AI tạo.",
+};
 import { requireUser } from "@/lib/auth/require-user";
 import { QuizRepository, MIN_QUIZ_WORDS } from "@/repositories/quiz.repository";
 import { Gamepad2, BookOpen } from "lucide-react";

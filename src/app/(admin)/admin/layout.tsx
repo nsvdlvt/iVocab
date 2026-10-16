@@ -4,7 +4,10 @@ import { AdminTopbar } from "@/components/admin/layout/topbar";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard - Vocabee",
+  title: {
+    default: "Quản trị hệ thống",
+    template: "%s | Vocabee",
+  },
 };
 
 export default async function AdminLayout({

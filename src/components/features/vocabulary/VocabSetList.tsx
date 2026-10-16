@@ -314,9 +314,11 @@ export function VocabSetList({
           return (
             <SectionCard
               key={set.id}
-              hoverable={!isDeleted}
+              hoverable={false}
               className={cn(
-                "group flex min-h-[72px] w-full items-center overflow-hidden rounded-xl border-border/80 p-0",
+                "group flex min-h-[72px] w-full items-center overflow-hidden rounded-xl border border-[#E5E7EB] dark:border-neutral-800 bg-card p-0 shadow-none transition-all duration-200",
+                !isDeleted &&
+                  "hover:border-gray-300 dark:hover:border-neutral-700 hover:shadow-xs hover:-translate-y-0.5 cursor-pointer",
                 isDeleted && "bg-muted/20 opacity-85"
               )}
             >

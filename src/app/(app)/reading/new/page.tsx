@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ReadingCreateForm } from "@/components/features/reading/ReadingCreateForm";
 import { requireReadingAdmin } from "@/lib/auth/admin";
+
+export const metadata: Metadata = {
+  title: "Tạo bài đọc mới",
+  description: "Tạo và xuất bản bài đọc song ngữ mới trên Vocabee.",
+};
 
 export const dynamic = "force-dynamic";
 

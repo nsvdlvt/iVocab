@@ -288,7 +288,7 @@ export function VocabSetCard({
       </div>
 
       {/* Bottom SRS Progress & Quick Study */}
-      <div className="mt-4 space-y-3 border-t border-border/70 pt-3.5">
+      <div className="mt-4 space-y-3 border-t border-gray-100 dark:border-neutral-800/80 pt-3.5">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[11px] font-medium">
             <span className="inline-flex items-center gap-1.5 text-foreground font-semibold tabular-nums">
@@ -356,9 +356,11 @@ export function VocabSetCard({
   return (
     <>
       <SectionCard
-        hoverable={!isDeleted}
+        hoverable={false}
         className={cn(
-          "group flex min-h-[236px] flex-col justify-between overflow-hidden rounded-xl border-border/80 p-0",
+          "group flex min-h-[236px] flex-col justify-between overflow-hidden rounded-xl border border-[#E5E7EB] dark:border-neutral-800 bg-card p-0 shadow-none transition-all duration-200",
+          !isDeleted &&
+            "hover:border-gray-300 dark:hover:border-neutral-700 hover:shadow-xs hover:-translate-y-0.5 cursor-pointer",
           isDeleted && "bg-muted/20 opacity-85"
         )}
       >

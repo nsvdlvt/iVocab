@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { requirePermission } from "@/lib/auth/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Globe, Pin } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Thư viện công khai",
+  description: "Quản lý nội dung và các bộ từ vựng nổi bật trên trang Khám phá.",
+};
 
 export default async function AdminPublicLibraryPage() {
   await requirePermission("manageVocabulary");

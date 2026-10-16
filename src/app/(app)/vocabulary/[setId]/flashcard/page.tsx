@@ -7,11 +7,20 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { FlashcardStudy } from "@/components/features/flashcard/FlashcardStudy";
 
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
 }
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "Flashcard");
+  return { title };
+}
 
 export default async function FlashcardPage({ params }: PageProps) {
   const { setId } = await params;

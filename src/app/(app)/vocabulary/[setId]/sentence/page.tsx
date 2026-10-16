@@ -7,8 +7,17 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { SentenceViewer } from "@/components/features/sentence/SentenceViewer";
 import { SentenceHistoryRepository } from "@/repositories/sentence-history.repository";
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "Luyện câu");
+  return { title };
 }
 
 export default async function SentencePracticePage({ params }: PageProps) {

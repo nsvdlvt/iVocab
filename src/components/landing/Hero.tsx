@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/common/SectionCard";
 import { FlashcardDeck } from "@/components/features/flashcard/FlashcardDeck";
 import { ROUTES } from "@/constants/routes";
+import { BeeMascot } from "@/components/mascot/BeeMascot";
 import { landingDemoFlashcard, landingStats } from "./landing-data";
 
 export function LandingHero() {
@@ -25,17 +26,28 @@ export function LandingHero() {
           transition={{ duration: 0.5 }}
           className="relative z-10 space-y-7"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="default" className="h-7 rounded-full px-3 text-xs font-semibold">
-              <Sparkles className="mr-1 h-3.5 w-3.5" />
-              Hệ thống học từ vựng thế hệ mới
-            </Badge>
-            <Badge variant="secondary" className="h-7 rounded-full px-3 text-xs font-medium">
-              Lặp lại ngắt quãng SRS
-            </Badge>
-            <Badge variant="secondary" className="h-7 rounded-full px-3 text-xs font-medium">
-              Luyện ngữ cảnh AI
-            </Badge>
+          <div className="flex flex-wrap items-center gap-3">
+            <BeeMascot
+              state="welcome"
+              size="sm"
+              showAura
+              interactive
+              bubble="Chào bạn! Cùng bứt phá từ vựng tiếng Anh nhé! 🐝"
+              bubblePosition="right"
+              bubbleClassName="hidden sm:block text-xs font-semibold py-1.5 px-3 bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="default" className="h-7 rounded-full px-3 text-xs font-semibold">
+                <Sparkles className="mr-1 h-3.5 w-3.5" />
+                Hệ thống học từ vựng thế hệ mới
+              </Badge>
+              <Badge variant="secondary" className="h-7 rounded-full px-3 text-xs font-medium">
+                Lặp lại ngắt quãng SRS
+              </Badge>
+              <Badge variant="secondary" className="h-7 rounded-full px-3 text-xs font-medium">
+                Luyện ngữ cảnh AI
+              </Badge>
+            </div>
           </div>
 
           <div className="space-y-4">

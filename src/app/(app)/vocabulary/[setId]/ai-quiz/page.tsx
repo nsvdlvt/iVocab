@@ -5,8 +5,17 @@ import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { AiQuizClient } from "@/components/features/ai-quiz/AiQuizClient";
 
+import type { Metadata } from "next";
+import { getVocabSetMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ setId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { setId } = await params;
+  const title = await getVocabSetMetadataTitle(setId, "AI Quiz");
+  return { title };
 }
 
 export default async function AiQuizPage({ params }: PageProps) {

@@ -1,4 +1,4 @@
-import { AI_MODEL } from "@/lib/ai/constants";
+import { AI_MODEL, DEFAULT_GEMINI_MODELS } from "@/lib/ai/constants";
 import { AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
 import crypto from "crypto";
 
@@ -24,141 +24,240 @@ export interface ResponsesRequestPayload {
   [key: string]: unknown;
 }
 
+interface GeminiPart {
+  text?: string;
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
+  thought?: boolean;
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: GeminiPart[];
+    };
+  }>;
+  error?: {
+    code?: number;
+    message?: string;
+    status?: string;
+  };
+}
+
 export async function request<T = unknown>(
   payload: Omit<ResponsesRequestPayload, "model"> & { model?: string },
   abortSignal?: AbortSignal
 ): Promise<T> {
-  const model = payload.model ?? AI_MODEL;
-  const body = { ...payload, model };
-
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = (process.env.GEMINI_API_KEY ?? process.env.OPENAI_API_KEY)?.trim();
   if (!apiKey) {
-    throw new AINetworkError("Missing OPENAI_API_KEY");
+    throw new AINetworkError("Thiếu cấu hình GEMINI_API_KEY trong biến môi trường (.env.local)");
   }
 
-  const baseURL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
-  const endpoint = `${baseURL.replace(/\/+$/, "")}/responses`;
-  const bodyJson = JSON.stringify(body);
-  const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
-  const callerFile = getCallerFile();
+  const requestedModel = payload.model ?? AI_MODEL;
+  const modelsToTry = [
+    requestedModel,
+    ...DEFAULT_GEMINI_MODELS.filter((m) => m !== requestedModel),
+  ];
 
-  const inputParts = Array.isArray(payload.input) ? payload.input : [];
-  const payloadType = Array.isArray(payload.input) ? "multimodal" : "text";
-  const imageSizeBytes = inputParts.reduce((total, part) => {
-    if (part.type !== "input_image" || typeof part.image_url !== "string") return total;
-    const base64Part = part.image_url.includes(",") ? part.image_url.split(",")[1] : part.image_url;
-    return total + Buffer.byteLength(base64Part, "base64");
-  }, 0);
+  // Convert input to Gemini contents parts
+  const parts: GeminiPart[] = [];
+  const textObj = payload.text as { format?: { type?: string } } | undefined;
+  let isJsonExpected =
+    textObj?.format?.type === "json_object" ||
+    textObj?.format?.type === "json_schema";
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("[responsesClient] Outbound payload", {
-      callerFile,
-      endpoint,
-      model,
-      payloadType,
-      inputParts: inputParts.length,
-      promptLength: typeof payload.input === "string" ? payload.input.length : inputParts.filter((part) => part.type === "input_text").reduce((sum, part) => sum + (part.text?.length ?? 0), 0),
-      imageSizeBytes,
-      requestBodyHash: bodyHash,
-      requestBodySize: Buffer.byteLength(bodyJson, "utf8"),
-      requestBody: JSON.parse(bodyJson),
-    });
-  }
+  if (typeof payload.input === "string") {
+    parts.push({ text: payload.input });
+    if (
+      payload.input.includes("strict JSON") ||
+      payload.input.includes("JSON array") ||
+      payload.input.includes("JSON object") ||
+      payload.input.includes("Return **strict JSON")
+    ) {
+      isJsonExpected = true;
+    }
+  } else if (Array.isArray(payload.input)) {
+    for (const part of payload.input) {
+      if (part.type === "input_text" && part.text) {
+        parts.push({ text: part.text });
+        if (
+          part.text.includes("strict JSON") ||
+          part.text.includes("JSON array") ||
+          part.text.includes("Return **strict JSON")
+        ) {
+          isJsonExpected = true;
+        }
+      } else if (part.type === "input_image" && part.image_url) {
+        let mimeType = "image/jpeg";
+        let base64Data = part.image_url;
 
-  const maxAttempts = 3;
-  let lastError: unknown = null;
+        const match = part.image_url.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          mimeType = match[1];
+          base64Data = match[2];
+        }
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(new Error("TimeoutError")), 90000);
-
-      if (abortSignal) {
-        abortSignal.addEventListener("abort", () => {
-          clearTimeout(timeoutId);
-          controller.abort(abortSignal.reason);
+        parts.push({
+          inlineData: {
+            mimeType,
+            data: base64Data,
+          },
         });
       }
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: bodyJson,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (process.env.NODE_ENV === "development") {
-        const headerEntries = Array.from(response.headers.entries());
-        const responseBody = await response.clone().text();
-        console.log("[responsesClient] HTTP response", {
-          attempt,
-          status: response.status,
-          headers: headerEntries,
-          body: responseBody,
-        });
-      }
-
-      if (!response.ok) {
-        const txt = await response.text();
-        const error = new AIResponseError(`Responses API error ${response.status}: ${txt}`);
-        if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
-          lastError = error;
-          await delay(backoffMs(attempt));
-          continue;
-        }
-        throw error;
-      }
-
-      const txt = await response.text();
-      const data = JSON.parse(txt);
-      let content: unknown = data;
-      if (data && typeof data === "object") {
-        const wrapper = data as {
-          output?: Array<{ content?: Array<{ text?: string }> }>;
-          content?: string;
-          output_text?: string;
-        };
-        const first = wrapper.output?.[0];
-        const txtNode = first?.content?.[0]?.text;
-        if (typeof txtNode === "string") content = txtNode;
-        else if (typeof wrapper.output_text === "string") content = wrapper.output_text;
-        else if (typeof wrapper.content === "string") content = wrapper.content;
-      }
-      return content as T;
-    } catch (err: unknown) {
-      if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
-        throw new AIAbortError("Request aborted or timed out");
-      }
-      if (err instanceof TypeError) {
-        throw new AINetworkError(`Network failure: ${err.message}`);
-      }
-      if (err instanceof AIResponseError || err instanceof AINetworkError || err instanceof AIAbortError) {
-        lastError = err;
-        if (err instanceof AIAbortError || err instanceof AINetworkError) {
-          throw err;
-        }
-        if (attempt < maxAttempts && isRetryableMessage(err.message)) {
-          await delay(backoffMs(attempt));
-          continue;
-        }
-        throw err;
-      }
-      const msg = err instanceof Error ? err.message : String(err);
-      lastError = new AIResponseError(`Unexpected error during request: ${msg}`);
-      if (attempt < maxAttempts) {
-        await delay(backoffMs(attempt));
-        continue;
-      }
-      throw lastError;
     }
   }
 
-  throw (lastError as Error) ?? new AIResponseError("Request failed after multiple attempts");
+  if (parts.length === 0) {
+    throw new AIResponseError("Không có nội dung để gửi tới AI.");
+  }
+
+  const requestBody = {
+    contents: [
+      {
+        role: "user",
+        parts,
+      },
+    ],
+    generationConfig: {
+      temperature: 0.3,
+      ...(isJsonExpected ? { responseMimeType: "application/json" } : {}),
+    },
+  };
+
+  const bodyJson = JSON.stringify(requestBody);
+  const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
+  const callerFile = getCallerFile();
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[responsesClient:gemini] Outbound payload", {
+      callerFile,
+      modelsToTry,
+      partsCount: parts.length,
+      isJsonExpected,
+      requestBodyHash: bodyHash,
+    });
+  }
+
+  let lastError: unknown = null;
+
+  for (const model of modelsToTry) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+      model
+    )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    const maxAttempts = 2;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(new Error("TimeoutError")), 60000);
+
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            clearTimeout(timeoutId);
+            controller.abort(abortSignal.reason);
+          } else {
+            abortSignal.addEventListener("abort", () => {
+              clearTimeout(timeoutId);
+              controller.abort(abortSignal.reason);
+            });
+          }
+        }
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: bodyJson,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const txt = await response.text();
+          let parsedErrorMsg = txt;
+          try {
+            const errObj = JSON.parse(txt) as GeminiResponse;
+            if (errObj.error?.message) {
+              parsedErrorMsg = errObj.error.message;
+            }
+          } catch {
+            // keep raw txt
+          }
+
+          const error = new AIResponseError(`Gemini API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);
+
+          // Fallback to next model if model unavailable / deprecated / high demand
+          if (
+            response.status === 404 ||
+            response.status === 429 ||
+            response.status === 502 ||
+            response.status === 503 ||
+            response.status === 504
+          ) {
+            lastError = error;
+            break; // Break inner retry loop to try next model in outer loop
+          }
+
+          if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
+            lastError = error;
+            await delay(backoffMs(attempt));
+            continue;
+          }
+
+          throw error;
+        }
+
+        const txt = await response.text();
+        const data = JSON.parse(txt) as GeminiResponse;
+
+        const candidateParts = data.candidates?.[0]?.content?.parts ?? [];
+        const replyText = candidateParts
+          .filter((part) => !part.thought && typeof part.text === "string")
+          .map((part) => part.text)
+          .join("")
+          .trim();
+
+        if (!replyText && candidateParts.length === 0) {
+          throw new AIResponseError("Gemini không trả về nội dung hợp lệ.");
+        }
+
+        // Return reply text, compatible with string or { content: string }
+        return replyText as unknown as T;
+      } catch (err: unknown) {
+        if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
+          throw new AIAbortError("Yêu cầu AI bị gián đoạn hoặc quá thời gian xử lý.");
+        }
+        if (err instanceof TypeError) {
+          throw new AINetworkError(`Lỗi kết nối mạng: ${err.message}`);
+        }
+        if (err instanceof AIResponseError || err instanceof AINetworkError || err instanceof AIAbortError) {
+          lastError = err;
+          if (err instanceof AIAbortError || err instanceof AINetworkError) {
+            throw err;
+          }
+          if (attempt < maxAttempts && isRetryableMessage(err.message)) {
+            await delay(backoffMs(attempt));
+            continue;
+          }
+          // If this was a model-level failure, break to try next model
+          break;
+        }
+        const msg = err instanceof Error ? err.message : String(err);
+        lastError = new AIResponseError(`Unexpected error during AI request: ${msg}`);
+        if (attempt < maxAttempts) {
+          await delay(backoffMs(attempt));
+          continue;
+        }
+        break;
+      }
+    }
+  }
+
+  throw (lastError as Error) ?? new AIResponseError("Không thể kết nối hoặc nhận phản hồi từ Gemini AI.");
 }
 
 function getCallerFile(): string {
@@ -166,6 +265,8 @@ function getCallerFile(): string {
   for (const line of stack) {
     if (line.includes("sentence-practice.ts")) return "sentence-practice.ts";
     if (line.includes("import-vocabulary.ts")) return "import-vocabulary.ts";
+    if (line.includes("writing-assistant.ts")) return "writing-assistant.ts";
+    if (line.includes("quiz.ts")) return "quiz.ts";
   }
   return "unknown";
 }
@@ -176,7 +277,7 @@ function isRetryableResponseStatus(status: number): boolean {
 
 function isRetryableMessage(message: string): boolean {
   const lower = message.toLowerCase();
-  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("upstream_error");
+  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("high demand");
 }
 
 function backoffMs(attempt: number): number {

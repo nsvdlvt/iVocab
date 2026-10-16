@@ -1,6 +1,13 @@
 import React from "react";
 import Link from "next/link";
-import { Compass, Home, LayoutDashboard } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "404 - Không tìm thấy trang",
+  description: "Trang bạn tìm kiếm không tồn tại hoặc đã bị di chuyển.",
+};
+import { BeeMascot } from "@/components/mascot/BeeMascot";
+import { Home, LayoutDashboard } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ROUTES } from "@/constants/routes";
@@ -9,10 +16,8 @@ import { cn } from "@/lib/utils";
 export default function NotFound() {
   return (
     <main className="flex min-h-[100dvh] w-full items-center justify-center bg-background px-4 py-12 text-foreground">
-      <div className="w-full max-w-md rounded-3xl border border-border/80 bg-card p-7 text-center shadow-sm sm:p-8">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
-          <Compass className="h-7 w-7" />
-        </div>
+      <div className="w-full max-w-md rounded-3xl border border-border/80 bg-card p-7 text-center shadow-sm sm:p-8 flex flex-col items-center">
+        <BeeMascot state="thinking" size="lg" showAura interactive />
 
         <div className="mt-5 space-y-2">
           <Badge variant="secondary" className="mx-auto font-mono">

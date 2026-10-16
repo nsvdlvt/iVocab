@@ -1,9 +1,21 @@
+import type { Metadata } from "next";
 import { AdminUserRepository } from "@/repositories/admin/user.repository";
 import { requirePermission } from "@/lib/auth/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Clock, Key, Shield, User } from "lucide-react";
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  try {
+    const user = await AdminUserRepository.getUserById(params.id);
+    if (user?.display_name || user?.email) {
+      return { title: `Người dùng: ${user.display_name || user.email}` };
+    }
+  } catch {}
+  return { title: "Chi tiết người dùng" };
+}
 
 export default async function AdminUserDetailPage(props: { params: Promise<{ id: string }> }) {
   await requirePermission("manageUsers");

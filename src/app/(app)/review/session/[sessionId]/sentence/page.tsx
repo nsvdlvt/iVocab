@@ -4,8 +4,17 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { SentenceViewer } from "@/components/features/sentence/SentenceViewer";
 import { requireReviewSession } from "@/lib/review-session/review-session-access";
 
+import type { Metadata } from "next";
+import { getReviewSessionMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ sessionId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { sessionId } = await params;
+  const title = await getReviewSessionMetadataTitle(sessionId, "Luyện câu");
+  return { title };
 }
 
 export default async function ReviewSessionSentencePage({ params }: PageProps) {

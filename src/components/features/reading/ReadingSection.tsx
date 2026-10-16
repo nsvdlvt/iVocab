@@ -155,7 +155,7 @@ function renderContentWithHighlightsAndVocab(
             e.stopPropagation();
             onVocabClick?.(v);
           }}
-          className="border-b-2 border-primary/50 text-foreground cursor-pointer font-medium hover:bg-primary/10 rounded-sm px-0.5 transition-colors"
+          className="border-b-2 border-primary/60 text-foreground cursor-pointer font-medium hover:bg-amber-400/15 hover:border-amber-500 dark:hover:bg-amber-400/20 rounded-sm px-1 py-0.5 transition-all duration-150 inline-block active:scale-95 shadow-2xs"
           title={`Bấm để xem nghĩa từ: ${v.text}`}
         >
           {chunk}

@@ -1,12 +1,24 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, XCircle, HelpCircle, RotateCcw, Award, Sparkles, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  RotateCcw,
+  Sparkles,
+  BookOpen,
+  ArrowDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { BeeMascot, type MascotState } from "@/components/mascot/BeeMascot";
+import { MascotCelebration } from "@/components/mascot/MascotCelebration";
 import { cn } from "@/lib/utils";
+import { EASING } from "@/lib/motion";
 import type { ComprehensionQuestion, ComprehensionProgress } from "./reading-types";
 
 interface ReadingComprehensionProps {
@@ -80,6 +92,12 @@ export function ReadingComprehension({
     } catch {
       // Ignore localStorage write errors
     }
+
+    // Smooth scroll down to quiz section
+    const el = document.getElementById("comprehension-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const handleRetake = () => {
@@ -105,10 +123,102 @@ export function ReadingComprehension({
     );
   }
 
+  // Determine mascot celebration state
+  const completionMascotState: MascotState =
+    scorePercentage === 100
+      ? "celebrating"
+      : scorePercentage >= 70
+      ? "graduating"
+      : scorePercentage >= 50
+      ? "welcome"
+      : "encouraging";
+
+  const completionTitle =
+    scorePercentage === 100
+      ? "Xuất sắc tuyệt đối! 100% chính xác!"
+      : scorePercentage >= 70
+      ? "Làm rất tốt! Bạn đã hiểu bài sâu sắc!"
+      : scorePercentage >= 50
+      ? "Tiến bộ rõ rệt! Hãy tiếp tục duy trì!"
+      : "Đừng nản lòng! Hãy đọc lại và thử sức lần nữa!";
+
+  const completionDesc =
+    scorePercentage === 100
+      ? `Bạn đã trả lời đúng hoàn toàn ${correctCount}/${totalQuestions} câu hỏi đọc hiểu của bài học "${articleTitle}". Vocabee rất tự hào về bạn!`
+      : scorePercentage >= 70
+      ? `Bạn đã trả lời đúng ${correctCount}/${totalQuestions} câu hỏi. Xem lại phần giải thích chi tiết bên dưới để hoàn thiện nốt những điểm còn sót nhé!`
+      : scorePercentage >= 50
+      ? `Bạn đã trả lời đúng ${correctCount}/${totalQuestions} câu hỏi. Hãy đọc kỹ lại các đoạn văn được đánh dấu để cải thiện điểm số.`
+      : `Bạn trả lời đúng ${correctCount}/${totalQuestions} câu. Hãy bình tĩnh xem lại bản dịch và từ vựng, rồi bấm "Làm lại bài" để chinh phục bài đọc này nhé!`;
+
   return (
     <div id="comprehension-section" className="space-y-6">
-      {/* Quiz Header & Score Card */}
+      {/* Submitted Completion Banner with Mascot */}
+      <AnimatePresence>
+        {isSubmitted && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ duration: 0.45, ease: EASING.spring }}
+            className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card to-blue-500/5 p-6 sm:p-8 shadow-md"
+          >
+            {/* Confetti particles for high scores */}
+            <MascotCelebration active={isSubmitted && scorePercentage >= 70} particleCount={42} />
+
+            <div className="relative flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+              {/* Mascot */}
+              <div className="shrink-0">
+                <BeeMascot
+                  state={completionMascotState}
+                  size="xl"
+                  showAura
+                  interactive
+                  className="mx-auto"
+                />
+              </div>
+
+              {/* Result Details */}
+              <div className="flex-1 space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  <Sparkles className="h-3.5 w-3.5 fill-current" />
+                  Kết quả đọc hiểu
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+                  {completionTitle}
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                  {completionDesc}
+                </p>
+
+                <div className="pt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <div className="inline-flex items-center gap-2 rounded-xl bg-background/80 px-4 py-2 border border-border/80 shadow-2xs">
+                    <span className="text-xs text-muted-foreground">Điểm số:</span>
+                    <span className="text-lg font-black text-foreground">
+                      {correctCount}/{totalQuestions}
+                    </span>
+                    <span className="text-xs font-bold text-primary">({scorePercentage}%)</span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRetake}
+                    className="rounded-full gap-2 text-xs"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Làm lại bài
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Quiz Container */}
       <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
+        {/* Quiz Header & Live Progress */}
         <div className="p-5 sm:p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-border/60">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -124,54 +234,22 @@ export function ReadingComprehension({
               </p>
             </div>
 
-            {isSubmitted ? (
-              <div className="flex items-center gap-3 shrink-0 bg-background/80 backdrop-blur px-4 py-3 rounded-2xl border border-border/70 shadow-sm">
-                <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
-                  {scorePercentage}%
+            {!isSubmitted ? (
+              <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0 bg-background/70 backdrop-blur-xs p-3 rounded-2xl border border-border/60 min-w-44">
+                <div className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground">
+                  <span>Tiến độ làm bài</span>
+                  <span className="font-bold text-foreground">
+                    {answeredCount}/{totalQuestions}
+                  </span>
                 </div>
-                <div>
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Kết quả</div>
-                  <div className="text-sm font-bold text-foreground">
-                    {correctCount} / {totalQuestions} câu đúng
-                  </div>
-                </div>
+                <Progress
+                  value={(answeredCount / totalQuestions) * 100}
+                  className="w-full h-2 transition-all duration-300"
+                />
               </div>
-            ) : (
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Tiến độ: {answeredCount} / {totalQuestions} câu
-                </span>
-                <Progress value={(answeredCount / totalQuestions) * 100} className="w-36 h-2" />
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
-
-        {/* Score banner when submitted */}
-        {isSubmitted && (
-          <div className="px-5 py-4 bg-muted/40 flex flex-wrap items-center justify-between gap-3 border-b border-border/60">
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-semibold text-foreground">
-                {scorePercentage === 100
-                  ? "Xuất sắc! Bạn đã trả lời đúng tất cả các câu hỏi. 🎉"
-                  : scorePercentage >= 70
-                  ? "Làm rất tốt! Bạn đã nắm vững nội dung chính bài đọc. 👍"
-                  : "Hãy đọc lại các đoạn được giải thích bên dưới để củng cố kỹ năng đọc hiểu nhé!"}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleRetake}
-              className="rounded-full gap-2 border-border/80"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Làm lại bài
-            </Button>
-          </div>
-        )}
 
         {/* Questions List */}
         <div className="divide-y divide-border/60">
@@ -192,16 +270,16 @@ export function ReadingComprehension({
                         <button
                           type="button"
                           onClick={() => {
-                            // parse paragraph number e.g. "Paragraph 1"
                             const match = q.paragraphRef?.match(/\d+/);
                             if (match) {
                               onScrollToParagraph?.(parseInt(match[0], 10) - 1);
                             }
                           }}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline group"
                         >
                           <BookOpen className="h-3 w-3" />
-                          {q.paragraphRef}
+                          <span>{q.paragraphRef}</span>
+                          <ArrowDown className="h-2.5 w-2.5 opacity-60 group-hover:translate-y-0.5 transition-transform" />
                         </button>
                       ) : null}
                     </div>
@@ -212,11 +290,11 @@ export function ReadingComprehension({
 
                   {isSubmitted ? (
                     isCorrect ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs shrink-0 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs shrink-0 bg-emerald-500/15 px-3 py-1 rounded-full">
                         <CheckCircle2 className="h-4 w-4" /> Chính xác
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold text-xs shrink-0 bg-rose-500/10 px-2.5 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-bold text-xs shrink-0 bg-rose-500/15 px-3 py-1 rounded-full">
                         <XCircle className="h-4 w-4" /> Chưa đúng
                       </span>
                     )
@@ -232,7 +310,7 @@ export function ReadingComprehension({
 
                     let btnClass = "border-border/70 hover:bg-muted/60 text-foreground";
                     if (isSelected && !isSubmitted) {
-                      btnClass = "border-primary bg-primary/10 text-primary font-medium ring-2 ring-primary/20";
+                      btnClass = "border-primary bg-primary/10 text-primary font-medium ring-2 ring-primary/20 shadow-xs";
                     } else if (isAnswerCorrect) {
                       btnClass = "border-emerald-500 bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 font-medium ring-2 ring-emerald-500/30";
                     } else if (isAnswerWrong) {
@@ -242,22 +320,24 @@ export function ReadingComprehension({
                     const optionLetter = String.fromCharCode(65 + optIndex);
 
                     return (
-                      <button
+                      <motion.button
                         key={optIndex}
                         type="button"
                         disabled={isSubmitted}
+                        whileHover={!isSubmitted ? { scale: 1.01 } : undefined}
+                        whileTap={!isSubmitted ? { scale: 0.99 } : undefined}
                         onClick={() => handleSelectOption(q.id, optIndex)}
                         className={cn(
-                          "flex items-start gap-3 p-3.5 rounded-xl border text-left text-sm transition-all duration-150 leading-relaxed",
+                          "flex items-start gap-3 p-3.5 rounded-xl border text-left text-sm transition-colors duration-150 leading-relaxed",
                           btnClass,
-                          !isSubmitted && "cursor-pointer active:scale-[0.99]"
+                          !isSubmitted && "cursor-pointer"
                         )}
                       >
                         <span
                           className={cn(
-                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors",
+                            "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-all duration-150",
                             isSelected && !isSubmitted
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-primary text-primary-foreground scale-105"
                               : isAnswerCorrect
                               ? "bg-emerald-600 text-white"
                               : isAnswerWrong
@@ -268,20 +348,27 @@ export function ReadingComprehension({
                           {optionLetter}
                         </span>
                         <span className="flex-1">{option}</span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
 
                 {/* Explanation Card */}
                 {isSubmitted && q.explanation && (
-                  <div className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 text-sm text-foreground space-y-1">
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-3 p-4 rounded-xl border border-primary/20 bg-primary/5 text-sm text-foreground space-y-1.5"
+                  >
                     <div className="font-semibold text-primary text-xs uppercase tracking-wider flex items-center gap-1.5">
                       <HelpCircle className="h-3.5 w-3.5" />
                       Giải thích chi tiết
                     </div>
-                    <p className="leading-relaxed text-muted-foreground">{q.explanation}</p>
-                  </div>
+                    <p className="leading-relaxed text-muted-foreground text-xs sm:text-sm">
+                      {q.explanation}
+                    </p>
+                  </motion.div>
                 )}
               </div>
             );
@@ -312,7 +399,7 @@ export function ReadingComprehension({
                 type="button"
                 disabled={answeredCount === 0}
                 onClick={handleSubmit}
-                className="w-full sm:w-auto rounded-full px-6 gap-2"
+                className="w-full sm:w-auto rounded-full px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Kiểm tra đáp án ({answeredCount}/{totalQuestions})

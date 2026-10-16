@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AdminVocabularyRepository } from "@/repositories/admin/vocabulary.repository";
 import { requirePermission } from "@/lib/auth/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Eye, Copy, Users, BookOpenCheck, Target, Layers } from "lucide-react";
 import { StatCard } from "@/components/admin/cards/stat-card";
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params;
+  try {
+    const set = await AdminVocabularyRepository.getSetById(params.id);
+    if (set?.title) {
+      return { title: `Bộ từ: ${set.title}` };
+    }
+  } catch {}
+  return { title: "Chi tiết bộ từ vựng" };
+}
 
 export default async function AdminVocabularySetDetailPage(props: { params: Promise<{ id: string }> }) {
   await requirePermission("manageVocabulary");

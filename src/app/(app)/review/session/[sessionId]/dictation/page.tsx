@@ -4,8 +4,17 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { DictationViewer } from "@/components/features/dictation/DictationViewer";
 import { requireReviewSession } from "@/lib/review-session/review-session-access";
 
+import type { Metadata } from "next";
+import { getReviewSessionMetadataTitle } from "@/lib/metadata-utils";
+
 interface PageProps {
   params: Promise<{ sessionId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { sessionId } = await params;
+  const title = await getReviewSessionMetadataTitle(sessionId, "Chính tả");
+  return { title };
 }
 
 export default async function ReviewSessionDictationPage({ params }: PageProps) {

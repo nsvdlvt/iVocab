@@ -1,5 +1,11 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Ôn tập thông minh",
+  description: "Lên lịch ôn tập từ vựng bằng thuật toán lặp lại ngắt quãng SRS tối ưu.",
+};
 import {
   AlertCircle,
   BookOpen,

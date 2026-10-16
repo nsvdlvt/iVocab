@@ -1,6 +1,12 @@
 import React from "react";
+import type { Metadata } from "next";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
+
+export const metadata: Metadata = {
+  title: "Hồ sơ cá nhân",
+  description: "Quản lý thông tin tài khoản hiển thị của bạn trên Vocabee.",
+};
 import { requireUser } from "@/lib/auth/require-user";
 import { SectionCard } from "@/components/common/SectionCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
