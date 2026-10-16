@@ -154,23 +154,31 @@ export function LoginForm() {
               Tài khoản với email <span className="underline">{unconfirmedEmail}</span> chưa được kích hoạt.
             </p>
             <p>Vui lòng kiểm tra hộp thư đến (hoặc thư rác) hoặc bấm nút bên dưới để nhận liên kết mới:</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isResending || resendCooldown > 0}
-              onClick={handleResendConfirmation}
-              className="mt-1 h-8 rounded-lg border-amber-500/30 bg-background text-amber-900 dark:text-amber-100 hover:bg-amber-500/10 text-xs font-semibold"
-            >
-              {isResending ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              {resendCooldown > 0
-                ? `Gửi lại sau (${resendCooldown}s)`
-                : "Gửi lại email xác nhận"}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isResending || resendCooldown > 0}
+                onClick={handleResendConfirmation}
+                className="h-8 rounded-lg border-amber-500/30 bg-background text-amber-900 dark:text-amber-100 hover:bg-amber-500/10 text-xs font-semibold"
+              >
+                {isResending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                {resendCooldown > 0
+                  ? `Gửi lại sau (${resendCooldown}s)`
+                  : "Gửi lại email xác nhận"}
+              </Button>
+              <Link
+                href={`${ROUTES.VERIFY_OTP}?email=${encodeURIComponent(unconfirmedEmail)}&type=signup`}
+                className="inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-primary hover:bg-primary/10 hover:underline transition-colors"
+              >
+                Nhập mã OTP xác minh →
+              </Link>
+            </div>
           </div>
         )}
 

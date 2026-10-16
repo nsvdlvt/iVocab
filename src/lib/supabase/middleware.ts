@@ -51,7 +51,8 @@ export async function updateSession(request: NextRequest) {
   const isGuestOnlyPage =
     path === "/login" ||
     path === "/register" ||
-    path === "/forgot-password";
+    path === "/forgot-password" ||
+    path === "/verify-otp";
 
   // 3. Publicly accessible routes
   const isPublicPage =

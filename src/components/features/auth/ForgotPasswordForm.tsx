@@ -31,6 +31,7 @@ export function ForgotPasswordForm() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -87,10 +88,18 @@ export function ForgotPasswordForm() {
         )}
 
         {successMessage && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300 space-y-2">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
               <p>{successMessage}</p>
+            </div>
+            <div className="pt-1">
+              <Link
+                href={`${ROUTES.VERIFY_OTP}?email=${encodeURIComponent(getValues("email"))}&type=recovery`}
+                className="inline-flex items-center text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+              >
+                Đã nhận được mã OTP 6 chữ số? Nhập mã xác minh tại đây →
+              </Link>
             </div>
           </div>
         )}

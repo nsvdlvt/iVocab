@@ -56,6 +56,9 @@ export function mapAuthError(error: unknown): string {
   if (
     lowerMessage.includes("invalid claim") ||
     lowerMessage.includes("token is expired") ||
+    lowerMessage.includes("token has expired") ||
+    lowerMessage.includes("token is invalid") ||
+    lowerMessage.includes("invalid token") ||
     lowerMessage.includes("flow state not found") ||
     lowerMessage.includes("otp_expired") ||
     lowerMessage.includes("token_expired") ||
@@ -63,7 +66,7 @@ export function mapAuthError(error: unknown): string {
     lowerMessage.includes("expired-link") ||
     lowerMessage.includes("invalid-link")
   ) {
-    return "Đường dẫn xác thực đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới.";
+    return "Mã xác thực hoặc liên kết đã hết hạn hoặc không hợp lệ. Vui lòng kiểm tra lại.";
   }
 
   if (

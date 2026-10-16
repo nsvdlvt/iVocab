@@ -16,6 +16,12 @@ export const passwordValidator = z
     `Mật khẩu phải chứa ít nhất ${AUTH_CONSTANTS.MIN_PASSWORD_LENGTH} ký tự`
   );
 
+export const otpTokenValidator = z
+  .string()
+  .trim()
+  .length(6, "Mã xác thực phải gồm đúng 6 chữ số")
+  .regex(/^\d{6}$/, "Mã xác thực chỉ bao gồm số");
+
 export const loginSchema = z.object({
   email: emailValidator,
   password: passwordValidator,
@@ -52,8 +58,52 @@ export const resendVerificationSchema = z.object({
   email: emailValidator,
 });
 
+export const verifyOtpSchema = z.object({
+  email: emailValidator,
+  token: otpTokenValidator,
+  type: z.enum(["signup", "recovery", "email", "email_change"]).default("signup"),
+  redirectTo: z.string().optional(),
+});
+
+export const resendOtpSchema = z.object({
+  email: emailValidator,
+  type: z.enum(["signup", "recovery", "email_change"]).default("signup"),
+});
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 export type ResendVerificationFormValues = z.infer<typeof resendVerificationSchema>;
+export type VerifyOtpFormValues = z.infer<typeof verifyOtpSchema>;
+export type ResendOtpFormValues = z.infer<typeof resendOtpSchema>;
+
+/**
+ * Partially masks an email address to protect user privacy in UI displays.
+ * e.g. "dungbnlvt@gmail.com" -> "du***t@gmail.com"
+ * e.g. "hi@example.com" -> "h***@example.com"
+ */
+export function maskEmail(email: string): string {
+  if (!email || typeof email !== "string") {
+    return "";
+  }
+
+  if (!email.includes("@")) {
+    return email;
+  }
+
+  const [username, domain] = email.trim().split("@");
+  if (!username || !domain) {
+    return email;
+  }
+
+  if (username.length <= 2) {
+    return `${username[0]}***@${domain}`;
+  }
+
+  if (username.length === 3) {
+    return `${username[0]}***${username[2]}@${domain}`;
+  }
+
+  return `${username.slice(0, 2)}***${username.slice(-1)}@${domain}`;
+}

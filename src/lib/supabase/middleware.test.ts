@@ -86,6 +86,26 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(location).toBe("http://localhost:3000/vocabulary");
   });
 
+  it("should permit unauthenticated visitors on /verify-otp", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+    const request = new NextRequest("http://localhost:3000/verify-otp?email=user@example.com");
+    const response = await updateSession(request);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("should redirect authenticated users on /verify-otp to /dashboard", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
+
+    const request = new NextRequest("http://localhost:3000/verify-otp");
+    const response = await updateSession(request);
+
+    expect(response.status).toBe(307);
+    const location = response.headers.get("location");
+    expect(location).toBe("http://localhost:3000/dashboard");
+  });
+
   it("should block malicious next parameter on guest-only page redirect", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 

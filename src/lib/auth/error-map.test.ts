@@ -37,10 +37,10 @@ describe("mapAuthError", () => {
 
   it("should map expired / invalid token errors", () => {
     expect(mapAuthError(new Error("token is expired"))).toBe(
-      "Đường dẫn xác thực đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới."
+      "Mã xác thực hoặc liên kết đã hết hạn hoặc không hợp lệ. Vui lòng kiểm tra lại."
     );
     expect(mapAuthError("otp_expired")).toBe(
-      "Đường dẫn xác thực đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu liên kết mới."
+      "Mã xác thực hoặc liên kết đã hết hạn hoặc không hợp lệ. Vui lòng kiểm tra lại."
     );
   });
 

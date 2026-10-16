@@ -5,6 +5,9 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   resendVerificationSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
+  maskEmail,
 } from "./auth";
 
 describe("auth validators", () => {
@@ -101,6 +104,69 @@ describe("auth validators", () => {
 
       const resend = resendVerificationSchema.safeParse({ email: "invalid" });
       expect(resend.success).toBe(false);
+    });
+  });
+
+  describe("maskEmail helper", () => {
+    it("should correctly mask standard email addresses", () => {
+      expect(maskEmail("dungbnlvt@gmail.com")).toBe("du***t@gmail.com");
+      expect(maskEmail("john.doe@example.org")).toBe("jo***e@example.org");
+    });
+
+    it("should handle short usernames gracefully", () => {
+      expect(maskEmail("ab@example.com")).toBe("a***@example.com");
+      expect(maskEmail("a@example.com")).toBe("a***@example.com");
+    });
+
+    it("should return unchanged for invalid or malformed strings", () => {
+      expect(maskEmail("invalid-email")).toBe("invalid-email");
+      expect(maskEmail("")).toBe("");
+    });
+  });
+
+  describe("verifyOtpSchema & resendOtpSchema", () => {
+    it("should accept valid 6-digit OTP code and normalize email and type", () => {
+      const result = verifyOtpSchema.safeParse({
+        email: " User@Example.COM ",
+        token: " 123456 ",
+        type: "signup",
+        redirectTo: "/dashboard",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.email).toBe("user@example.com");
+        expect(result.data.token).toBe("123456");
+        expect(result.data.type).toBe("signup");
+        expect(result.data.redirectTo).toBe("/dashboard");
+      }
+    });
+
+    it("should reject non-6-digit tokens", () => {
+      expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "12345", type: "signup" }).success).toBe(false);
+      expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "1234567", type: "signup" }).success).toBe(false);
+      expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "abcdef", type: "signup" }).success).toBe(false);
+      expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "123 45", type: "signup" }).success).toBe(false);
+    });
+
+    it("should reject invalid verification types", () => {
+      const result = verifyOtpSchema.safeParse({
+        email: "user@example.com",
+        token: "123456",
+        type: "unsupported_type",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should validate resendOtpSchema", () => {
+      const valid = resendOtpSchema.safeParse({
+        email: " User@Example.COM ",
+        type: "recovery",
+      });
+      expect(valid.success).toBe(true);
+      if (valid.success) {
+        expect(valid.data.email).toBe("user@example.com");
+        expect(valid.data.type).toBe("recovery");
+      }
     });
   });
 });

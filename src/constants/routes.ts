@@ -6,6 +6,7 @@ export const ROUTES = {
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
+  VERIFY_OTP: "/verify-otp",
   VOCABULARY: "/vocabulary",
   VOCABULARY_MANAGEMENT: "/vocabulary-management",
   VOCABULARY_DETAIL: (setId: string) => `/vocabulary/${setId}`,

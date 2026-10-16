@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -12,10 +12,6 @@ import {
   User,
   Eye,
   EyeOff,
-  CheckCircle2,
-  Send,
-  ArrowLeft,
-  Edit2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,9 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterFormValues } from "@/lib/validators/auth";
 import { registerAction } from "@/actions/auth/register";
-import { resendVerificationAction } from "@/actions/auth/resend-verification";
 import { ROUTES } from "@/constants/routes";
 import { SocialAuthSection } from "./SocialAuthSection";
+import { OtpVerificationForm } from "./OtpVerificationForm";
 
 export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,24 +31,12 @@ export function RegisterForm() {
 
   // Dedicated email confirmation pending state
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [isResending, setIsResending] = useState(false);
 
   const searchParams = useSearchParams();
-
-  // Cooldown countdown
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const interval = setInterval(() => {
-      setResendCooldown((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [resendCooldown]);
 
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -71,8 +55,7 @@ export function RegisterForm() {
       if (result.success) {
         if (result.emailConfirmationRequired && result.email) {
           setPendingConfirmationEmail(result.email);
-          setResendCooldown(60);
-          toast.success(result.message ?? "Đăng ký thành công! Vui lòng xác thực email.");
+          toast.success(result.message ?? "Đăng ký thành công! Vui lòng kiểm tra mã OTP.");
         } else {
           toast.success(result.message ?? "Đăng ký thành công!");
         }
@@ -86,24 +69,6 @@ export function RegisterForm() {
     }
   };
 
-  const handleResend = async () => {
-    if (!pendingConfirmationEmail || resendCooldown > 0) return;
-    setIsResending(true);
-    try {
-      const res = await resendVerificationAction(pendingConfirmationEmail);
-      if (res.success) {
-        toast.success(res.message);
-        setResendCooldown(60);
-      } else {
-        toast.error(res.error);
-      }
-    } catch {
-      toast.error("Không thể gửi lại email xác nhận. Vui lòng thử lại sau.");
-    } finally {
-      setIsResending(false);
-    }
-  };
-
   const loginHref = React.useMemo(() => {
     const next = searchParams.get("next");
     if (next) {
@@ -112,69 +77,15 @@ export function RegisterForm() {
     return ROUTES.LOGIN;
   }, [searchParams]);
 
-  // Dedicated email confirmation pending view
+  // Dedicated email OTP verification view
   if (pendingConfirmationEmail) {
     return (
-      <Card className="rounded-2xl border-border/80 bg-card shadow-sm animate-in fade-in-50 duration-200">
-        <CardHeader className="space-y-2 pb-4 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Xác thực tài khoản</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Chúng tôi đã gửi liên kết kích hoạt tài khoản đến địa chỉ:
-          </CardDescription>
-          <div className="rounded-xl border border-border/80 bg-muted/40 py-2 px-3 text-sm font-semibold text-foreground">
-            {pendingConfirmationEmail}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <p className="text-center text-xs text-muted-foreground leading-relaxed">
-            Vui lòng kiểm tra hộp thư đến (hoặc hòm thư rác/Spam) của bạn và bấm vào liên kết xác nhận để bắt đầu học tập.
-          </p>
-
-          <div className="space-y-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="h-10 w-full rounded-xl font-semibold shadow-2xs"
-              disabled={isResending || resendCooldown > 0}
-              onClick={handleResend}
-            >
-              {isResending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              {resendCooldown > 0
-                ? `Gửi lại email sau (${resendCooldown}s)`
-                : "Gửi lại email kích hoạt"}
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 w-full rounded-xl text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => setPendingConfirmationEmail(null)}
-            >
-              <Edit2 className="mr-1.5 h-3.5 w-3.5" />
-              Thay đổi địa chỉ email
-            </Button>
-          </div>
-
-          <div className="border-t border-border/60 pt-4 text-center">
-            <Link
-              href={loginHref}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại đăng nhập
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+      <OtpVerificationForm
+        initialEmail={pendingConfirmationEmail}
+        initialType="signup"
+        redirectTo={searchParams.get("next") || undefined}
+        onBackToForm={() => setPendingConfirmationEmail(null)}
+      />
     );
   }
 

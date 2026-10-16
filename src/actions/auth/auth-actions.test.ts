@@ -4,6 +4,8 @@ import { registerAction } from "./register";
 import { forgotPasswordAction } from "./forgot-password";
 import { resetPasswordAction } from "./reset-password";
 import { resendVerificationAction } from "./resend-verification";
+import { verifyOtpAction } from "./verify-otp";
+import { resendOtpAction } from "./resend-otp";
 
 const mockSignInWithPassword = vi.fn();
 const mockSignUp = vi.fn();
@@ -11,6 +13,7 @@ const mockResetPasswordForEmail = vi.fn();
 const mockUpdateUser = vi.fn();
 const mockGetUser = vi.fn();
 const mockResend = vi.fn();
+const mockVerifyOtp = vi.fn();
 const mockRedirect = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -22,6 +25,7 @@ vi.mock("@/lib/supabase/server", () => ({
       updateUser: mockUpdateUser,
       getUser: mockGetUser,
       resend: mockResend,
+      verifyOtp: mockVerifyOtp,
     },
   })),
 }));
@@ -229,6 +233,123 @@ describe("Authentication Server Actions", () => {
         expect.objectContaining({
           type: "signup",
           email: "user@example.com",
+        })
+      );
+    });
+  });
+
+  describe("verifyOtpAction", () => {
+    it("should reject invalid input data (short token)", async () => {
+      const result = await verifyOtpAction({
+        email: "user@example.com",
+        token: "123",
+        type: "signup",
+      });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Mã xác thực phải gồm đúng 6 chữ số");
+    });
+
+    it("should verify signup OTP and redirect to dashboard", async () => {
+      mockVerifyOtp.mockResolvedValueOnce({
+        data: { session: {}, user: { id: "test-user" } },
+        error: null,
+      });
+
+      await expect(
+        verifyOtpAction({
+          email: "user@example.com",
+          token: "123456",
+          type: "signup",
+        })
+      ).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+
+      expect(mockVerifyOtp).toHaveBeenCalledWith({
+        email: "user@example.com",
+        token: "123456",
+        type: "signup",
+      });
+    });
+
+    it("should verify recovery OTP and redirect to /reset-password", async () => {
+      mockVerifyOtp.mockResolvedValueOnce({
+        data: { session: {}, user: { id: "recovery-user" } },
+        error: null,
+      });
+
+      await expect(
+        verifyOtpAction({
+          email: "user@example.com",
+          token: "654321",
+          type: "recovery",
+        })
+      ).rejects.toThrow("NEXT_REDIRECT:/reset-password");
+
+      expect(mockVerifyOtp).toHaveBeenCalledWith({
+        email: "user@example.com",
+        token: "654321",
+        type: "recovery",
+      });
+    });
+
+    it("should return localized error when OTP code is invalid or expired", async () => {
+      mockVerifyOtp.mockResolvedValueOnce({
+        data: null,
+        error: new Error("Token has expired or is invalid"),
+      });
+
+      const result = await verifyOtpAction({
+        email: "user@example.com",
+        token: "000000",
+        type: "recovery",
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Mã xác thực hoặc liên kết đã hết hạn hoặc không hợp lệ");
+    });
+  });
+
+  describe("resendOtpAction", () => {
+    it("should reject invalid email", async () => {
+      const result = await resendOtpAction({
+        email: "bad-email",
+        type: "signup",
+      });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Email không hợp lệ.");
+    });
+
+    it("should resend signup OTP", async () => {
+      mockResend.mockResolvedValueOnce({ data: {}, error: null });
+
+      const result = await resendOtpAction({
+        email: "user@example.com",
+        type: "signup",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("Mã xác thực mới đã được gửi về email của bạn.");
+      expect(mockResend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "signup",
+          email: "user@example.com",
+        })
+      );
+    });
+
+    it("should resend recovery OTP via resetPasswordForEmail", async () => {
+      mockResetPasswordForEmail.mockResolvedValueOnce({ data: {}, error: null });
+
+      const result = await resendOtpAction({
+        email: "user@example.com",
+        type: "recovery",
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("Mã khôi phục mới đã được gửi về email của bạn.");
+      expect(mockResetPasswordForEmail).toHaveBeenCalledWith(
+        "user@example.com",
+        expect.objectContaining({
+          redirectTo: expect.stringContaining("reset-password"),
         })
       );
     });
