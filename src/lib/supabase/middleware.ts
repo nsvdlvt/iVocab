@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { perfEnd, perfStart } from "@/lib/perf";
+import { ROUTES } from "@/constants/routes";
+import { getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
 
 export async function updateSession(request: NextRequest) {
   const totalTimer = perfStart("middleware");
@@ -37,33 +39,59 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
   perfEnd(authTimer);
 
-  const url = request.nextUrl.clone();
-  const path = url.pathname;
+  const path = request.nextUrl.pathname;
 
-  const isAuthPage =
-    path.startsWith("/login") ||
-    path.startsWith("/register") ||
-    path.startsWith("/forgot-password") ||
-    path.startsWith("/reset-password") ||
-    path.startsWith("/auth/callback");
+  // 1. Auth callback handler must always pass through to route handler
+  if (path.startsWith("/auth/callback")) {
+    perfEnd(totalTimer);
+    return supabaseResponse;
+  }
 
+  // 2. Guest-only authentication pages (authenticated users should be redirected away)
+  const isGuestOnlyPage =
+    path === "/login" ||
+    path === "/register" ||
+    path === "/forgot-password";
+
+  // 3. Publicly accessible routes
   const isPublicPage =
     path === "/" ||
     path.startsWith("/share") ||
     path === "/403" ||
     path === "/offline" ||
-    isAuthPage;
+    path === "/reset-password" ||
+    isGuestOnlyPage;
 
+  // 4. Redirect unauthenticated users from protected routes to login, preserving intended destination
   if (!user && !isPublicPage) {
-    url.pathname = "/login";
+    const loginUrl = new URL(ROUTES.LOGIN, request.nextUrl.origin);
+    const destination = `${path}${request.nextUrl.search || ""}`;
+    loginUrl.searchParams.set("next", destination);
+
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    // Copy any refreshed session cookies to the redirect response
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+
     perfEnd(totalTimer);
-    return NextResponse.redirect(url);
+    return redirectResponse;
   }
 
-  if (user && isAuthPage) {
-    url.pathname = "/vocabulary";
+  // 5. Redirect authenticated users away from guest-only pages to their destination or dashboard
+  if (user && isGuestOnlyPage) {
+    const nextParam = request.nextUrl.searchParams.get("next");
+    const targetUrl = getSafeRedirectUrl(nextParam, ROUTES.DASHBOARD);
+    const redirectUrl = new URL(targetUrl, request.nextUrl.origin);
+
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    // Copy session cookies to the redirect response
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+
     perfEnd(totalTimer);
-    return NextResponse.redirect(url);
+    return redirectResponse;
   }
 
   perfEnd(totalTimer);

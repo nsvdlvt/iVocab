@@ -60,11 +60,18 @@ export function UserMenu({ profile: initialProfile, collapsed = false }: UserMen
     fetchProfile();
   }, [supabase, initialProfile]);
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
+      // Clear client session and cached state
+      await supabase.auth.signOut().catch(() => {});
       await logoutAction();
     } catch (error) {
       console.error("Lỗi đăng xuất:", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -175,11 +182,16 @@ export function UserMenu({ profile: initialProfile, collapsed = false }: UserMen
 
         <DropdownMenuItem
           onClick={handleLogout}
+          disabled={isLoggingOut}
           variant="destructive"
           className="rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer flex items-center gap-2"
         >
-          <LogOut className="h-3.5 w-3.5" />
-          <span>Đăng xuất</span>
+          {isLoggingOut ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <LogOut className="h-3.5 w-3.5" />
+          )}
+          <span>{isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

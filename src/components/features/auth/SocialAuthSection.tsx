@@ -1,19 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { signInWithOAuth } from "@/lib/auth/oauth";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon } from "./GoogleIcon";
 import { toast } from "sonner";
+import { ROUTES } from "@/constants/routes";
 
 export function SocialAuthSection() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const searchParams = useSearchParams();
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const result = await signInWithOAuth("google");
+      const next = searchParams.get("next") || ROUTES.DASHBOARD;
+      const result = await signInWithOAuth("google", next);
 
       if (!result.success) {
         toast.error(result.error);

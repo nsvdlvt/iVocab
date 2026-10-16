@@ -10,28 +10,60 @@ export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   try {
     const supabase = await createClient();
 
+    // Verify user identity via secure server-side JWT verification
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session?.user) {
+    if (userError || !user) {
       return null;
     }
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", session.user.id)
-      .single();
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (profileError || !profile) {
-      return null;
+    if (!profileError && profile) {
+      return profile;
     }
 
-    return profile;
-  } catch (error) {
-    console.error("Lá»—i láº¥y thÃ´ng tin user hiá»‡n táº¡i:", error);
+    // Fallback: ensure authenticated user is not locked out if profile row is not yet created
+    const fallbackProfile: Partial<UserProfile> = {
+      id: user.id,
+      email: user.email ?? "",
+      display_name:
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "Học viên",
+      avatar_url: user.user_metadata?.avatar_url || null,
+    };
+
+    const { data: createdProfile } = await supabase
+      .from("profiles")
+      .upsert(fallbackProfile as UserProfile)
+      .select("*")
+      .maybeSingle();
+
+    return createdProfile || (fallbackProfile as UserProfile);
+  } catch (error: unknown) {
+    // Preserve Next.js internal control flow signals (dynamic bailing, redirects)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      typeof (error as { digest: unknown }).digest === "string"
+    ) {
+      const digest = (error as { digest: string }).digest;
+      if (digest === "DYNAMIC_SERVER_USAGE" || digest.startsWith("NEXT_REDIRECT")) {
+        throw error;
+      }
+    }
+
+    console.error("Error fetching current user profile:", error);
     return null;
   } finally {
     perfEnd(timer);

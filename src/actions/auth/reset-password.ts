@@ -4,7 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validators/auth";
 import { mapAuthError } from "@/lib/auth/error-map";
 
-export async function resetPasswordAction(values: ResetPasswordFormValues) {
+export type ResetPasswordActionResult = {
+  success: boolean;
+  error?: string;
+  message?: string;
+};
+
+export async function resetPasswordAction(
+  values: ResetPasswordFormValues
+): Promise<ResetPasswordActionResult> {
   const validatedFields = resetPasswordSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -16,11 +24,14 @@ export async function resetPasswordAction(values: ResetPasswordFormValues) {
 
   const { password } = validatedFields.data;
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
 
-  if (!session) {
+  // Verify that an active authenticated recovery session exists via getUser()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
     return {
       success: false,
       error: "Phiên khôi phục đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu đặt lại mật khẩu mới.",

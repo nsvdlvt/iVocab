@@ -2,19 +2,24 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { registerSchema, type RegisterFormValues } from "@/lib/validators/auth";
+import { mapAuthError } from "@/lib/auth/error-map";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
+import { headers } from "next/headers";
 import { env } from "@/lib/env";
 
-export async function registerAction(values: RegisterFormValues) {
-  console.log("🔍 [registerAction] Connecting to Supabase URL:", env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log("🔍 [registerAction] Key length:", env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.length);
-  console.log("🔍 [registerAction] Key preview:", env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.substring(0, 15) + "...");
+export type RegisterActionResult = {
+  success: boolean;
+  error?: string;
+  emailConfirmationRequired?: boolean;
+  email?: string;
+  message?: string;
+};
 
+export async function registerAction(values: RegisterFormValues): Promise<RegisterActionResult> {
   const validatedFields = registerSchema.safeParse(values);
 
   if (!validatedFields.success) {
-    console.error("❌ [registerAction] Validation failed:", validatedFields.error.format());
     return {
       success: false,
       error: "Dữ liệu nhập vào không hợp lệ.",
@@ -24,7 +29,16 @@ export async function registerAction(values: RegisterFormValues) {
   const { name, email, password } = validatedFields.data;
   const supabase = await createClient();
 
-  console.log("⚡ [registerAction] Sending signUp request to Supabase Auth...");
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+  const proto =
+    headersList.get("x-forwarded-proto") ||
+    (process.env.NODE_ENV === "production" ? "https" : "http");
+  const origin =
+    process.env.NODE_ENV === "production"
+      ? (env.NEXT_PUBLIC_SITE_URL || `${proto}://${host}`)
+      : `${proto}://${host}`;
+
   const signupResponse = await supabase.auth.signUp({
     email,
     password,
@@ -33,26 +47,27 @@ export async function registerAction(values: RegisterFormValues) {
         name,
         avatar_url: null,
       },
+      emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
     },
   });
-
-  console.log("📦 [registerAction] signUp raw response data:", JSON.stringify(signupResponse.data, null, 2));
-  console.log("⚠️ [registerAction] signUp raw response error:", JSON.stringify(signupResponse.error, null, 2));
 
   if (signupResponse.error) {
     return {
       success: false,
-      error: signupResponse.error.message, // Return the exact error message
+      error: mapAuthError(signupResponse.error),
     };
   }
 
+  // If immediate session is provided (email confirmation disabled in Supabase)
   if (signupResponse.data?.session) {
-    console.log("✅ [registerAction] Session established immediately. Redirecting...");
     redirect(ROUTES.DASHBOARD);
   }
 
+  // Email confirmation required flow
   return {
     success: true,
+    emailConfirmationRequired: true,
+    email,
     message: "Đăng ký thành công! Vui lòng kiểm tra hòm thư email để kích hoạt tài khoản.",
   };
 }

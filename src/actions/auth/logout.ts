@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 
 export async function logoutAction() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error("Error signing out user:", error);
+  }
+
   redirect(ROUTES.LOGIN);
 }

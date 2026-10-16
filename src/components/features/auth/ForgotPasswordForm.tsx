@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, ChevronLeft, CheckCircle2, TriangleAlert } from "lucide-react";
+import { Loader2, Mail, ChevronLeft, CheckCircle2, TriangleAlert, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,15 @@ export function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const {
     register,
@@ -29,6 +38,7 @@ export function ForgotPasswordForm() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
+    if (cooldown > 0) return;
     setIsLoading(true);
     setFormError(null);
     setSuccessMessage(null);
@@ -37,8 +47,11 @@ export function ForgotPasswordForm() {
       const result = await forgotPasswordAction(data);
 
       if (result.success) {
-        const message = result.message ?? "Đã gửi liên kết đặt lại mật khẩu.";
+        const message =
+          result.message ??
+          "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được liên kết đặt lại mật khẩu trong giây lát.";
         setSuccessMessage(message);
+        setCooldown(60);
         toast.success(message);
         return;
       }
@@ -93,7 +106,7 @@ export function ForgotPasswordForm() {
               type="email"
               placeholder="name@example.com"
               className="h-10 rounded-xl"
-              disabled={isLoading}
+              disabled={isLoading || cooldown > 0}
               autoComplete="email"
               {...register("email")}
             />
@@ -106,10 +119,14 @@ export function ForgotPasswordForm() {
             type="submit"
             size="lg"
             className="mt-1 h-10 w-full rounded-xl font-semibold shadow-xs"
-            disabled={isLoading}
+            disabled={isLoading || cooldown > 0}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Gửi liên kết đặt lại
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="mr-2 h-4 w-4" />
+            )}
+            {cooldown > 0 ? `Gửi lại sau (${cooldown}s)` : "Gửi liên kết đặt lại"}
           </Button>
         </form>
 

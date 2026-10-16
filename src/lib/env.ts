@@ -3,11 +3,13 @@ import { z } from "zod";
 const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL phải là một URL hợp lệ"),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY không được để trống"),
+  NEXT_PUBLIC_SITE_URL: z.string().url("NEXT_PUBLIC_SITE_URL phải là một URL hợp lệ").default("https://www.vocabee.site"),
 });
 
 const parsedEnv = envSchema.safeParse({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "https://www.vocabee.site",
 });
 
 if (!parsedEnv.success) {
