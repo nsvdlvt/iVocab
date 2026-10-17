@@ -36,6 +36,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export function PushNotificationSettings() {
   const [isSupported, setIsSupported] = useState<boolean>(true);
+  const [isSecureContext, setIsSecureContext] = useState<boolean>(true);
   const [isIos, setIsIos] = useState<boolean>(false);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
@@ -44,10 +45,35 @@ export function PushNotificationSettings() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
 
+  // Helper to safely get or register service worker without hanging
+  const getSafeServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+    try {
+      let reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      }
+      const readyReg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<ServiceWorkerRegistration | null>((resolve) =>
+          setTimeout(() => resolve(reg || null), 2500)
+        ),
+      ]);
+
+      return readyReg || reg;
+    } catch (err) {
+      console.error("Service worker registration error:", err);
+      return null;
+    }
+  };
+
   // Check browser capabilities and current subscription status
   const checkStatus = useCallback(async () => {
     try {
       if (typeof window === "undefined") return;
+
+      const isSecure = window.isSecureContext;
+      setIsSecureContext(isSecure);
 
       const hasNotification = "Notification" in window;
       const hasSW = "serviceWorker" in navigator;
@@ -64,7 +90,8 @@ export function PushNotificationSettings() {
 
       // Detect iOS / iPadOS
       const userAgent = window.navigator.userAgent || "";
-      const isAppleMobile = /iPad|iPhone|iPod/.test(userAgent) ||
+      const isAppleMobile =
+        /iPad|iPhone|iPod/.test(userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       setIsIos(isAppleMobile);
 
@@ -75,12 +102,15 @@ export function PushNotificationSettings() {
       setIsStandalone(Boolean(standalone));
 
       if (Notification.permission === "granted") {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-
-        if (sub) {
-          const statusRes = await checkDevicePushStatusAction(sub.endpoint);
-          setIsSubscribed(statusRes.isSubscribed);
+        const reg = await getSafeServiceWorker();
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            const statusRes = await checkDevicePushStatusAction(sub.endpoint);
+            setIsSubscribed(statusRes.isSubscribed);
+          } else {
+            setIsSubscribed(false);
+          }
         } else {
           setIsSubscribed(false);
         }
@@ -127,23 +157,24 @@ export function PushNotificationSettings() {
 
       // Fetch VAPID public key
       const vapidRes = await getVapidPublicKeyAction();
-      if (!vapidRes.ok || !vapidRes.publicKey) {
-        setMessage({
-          type: "error",
-          text: vapidRes.error || "Không thể lấy VAPID Public Key từ máy chủ.",
-        });
-        return;
-      }
+      const publicKey =
+        vapidRes.publicKey ||
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+        "BFrSQWtZTgSiRPo3ndCdmFpuku6cVrCWZ2TrU4U__udhs3L7aixmWikTFb_SvNErfwnXsq2OTDsLbS6WsibSQgQ";
 
       // Ensure service worker is ready
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getSafeServiceWorker();
+      if (!reg) {
+        throw new Error("Không thể khởi động Service Worker trên trình duyệt này.");
+      }
 
       // Subscribe via PushManager
-      const applicationServerKey = urlBase64ToUint8Array(vapidRes.publicKey);
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as unknown as string,
       });
+
 
       const subJson = sub.toJSON();
       if (!subJson.keys?.p256dh || !subJson.keys?.auth) {
@@ -184,8 +215,8 @@ export function PushNotificationSettings() {
     setIsProcessing(true);
 
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
+      const reg = await getSafeServiceWorker();
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
 
       if (sub) {
         await sub.unsubscribe();
@@ -249,6 +280,22 @@ export function PushNotificationSettings() {
         </div>
       </div>
 
+      {/* Non-secure Context Notice (HTTP on LAN IP) */}
+      {!isSecureContext && (
+        <div className="p-3.5 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive text-xs space-y-2">
+          <div className="flex items-center gap-1.5 font-bold">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>Kết nối không an toàn (HTTP qua địa chỉ IP):</span>
+          </div>
+          <p className="leading-relaxed">
+            Bạn đang truy cập qua giao thức <code>http://</code> (mạng LAN). Cả <strong>Apple (iOS Safari)</strong> và <strong>Google (Android Chrome)</strong> đều tự động vô hiệu hóa Web Push và Service Worker trên các địa chỉ không phải HTTPS để bảo vệ người dùng.
+          </p>
+          <p className="leading-relaxed">
+            Để kiểm tra Web Push trên điện thoại, bạn cần truy cập qua <strong>HTTPS</strong> (ví dụ tên miền production chính thức <code>https://www.vocabee.site</code> hoặc sử dụng Cloudflare Tunnel / ngrok). Nếu kiểm tra trên máy tính, bạn có thể dùng trực tiếp <code>http://localhost:3000</code>.
+          </p>
+        </div>
+      )}
+
       {/* iOS Safari Home Screen Notice */}
       {isIos && !isStandalone && (
         <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs space-y-2">
@@ -258,6 +305,19 @@ export function PushNotificationSettings() {
           </div>
           <p className="leading-relaxed">
             Hệ điều hành iOS yêu cầu cài đặt ứng dụng vào màn hình chính để nhận thông báo đẩy. Bấm vào nút <strong>Chia sẻ (Share)</strong> trên thanh công cụ Safari và chọn <strong>&ldquo;Thêm vào MH chính&rdquo; (Add to Home Screen)</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* iOS Standalone Ready Notice */}
+      {isIos && isStandalone && !isSubscribed && (
+        <div className="p-3.5 rounded-xl border border-primary/30 bg-primary/10 text-primary text-xs space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>Đã mở từ Màn hình chính (PWA):</span>
+          </div>
+          <p className="leading-relaxed">
+            Thiết bị của bạn đã sẵn sàng! Bấm nút <strong>&ldquo;Bật thông báo đẩy trên thiết bị này&rdquo;</strong> bên dưới và chọn <strong>Cho phép (Allow)</strong> để kích hoạt.
           </p>
         </div>
       )}
@@ -276,7 +336,7 @@ export function PushNotificationSettings() {
       )}
 
       {/* Unsupported Browser Notice */}
-      {!isSupported && (
+      {!isSupported && isSecureContext && (
         <div className="p-3.5 rounded-xl border border-border bg-muted/40 text-muted-foreground text-xs space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
             <Info className="h-4 w-4" />
@@ -289,7 +349,8 @@ export function PushNotificationSettings() {
       )}
 
       {/* Action Buttons */}
-      {isSupported && permission !== "denied" && (
+      {isSupported && isSecureContext && permission !== "denied" && (
+
         <div className="flex items-center gap-3 pt-1">
           {isSubscribed ? (
             <Button

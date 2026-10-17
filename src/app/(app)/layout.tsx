@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AppMain } from "@/components/layout/AppMain";
+import { PushNotificationPromptBanner } from "@/components/notifications/PushNotificationPromptBanner";
 import { perfEnd, perfStart } from "@/lib/perf";
 
 interface AppLayoutProps {
@@ -15,6 +16,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return (
       <div className="flex h-screen flex-col overflow-hidden">
         <Navbar />
+        <PushNotificationPromptBanner />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
           <AppMain>
@@ -28,3 +30,4 @@ export default function AppLayout({ children }: AppLayoutProps) {
     perfEnd(timer);
   }
 }
+

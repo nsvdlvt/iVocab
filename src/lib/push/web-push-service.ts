@@ -41,6 +41,8 @@ export class WebPushService {
       return false;
     }
 
+
+
     try {
       webpush.setVapidDetails(subject, publicKey, privateKey);
       this.isConfigured = true;

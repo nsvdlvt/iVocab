@@ -37,6 +37,8 @@ export async function getVapidPublicKeyAction(): Promise<{ ok: boolean; publicKe
   return { ok: true, publicKey };
 }
 
+
+
 export interface RegisterPushSubscriptionPayload {
   endpoint: string;
   p256dh: string;
