@@ -820,7 +820,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                       className="w-11 text-center"
                       aria-label="Yêu thích"
                     >
-                      ★
+                      <Star className="h-3.5 w-3.5 mx-auto text-muted-foreground" aria-hidden="true" />
                     </TableHead>
                     <TableHead>Từ vựng</TableHead>
                     <TableHead>Ý nghĩa</TableHead>

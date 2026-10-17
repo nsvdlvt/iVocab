@@ -244,6 +244,7 @@ export function OtpVerificationForm({
               </Label>
               <OtpInput
                 value={otp}
+                length={6}
                 onChange={(newOtp) => {
                   setOtp(newOtp);
                   if (errorMessage) setErrorMessage(null);

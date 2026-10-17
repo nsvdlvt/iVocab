@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth/admin";
+import { requireAdmin } from "@/lib/auth/admin";
 import { AdminSidebar } from "@/components/admin/layout/sidebar";
 import { AdminTopbar } from "@/components/admin/layout/topbar";
 import { Metadata } from "next";
@@ -6,7 +6,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: {
     default: "Quản trị hệ thống",
-    template: "%s | Vocabee",
+    template: "%s | Vocabee Admin",
   },
 };
 
@@ -15,20 +15,18 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requirePermission("accessAdmin");
+  const { user } = await requireAdmin();
 
   return (
-    <div className="flex min-h-screen w-full bg-muted/40">
+    <div className="flex h-screen w-full bg-slate-100 dark:bg-slate-950 overflow-hidden">
       <AdminSidebar />
-      <div className="flex flex-col flex-1 sm:gap-4 sm:py-4">
-        <div className="sm:px-6">
-          <div className="rounded-xl border bg-background text-card-foreground shadow overflow-hidden flex flex-col h-[calc(100vh-2rem)]">
-            <AdminTopbar user={user} />
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin">
-              {children}
-            </main>
+      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+        <AdminTopbar user={user} />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-thin">
+          <div className="max-w-7xl mx-auto space-y-6 pb-12">
+            {children}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

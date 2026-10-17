@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Rocket, Lightbulb, FileText, RefreshCw, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export function AITestClient() {
@@ -110,11 +111,18 @@ export function AITestClient() {
 
           <div className="border-t pt-4 space-y-2">
             <Button
-              className="w-full rounded-xl"
+              className="w-full rounded-xl gap-2"
               onClick={handleTestSentence}
               disabled={loading["sentence"]}
             >
-              {loading["sentence"] ? "Đang đánh giá câu..." : "🚀 Đánh giá câu (POST /sentence)"}
+              {loading["sentence"] ? (
+                "Đang đánh giá câu..."
+              ) : (
+                <>
+                  <Rocket className="h-4 w-4" />
+                  <span>Đánh giá câu (POST /sentence)</span>
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -126,43 +134,78 @@ export function AITestClient() {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl gap-1.5"
                 onClick={() => handleTestHelper("hint")}
                 disabled={loading["hint"]}
               >
-                {loading["hint"] ? "Đang tải..." : "💡 Gợi ý (Hint)"}
+                {loading["hint"] ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    <Lightbulb className="h-4 w-4" />
+                    <span>Gợi ý (Hint)</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl gap-1.5"
                 onClick={() => handleTestHelper("example")}
                 disabled={loading["example"]}
               >
-                {loading["example"] ? "Đang tải..." : "📝 Ví dụ (Example)"}
+                {loading["example"] ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    <span>Ví dụ (Example)</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl gap-1.5"
                 onClick={() => handleTestHelper("another-example")}
                 disabled={loading["another-example"]}
               >
-                {loading["another-example"] ? "Đang tải..." : "🔄 Ví dụ khác (Another Example)"}
+                {loading["another-example"] ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Ví dụ khác (Another Example)</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl gap-1.5"
                 onClick={() => handleTestHelper("explain")}
                 disabled={loading["explain"]}
               >
-                {loading["explain"] ? "Đang tải..." : "🔍 Giải thích (Explain)"}
+                {loading["explain"] ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    <Search className="h-4 w-4" />
+                    <span>Giải thích (Explain)</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl gap-1.5"
                 onClick={() => handleTestHelper("generate-more")}
                 disabled={loading["generate-more"]}
               >
-                {loading["generate-more"] ? "Đang tải..." : "🚀 3 câu mẫu (Generate More)"}
+                {loading["generate-more"] ? (
+                  "Đang tải..."
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    <span>3 câu mẫu (Generate More)</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>

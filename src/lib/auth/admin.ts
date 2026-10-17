@@ -12,9 +12,6 @@ export type Action =
   | "manageSettings" 
   | "manageSystem";
 
-export const READING_ADMIN_EMAIL = "dungbnlvt@gmail.com";
-
-// Currently only admin role exists, but this structure allows easy expansion
 const rolePermissions: Record<Role, Action[]> = {
   user: [],
   admin: ["accessAdmin", "manageUsers", "manageVocabulary", "manageSettings", "manageSystem"],
@@ -58,15 +55,30 @@ export async function getAdminSession() {
   return { user, role, supabase };
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(returnUrl: string = "/admin") {
   const { user, role, supabase } = await getAdminSession();
 
   if (!user) {
-    redirect("/login");
+    const safeNext = encodeURIComponent(returnUrl.startsWith("/") ? returnUrl : "/admin");
+    redirect(`/login?next=${safeNext}`);
   }
 
   if (role !== "admin") {
     redirect("/403");
+  }
+
+  return { user, role, supabase };
+}
+
+export async function assertAdmin() {
+  const { user, role, supabase } = await getAdminSession();
+
+  if (!user) {
+    throw new Error("UNAUTHENTICATED: Bạn cần đăng nhập để thực hiện thao tác này");
+  }
+
+  if (role !== "admin") {
+    throw new Error("FORBIDDEN: Bạn không có quyền quản trị viên");
   }
 
   return { user, role, supabase };
@@ -82,18 +94,19 @@ export function hasRole(userRole: Role | null, expectedRole: Role | Role[]): boo
 
 export function can(userRole: Role | null, action: Action): boolean {
   if (!userRole) return false;
-  return rolePermissions[userRole].includes(action);
+  return rolePermissions[userRole]?.includes(action) ?? false;
 }
 
 export function cannot(userRole: Role | null, action: Action): boolean {
   return !can(userRole, action);
 }
 
-export async function requirePermission(action: Action) {
+export async function requirePermission(action: Action, returnUrl: string = "/admin") {
   const { user, role, supabase } = await getAdminSession();
 
   if (!user) {
-    redirect("/login");
+    const safeNext = encodeURIComponent(returnUrl.startsWith("/") ? returnUrl : "/admin");
+    redirect(`/login?next=${safeNext}`);
   }
 
   if (!can(role, action)) {
@@ -103,16 +116,18 @@ export async function requirePermission(action: Action) {
   return { user, role, supabase };
 }
 
-export async function requireReadingAdmin() {
-  const { user, supabase } = await getAdminSession();
+export async function requireReadingAdmin(returnUrl: string = "/admin/reading") {
+  const { user, role, supabase } = await getAdminSession();
 
   if (!user) {
-    redirect("/login");
+    const safeNext = encodeURIComponent(returnUrl.startsWith("/") ? returnUrl : "/admin");
+    redirect(`/login?next=${safeNext}`);
   }
 
-  if (user.email !== READING_ADMIN_EMAIL) {
+  // Strictly require database admin role
+  if (role !== "admin") {
     redirect("/403");
   }
 
-  return { user, supabase };
+  return { user, role, supabase };
 }

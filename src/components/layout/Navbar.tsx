@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { StreakBadge } from "@/components/common/StreakBadge";
 import { BrandLogo } from "@/components/common/BrandLogo";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const ROUTE_TITLES: Array<{ match: (path: string) => boolean; label: string }> =
   { match: (p) => p.startsWith("/ai"), label: "Trợ lý AI" },
   { match: (p) => p.startsWith("/statistics"), label: "Thống kê học tập" },
   { match: (p) => p.startsWith("/settings"), label: "Cài đặt" },
+  { match: (p) => p.startsWith("/notifications"), label: "Trung tâm thông báo" },
 ];
 
 export function Navbar({ profile }: NavbarProps) {
@@ -88,6 +90,7 @@ export function Navbar({ profile }: NavbarProps) {
             <span>Trợ lý AI</span>
           </Link>
           <StreakBadge profile={profile} />
+          <NotificationBell />
           <ThemeToggle />
         </div>
       </div>

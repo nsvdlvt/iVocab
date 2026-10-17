@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { User, LogOut, ChevronsUpDown, Loader2, Settings, BarChart3 } from "lucide-react";
+import { User, LogOut, ChevronsUpDown, Loader2, Settings, BarChart3, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -168,6 +168,14 @@ export function UserMenu({ profile: initialProfile, collapsed = false }: UserMen
         >
           <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
           <span>Thống kê học tập</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => router.push("/notifications")}
+          className="rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer flex items-center gap-2"
+        >
+          <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>Thông báo</span>
         </DropdownMenuItem>
 
         <DropdownMenuItem

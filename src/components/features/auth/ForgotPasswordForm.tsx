@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, ChevronLeft, CheckCircle2, TriangleAlert, Send } from "lucide-react";
+import { Loader2, Mail, ChevronLeft, CheckCircle2, TriangleAlert, Send, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,9 +96,10 @@ export function ForgotPasswordForm() {
             <div className="pt-1">
               <Link
                 href={`${ROUTES.VERIFY_OTP}?email=${encodeURIComponent(getValues("email"))}&type=recovery`}
-                className="inline-flex items-center text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary underline underline-offset-4 hover:opacity-80"
               >
-                Đã nhận được mã OTP 6 chữ số? Nhập mã xác minh tại đây →
+                <span>Đã nhận được mã OTP? Nhập mã xác minh tại đây</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>

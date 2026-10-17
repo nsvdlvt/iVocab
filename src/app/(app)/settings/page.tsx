@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppearanceSettings } from "@/components/features/settings/AppearanceSettings";
+import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
 import { requireUser } from "@/lib/auth/require-user";
 
 export const dynamic = "force-dynamic";
@@ -135,11 +136,19 @@ export default async function SettingsPage() {
         </TabsContent>
 
         {/* NOTIFICATIONS TAB */}
-        <TabsContent value="notifications">
+        <TabsContent value="notifications" className="space-y-6">
           <SectionCard className="space-y-6">
             <SectionHeader
-              title="Nhắc nhở học tập"
-              description="Cấu hình hệ thống gửi thông báo nhắc nhở rèn luyện"
+              title="Thông báo đẩy thiết bị (Browser Web Push)"
+              description="Bật thông báo để nhận bản tin, bài học mới và nhắc nhở ôn tập SRS ngay trên màn hình thiết bị của bạn."
+            />
+            <PushNotificationSettings />
+          </SectionCard>
+
+          <SectionCard className="space-y-6">
+            <SectionHeader
+              title="Nhắc nhở học tập hàng ngày"
+              description="Cấu hình hệ thống gửi thông báo nhắc nhở rèn luyện theo khung giờ mong muốn"
             />
             <div className="space-y-4 max-w-md">
               <div className="flex items-center justify-between border border-border rounded-2xl p-4 bg-card shadow-sm">

@@ -91,8 +91,23 @@ export class AdminHealthRepository {
   }
 
   static async checkDictionaryApi(): Promise<SystemHealthResult> {
-    // We would ping the Dictionary API (e.g. Free Dictionary API or Wordnik) here.
-    return { service: "Dictionary API", status: "unknown", message: "Health check not implemented yet" };
+    const start = performance.now();
+    try {
+      const res = await fetch("https://api.dictionaryapi.dev/api/v2/entries/en/hello", {
+        signal: AbortSignal.timeout(3000),
+      });
+      const latencyMs = Math.round(performance.now() - start);
+      if (res.ok) {
+        return { service: "Free Dictionary API", status: "healthy", latencyMs };
+      }
+      return { service: "Free Dictionary API", status: "degraded", latencyMs, message: `Status code: ${res.status}` };
+    } catch (e: unknown) {
+      return {
+        service: "Free Dictionary API",
+        status: "unhealthy",
+        message: e instanceof Error ? e.message : String(e),
+      };
+    }
   }
 
   static async checkBackgroundJobs(): Promise<SystemHealthResult> {

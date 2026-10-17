@@ -72,14 +72,20 @@ async function testOtpUI() {
     // 5. Test submission with invalid code (triggers real Supabase call & maps error)
     console.log('5. Clicking submit button');
     const submitBtn = page.locator('button:has-text("Xác nhận mã")');
+    console.log('Submit button disabled?', await submitBtn.isDisabled());
     await submitBtn.click();
 
     // Wait for error banner
     console.log('Waiting for verification response from Supabase...');
-    const errorAlert = page.locator('div.border-destructive\\/20').first();
-    await errorAlert.waitFor({ timeout: 10000 });
-    const errorMsg = await errorAlert.textContent();
-    console.log(`Received error message from Supabase verification: "${errorMsg?.trim()}"`);
+    try {
+      const errorAlert = page.locator('div.border-destructive\\/20').first();
+      await errorAlert.waitFor({ timeout: 30000 });
+      const errorMsg = await errorAlert.textContent();
+      console.log(`Received error message from Supabase verification: "${errorMsg?.trim()}"`);
+    } catch (e) {
+      console.log('Page HTML:', await page.locator('form').innerHTML());
+      throw e;
+    }
 
     // 6. Test inline email editing
     console.log('6. Testing email edit button');

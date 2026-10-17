@@ -14,7 +14,7 @@ export default function AIPage() {
   return (
     <PageContainer className="max-w-5xl space-y-6 md:space-y-8 pb-16">
       <PageHeader
-        title="Vocabee AI Studio 🐝"
+        title="Vocabee AI Studio"
         description="Không gian học từ vựng ngữ cảnh thế hệ mới: Dệt câu chuyện sinh động, thử thách nhập vai hội thoại thực chiến."
       />
       <AIStudioHub />

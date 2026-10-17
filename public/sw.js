@@ -144,3 +144,76 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+// ==============================================================================
+// WEB PUSH NOTIFICATIONS
+// ==============================================================================
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      try {
+        data = { body: event.data.text() };
+      } catch {}
+    }
+  }
+
+  const title = data.title || "Vocabee — Thông báo mới";
+  const body = data.body || data.content || "Bạn có thông báo mới từ Vocabee.";
+  const url = data.url || data.action_url || "/notifications";
+  const icon = data.icon || "/icon-192.png";
+  const badge = data.badge || "/icon-192.png";
+  const tag = data.tag || (data.id ? `vocabee-${data.id}` : "vocabee-announcement");
+
+  const options = {
+    body,
+    icon,
+    badge,
+    tag,
+    renotify: true,
+    data: {
+      url,
+      timestamp: Date.now(),
+      id: data.id,
+    },
+    actions: data.actions || [
+      { action: "open", title: "Xem ngay" }
+    ],
+    vibrate: [100, 50, 100],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  let targetUrl = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : "/notifications";
+
+  try {
+    targetUrl = new URL(targetUrl, self.location.origin).href;
+  } catch {
+    targetUrl = self.location.origin + "/notifications";
+  }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          if ("navigate" in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

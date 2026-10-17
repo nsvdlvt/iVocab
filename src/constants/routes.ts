@@ -14,10 +14,12 @@ export const ROUTES = {
   REVIEW: "/review",
   QUIZ: "/quiz",
   AI_QUIZ: (setId: string, basePath = "/vocabulary") => `${basePath}/${setId}/ai-quiz`,
+  SPEAKING: (setId: string, basePath = "/vocabulary") => `${basePath}/${setId}/speaking`,
   AI: "/ai",
   STATISTICS: "/statistics",
   READING: "/reading",
   SETTINGS: "/settings",
+  NOTIFICATIONS: "/notifications",
 } as const;
 
 export type AppRoutes =

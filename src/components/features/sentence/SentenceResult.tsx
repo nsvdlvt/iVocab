@@ -14,7 +14,9 @@ import {
   Languages,
   PenTool,
   Copy,
-  RotateCcw
+  RotateCcw,
+  Search,
+  Lightbulb,
 } from "lucide-react";
 import { SentenceFeedback } from "@/lib/ai/schemas/sentence-feedback";
 import { toast } from "sonner";
@@ -528,7 +530,8 @@ export function SentenceResult({
                   disabled={explainMoreLoading}
                   className="rounded-xl px-4 py-2.5 text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  🔍 Giải thích lỗi chi tiết
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Giải thích lỗi chi tiết</span>
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
@@ -537,7 +540,8 @@ export function SentenceResult({
                   disabled={generateMoreLoading}
                   className="rounded-xl px-4 py-2.5 text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all duration-200 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  💡 Tạo thêm câu mẫu phân cấp
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  <span>Tạo thêm câu mẫu phân cấp</span>
                 </motion.button>
               </div>
 

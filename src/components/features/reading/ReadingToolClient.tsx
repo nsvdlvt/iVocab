@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, EyeOff, Highlighter, Languages, Loader2, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, EyeOff, Highlighter, Languages, Loader2, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -331,7 +331,8 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
               }}
             >
               <Highlighter className="h-4 w-4" />
-              Highlight {highlightModeEnabled ? "✓" : ""}
+              <span>Highlight</span>
+              {highlightModeEnabled && <Check className="h-3.5 w-3.5" />}
             </Button>
 
             {highlightModeEnabled ? (
@@ -352,8 +353,8 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
                     onClick={() => setSelectedHighlightColor(color.value)}
                   >
                     {selectedHighlightColor === color.value ? (
-                      <span className="absolute inset-0 flex items-center justify-center text-[13px] font-black text-slate-950">
-                        ✓
+                      <span className="absolute inset-0 flex items-center justify-center text-slate-950">
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
                       </span>
                     ) : null}
                   </button>

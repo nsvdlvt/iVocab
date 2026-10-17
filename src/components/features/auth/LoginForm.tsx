@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, KeyRound, Mail, Eye, EyeOff, TriangleAlert, Send } from "lucide-react";
+import { Loader2, KeyRound, Mail, Eye, EyeOff, TriangleAlert, Send, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -174,9 +174,10 @@ export function LoginForm() {
               </Button>
               <Link
                 href={`${ROUTES.VERIFY_OTP}?email=${encodeURIComponent(unconfirmedEmail)}&type=signup`}
-                className="inline-flex h-8 items-center rounded-lg px-2 text-xs font-semibold text-primary hover:bg-primary/10 hover:underline transition-colors"
+                className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-primary hover:bg-primary/10 hover:underline transition-colors"
               >
-                Nhập mã OTP xác minh →
+                <span>Nhập mã OTP xác minh</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>

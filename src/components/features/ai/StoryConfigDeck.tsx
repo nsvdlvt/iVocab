@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Sparkles,
   BookOpen,
@@ -211,7 +212,8 @@ export function StoryConfigDeck({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-              <span className="text-sm">🐝</span> Vocabee Micro-Storyteller
+              <Image src="/Vocabee.png" alt="Vocabee" width={16} height={16} className="h-4 w-4 object-contain" />
+              <span>Vocabee Micro-Storyteller</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
               Dệt truyện ngẫu hồi từ vốn từ của bạn

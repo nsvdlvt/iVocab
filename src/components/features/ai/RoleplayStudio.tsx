@@ -146,7 +146,7 @@ export function RoleplayStudio({ vocabSets: _vocabSets, dueWords, presets }: Rol
         detectedWords.forEach((w: string) => nextUsed.add(w.toLowerCase()));
         setUsedWordsHistory(nextUsed);
 
-        toast.success(`🎯 Bạn vừa vận dụng thành công: ${detectedWords.join(", ")}!`);
+        toast.success(`Bạn vừa vận dụng thành công: ${detectedWords.join(", ")}!`);
 
         // Check if user completed target threshold (e.g. used at least 3 words)
         if (nextUsed.size >= Math.min(3, targetWords.length) || isGoalMet) {

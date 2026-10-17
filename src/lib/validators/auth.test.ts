@@ -144,6 +144,7 @@ describe("auth validators", () => {
     it("should reject non-6-digit tokens", () => {
       expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "12345", type: "signup" }).success).toBe(false);
       expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "1234567", type: "signup" }).success).toBe(false);
+      expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "12345678", type: "signup" }).success).toBe(false);
       expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "abcdef", type: "signup" }).success).toBe(false);
       expect(verifyOtpSchema.safeParse({ email: "user@example.com", token: "123 45", type: "signup" }).success).toBe(false);
     });

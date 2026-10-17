@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
+import { Target } from "lucide-react";
 import { ReadingHeader } from "./ReadingHeader";
 import { ReadingToolbar, type HighlightColor } from "./ReadingToolbar";
 import { ReadingSection } from "./ReadingSection";
@@ -469,7 +470,8 @@ export function ReadingWorkspace({ lesson }: { lesson: ReadingLesson }) {
         action={
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-              🎯 Mục tiêu: Hoàn thành bài đọc & {questions.length} câu hỏi trắc nghiệm
+              <Target className="h-3.5 w-3.5" />
+              <span>Mục tiêu: Hoàn thành bài đọc & {questions.length} câu hỏi trắc nghiệm</span>
             </span>
           </div>
         }

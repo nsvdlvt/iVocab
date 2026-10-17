@@ -110,9 +110,14 @@ export function ReviewClient({ words, dueToday, masteredWords, learningWords }: 
               <ChevronRight className="h-4 w-4" />
             </Button>
           ) : (
-            <div className="rounded-2xl border border-dashed bg-muted/20 p-6 text-center">
-              <p className="text-lg font-bold">🎉 Tuyệt vời!</p>
-              <p className="text-sm text-muted-foreground mt-2">
+            <div className="rounded-2xl border border-dashed bg-muted/20 p-6 text-center space-y-2">
+              <div className="flex justify-center">
+                <div className="rounded-full bg-emerald-500/10 p-2.5 text-emerald-600 dark:text-emerald-400">
+                  <PartyPopper className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-lg font-bold">Tuyệt vời!</p>
+              <p className="text-sm text-muted-foreground">
                 Bạn đã hoàn thành hết các bài ôn đã lên lịch hôm nay.
               </p>
             </div>

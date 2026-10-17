@@ -249,7 +249,7 @@ describe("Authentication Server Actions", () => {
       expect(result.error).toBe("Mã xác thực phải gồm đúng 6 chữ số");
     });
 
-    it("should verify signup OTP and redirect to dashboard", async () => {
+    it("should verify 6-digit signup OTP and redirect to dashboard", async () => {
       mockVerifyOtp.mockResolvedValueOnce({
         data: { session: {}, user: { id: "test-user" } },
         error: null,

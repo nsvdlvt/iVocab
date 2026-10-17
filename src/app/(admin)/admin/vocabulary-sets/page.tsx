@@ -1,42 +1,53 @@
 import type { Metadata } from "next";
 import { AdminVocabularyRepository } from "@/repositories/admin/vocabulary.repository";
-import { AdminDataTable } from "@/components/admin/tables/data-table";
-import { columns } from "./columns";
-import { requirePermission } from "@/lib/auth/admin";
-import { Button } from "@/components/ui/button";
-import { VocabSetRow } from "./columns";
+import { SetsTableClient } from "@/components/admin/vocabulary/sets-table-client";
+import { requireAdmin } from "@/lib/auth/admin";
 
 export const metadata: Metadata = {
-  title: "Quản lý bộ từ vựng",
-  description: "Quản lý tất cả bộ từ vựng và quyền truy cập trong hệ thống Vocabee.",
+  title: "Quản lý Bộ từ vựng | Vocabee Admin",
+  description: "Duyệt, tìm kiếm và quản lý toàn bộ các bộ từ vựng người dùng và cộng đồng.",
 };
 
-export default async function AdminVocabularySetsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-  await requirePermission("manageVocabulary");
+interface AdminVocabularySetsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-  const resolvedSearchParams = await searchParams;
-  const page = parseInt(resolvedSearchParams?.page as string) || 1;
-  const search = resolvedSearchParams?.search as string || "";
+export default async function AdminVocabularySetsPage({ searchParams }: AdminVocabularySetsPageProps) {
+  await requireAdmin();
 
-  const { data: sets } = await AdminVocabularyRepository.getSets(page, 10, search);
+  const params = await searchParams;
+  const page = parseInt(params?.page as string) || 1;
+  const search = (params?.search as string) || "";
+  const visibility = (params?.visibility as string) || "all";
+
+  const { data: sets, count, totalPages } = await AdminVocabularyRepository.getSets(
+    page,
+    15,
+    search,
+    visibility
+  );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Vocabulary Sets</h1>
-        <p className="text-muted-foreground">Manage all vocabulary sets.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+            Quản lý Bộ từ vựng
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Danh sách tất cả bộ từ vựng được tạo bởi người dùng và hệ thống.
+          </p>
+        </div>
       </div>
-      
-      <AdminDataTable
-        columns={columns}
-        data={sets as unknown as VocabSetRow[]}
-        searchKey="title"
-        bulkActions={
-          <div className="space-x-2 flex">
-             <Button variant="outline" size="sm" className="h-8">Make Public</Button>
-             <Button variant="destructive" size="sm" className="h-8">Delete Selected</Button>
-          </div>
-        }
+
+      <SetsTableClient
+        sets={sets}
+        totalCount={count}
+        currentPage={page}
+        pageSize={15}
+        totalPages={totalPages}
+        search={search}
+        visibilityFilter={visibility}
       />
     </div>
   );

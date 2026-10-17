@@ -250,7 +250,7 @@ export function WordTable({ words }: WordTableProps) {
               <thead>
                 <tr className="border-b border-border/80 bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <th className="w-11 px-3 py-3 text-center" aria-label="Yêu thích">
-                    ★
+                    <Star className="h-3.5 w-3.5 mx-auto text-muted-foreground" aria-hidden="true" />
                   </th>
                   <th className="px-4 py-3">Từ vựng & IPA</th>
                   <th className="px-4 py-3">Từ loại</th>

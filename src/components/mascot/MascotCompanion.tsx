@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BeeMascot, type MascotState } from "./BeeMascot";
-import { X, Sparkles, MessageCircleHeart } from "lucide-react";
+import { X, Sparkles, MessageCircleHeart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EASING } from "@/lib/motion";
 
@@ -90,9 +90,10 @@ export function MascotCompanion({
                 variant="ghost"
                 size="sm"
                 onClick={handleNextTip}
-                className="h-6 px-2 text-[11px] text-primary hover:text-primary font-medium"
+                className="h-6 px-2 text-[11px] text-primary hover:text-primary font-medium inline-flex items-center gap-1"
               >
-                Mẹo tiếp theo →
+                <span>Mẹo tiếp theo</span>
+                <ArrowRight className="h-3 w-3" />
               </Button>
             </div>
           </motion.div>

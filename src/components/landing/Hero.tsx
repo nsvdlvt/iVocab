@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, RotateCw, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Flame, RotateCw, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/common/SectionCard";
@@ -235,8 +235,9 @@ export function LandingHero() {
                           30 <span className="text-sm font-medium text-muted-foreground">/ 30 từ hoàn thành</span>
                         </div>
                       </div>
-                      <Badge variant="success" className="h-6 px-2.5 text-xs font-bold">
-                        Chuỗi 14 ngày 🔥
+                      <Badge variant="success" className="h-6 px-2.5 text-xs font-bold inline-flex items-center gap-1">
+                        <Flame className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                        <span>Chuỗi 14 ngày</span>
                       </Badge>
                     </div>
                   </div>

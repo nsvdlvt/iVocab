@@ -14,6 +14,8 @@ import {
   Lightbulb,
   X,
   Circle,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -191,7 +193,8 @@ export function StoryReader({ story, onBackToConfig }: StoryReaderProps) {
           </Button>
           <div className="hidden sm:block h-4 w-px bg-border" />
           <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 text-[11px] gap-1">
-            <span>🐝</span> {story.level}
+            <Sparkles className="h-3 w-3" />
+            <span>{story.level}</span>
           </Badge>
           <span className="hidden md:inline-block text-xs text-muted-foreground">
             {story.readTimeMinutes} phút đọc
@@ -309,7 +312,8 @@ export function StoryReader({ story, onBackToConfig }: StoryReaderProps) {
         <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <span className="text-base">🐝</span> Bảng từ vựng mục tiêu trong bài ({story.targetWords.length})
+              <BookOpen className="h-4 w-4 text-amber-500" />
+              <span>Bảng từ vựng mục tiêu trong bài ({story.targetWords.length})</span>
             </h3>
             <span className="text-xs text-muted-foreground">Bấm vào từ để xem chi tiết & phát âm</span>
           </div>

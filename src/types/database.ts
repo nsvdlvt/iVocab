@@ -759,6 +759,194 @@ export interface Database {
           }
         ];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+          device_name: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          last_successful_delivery_at: string | null;
+          last_failure_at: string | null;
+          failure_count: number;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+          device_name?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          last_successful_delivery_at?: string | null;
+          last_failure_at?: string | null;
+          failure_count?: number;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          user_agent?: string | null;
+          device_name?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          last_successful_delivery_at?: string | null;
+          last_failure_at?: string | null;
+          failure_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      announcement_push_deliveries: {
+        Row: {
+          id: string;
+          announcement_id: string;
+          subscription_id: string;
+          user_id: string;
+          status: string;
+          status_code: number | null;
+          error_message: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          announcement_id: string;
+          subscription_id: string;
+          user_id: string;
+          status?: string;
+          status_code?: number | null;
+          error_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          announcement_id?: string;
+          subscription_id?: string;
+          user_id?: string;
+          status?: string;
+          status_code?: number | null;
+          error_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      admin_announcements: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          summary: string | null;
+          type: "info" | "warning" | "success" | "broadcast";
+          priority: "low" | "normal" | "high" | "urgent";
+          target_audience: "all" | "free" | "premium" | "admin";
+          status: "draft" | "scheduled" | "published" | "archived";
+          action_url: string | null;
+          is_active: boolean;
+          start_at: string | null;
+          end_at: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+          published_at: string | null;
+          delivery_channels: string;
+          push_attempt_count: number;
+          push_success_count: number;
+          push_failure_count: number;
+          push_delivered_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          content: string;
+          summary?: string | null;
+          type?: "info" | "warning" | "success" | "broadcast";
+          priority?: "low" | "normal" | "high" | "urgent";
+          target_audience?: "all" | "free" | "premium" | "admin";
+          status?: "draft" | "scheduled" | "published" | "archived";
+          action_url?: string | null;
+          is_active?: boolean;
+          start_at?: string | null;
+          end_at?: string | null;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+          delivery_channels?: string;
+          push_attempt_count?: number;
+          push_success_count?: number;
+          push_failure_count?: number;
+          push_delivered_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          content?: string;
+          summary?: string | null;
+          type?: "info" | "warning" | "success" | "broadcast";
+          priority?: "low" | "normal" | "high" | "urgent";
+          target_audience?: "all" | "free" | "premium" | "admin";
+          status?: "draft" | "scheduled" | "published" | "archived";
+          action_url?: string | null;
+          is_active?: boolean;
+          start_at?: string | null;
+          end_at?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+          published_at?: string | null;
+          delivery_channels?: string;
+          push_attempt_count?: number;
+          push_success_count?: number;
+          push_failure_count?: number;
+          push_delivered_at?: string | null;
+        };
+        Relationships: [];
+      };
+      user_announcement_reads: {
+        Row: {
+          user_id: string;
+          announcement_id: string;
+          read_at: string | null;
+          dismissed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          announcement_id: string;
+          read_at?: string | null;
+          dismissed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          announcement_id?: string;
+          read_at?: string | null;
+          dismissed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

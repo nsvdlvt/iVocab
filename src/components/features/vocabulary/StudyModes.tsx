@@ -9,6 +9,7 @@ import {
   PenSquare,
   Sparkles,
   ArrowUpRight,
+  Mic,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,16 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
         "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
     },
     {
+      id: "speaking",
+      title: "Speaking",
+      description: "Luyện phát âm & ngữ điệu cùng AI Azure.",
+      icon: Mic,
+      href: `${basePath}/${setId}/speaking`,
+      iconStyle:
+        "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+      badge: "AI",
+    },
+    {
       id: "sentence",
       title: "Sentence Practice",
       description: "Đặt câu ngữ cảnh và chấm điểm AI.",
@@ -90,8 +101,7 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
       </div>
       <div
         className={cn(
-          "grid grid-cols-1 gap-3 sm:grid-cols-2",
-          modes.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"
+          "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
         )}
       >
         {modes.map((mode) => {

@@ -158,5 +158,5 @@ export const landingStats = [
   { value: "20,000+", label: "Từ vựng được lưu trữ", detail: "Chuẩn hóa IPA, từ loại và ngữ cảnh học thuật" },
   { value: "94.8%", label: "Tỷ lệ duy trì trí nhớ", detail: "Sau 30 ngày áp dụng lịch ôn tập ngắt quãng SRS" },
   { value: "1.2M+", label: "Lượt ôn thẻ hoàn thành", detail: "Tối ưu thời gian học mỗi ngày với phản hồi nhanh" },
-  { value: "4.9/5★", label: "Đánh giá từ người học", detail: "Được yêu thích bởi cộng đồng luyện thi IELTS & TOEIC" },
+  { value: "4.9 / 5.0", label: "Đánh giá từ người học", detail: "Được yêu thích bởi cộng đồng luyện thi IELTS & TOEIC" },
 ];
