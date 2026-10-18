@@ -76,18 +76,23 @@ export class UserNotificationsRepository {
         .order("published_at", { ascending: false, nullsFirst: false })
         .limit(limit * 2);
 
-      if (annError || !announcements) {
-        return { items: [], unreadCount: 0 };
-      }
+      // 2. Fetch personalized in-app notifications
+      const { data: personalNotifs } = await supabase
+        .from("user_in_app_notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .is("dismissed_at", null)
+        .order("created_at", { ascending: false })
+        .limit(limit * 2);
 
-      // 2. Fetch user's read states
-      const { data: readStates, error: readError } = await supabase
+      // 3. Fetch user's read states for announcements
+      const { data: readStates } = await supabase
         .from("user_announcement_reads" as any)
         .select("announcement_id, read_at, dismissed_at")
         .eq("user_id", userId);
 
       const readMap = new Map<string, { read_at: string | null; dismissed_at: string | null }>();
-      if (!readError && readStates) {
+      if (readStates) {
         for (const r of readStates as any[]) {
           readMap.set(r.announcement_id, {
             read_at: r.read_at,
@@ -96,39 +101,69 @@ export class UserNotificationsRepository {
         }
       }
 
-      // 3. Transform and calculate unread count
+      // 4. Transform and combine
       let unreadCount = 0;
       const allItems: UserNotificationItem[] = [];
 
-      for (const ann of announcements as any[]) {
-        const userState = readMap.get(ann.id);
-        const isDismissed = Boolean(userState?.dismissed_at);
-        const isRead = Boolean(userState?.read_at);
+      // Add personal in-app notifications
+      if (personalNotifs) {
+        for (const p of personalNotifs) {
+          const isRead = Boolean(p.is_read);
+          if (!isRead) unreadCount++;
 
-        if (!isRead && !isDismissed) {
-          unreadCount++;
+          allItems.push({
+            id: p.id,
+            title: p.title,
+            content: p.content,
+            summary: p.summary || null,
+            type: p.type || "info",
+            priority: p.priority || "normal",
+            action_url: this.sanitizeActionUrl(p.action_url),
+            published_at: p.created_at,
+            created_at: p.created_at,
+            is_read: isRead,
+            read_at: p.read_at,
+            dismissed_at: p.dismissed_at,
+          });
         }
-
-        // Skip dismissed notifications from user active views
-        if (isDismissed) continue;
-
-        allItems.push({
-          id: ann.id,
-          title: ann.title,
-          content: ann.content,
-          summary: ann.summary || null,
-          type: ann.type || "info",
-          priority: ann.priority || "normal",
-          action_url: this.sanitizeActionUrl(ann.action_url),
-          published_at: ann.published_at || ann.created_at,
-          created_at: ann.created_at,
-          is_read: isRead,
-          read_at: userState?.read_at || null,
-          dismissed_at: userState?.dismissed_at || null,
-        });
       }
 
-      // 4. Apply unread filter if requested
+      // Add broadcast announcements
+      if (!annError && announcements) {
+        for (const ann of announcements as any[]) {
+          const userState = readMap.get(ann.id);
+          const isDismissed = Boolean(userState?.dismissed_at);
+          const isRead = Boolean(userState?.read_at);
+
+          if (!isRead && !isDismissed) {
+            unreadCount++;
+          }
+
+          if (isDismissed) continue;
+
+          allItems.push({
+            id: ann.id,
+            title: ann.title,
+            content: ann.content,
+            summary: ann.summary || null,
+            type: ann.type || "info",
+            priority: ann.priority || "normal",
+            action_url: this.sanitizeActionUrl(ann.action_url),
+            published_at: ann.published_at || ann.created_at,
+            created_at: ann.created_at,
+            is_read: isRead,
+            read_at: userState?.read_at || null,
+            dismissed_at: userState?.dismissed_at || null,
+          });
+        }
+      }
+
+      // Sort all items by published_at / created_at DESC
+      allItems.sort(
+        (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+      );
+
+      // 5. Apply unread filter if requested
       const filteredItems = filter === "unread"
         ? allItems.filter((item) => !item.is_read)
         : allItems;
@@ -147,17 +182,35 @@ export class UserNotificationsRepository {
     return unreadCount;
   }
 
-  static async markAsRead(userId: string, announcementId: string): Promise<boolean> {
+  static async markAsRead(userId: string, notificationId: string): Promise<boolean> {
     try {
       const supabase = await this.getSupabase();
       const now = new Date().toISOString();
 
+      // Check if it's a personalized notification
+      const { data: personal } = await supabase
+        .from("user_in_app_notifications")
+        .select("id")
+        .eq("id", notificationId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (personal) {
+        const { error } = await supabase
+          .from("user_in_app_notifications")
+          .update({ is_read: true, read_at: now })
+          .eq("id", notificationId)
+          .eq("user_id", userId);
+        return !error;
+      }
+
+      // Otherwise treat as announcement
       const { error } = await supabase
         .from("user_announcement_reads" as any)
         .upsert(
           {
             user_id: userId,
-            announcement_id: announcementId,
+            announcement_id: notificationId,
             read_at: now,
           },
           { onConflict: "user_id,announcement_id" }
@@ -174,44 +227,67 @@ export class UserNotificationsRepository {
       const supabase = await this.getSupabase();
       const now = new Date().toISOString();
 
-      // Get all active announcements visible to user
-      const { data: announcements, error: annError } = await supabase
+      // 1. Mark personal notifications
+      await supabase
+        .from("user_in_app_notifications")
+        .update({ is_read: true, read_at: now })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+
+      // 2. Mark active announcements
+      const { data: announcements } = await supabase
         .from("admin_announcements" as any)
         .select("id")
         .eq("is_active", true)
         .or("status.eq.published,status.is.null");
 
-      if (annError || !announcements || announcements.length === 0) {
-        return true;
+      if (announcements && announcements.length > 0) {
+        const rows = (announcements as any[]).map((a) => ({
+          user_id: userId,
+          announcement_id: a.id,
+          read_at: now,
+        }));
+
+        await supabase
+          .from("user_announcement_reads" as any)
+          .upsert(rows, { onConflict: "user_id,announcement_id" });
       }
 
-      const rows = (announcements as any[]).map((a) => ({
-        user_id: userId,
-        announcement_id: a.id,
-        read_at: now,
-      }));
-
-      const { error } = await supabase
-        .from("user_announcement_reads" as any)
-        .upsert(rows, { onConflict: "user_id,announcement_id" });
-
-      return !error;
+      return true;
     } catch {
       return false;
     }
   }
 
-  static async dismissNotification(userId: string, announcementId: string): Promise<boolean> {
+  static async dismissNotification(userId: string, notificationId: string): Promise<boolean> {
     try {
       const supabase = await this.getSupabase();
       const now = new Date().toISOString();
 
+      // Check if it's a personal notification
+      const { data: personal } = await supabase
+        .from("user_in_app_notifications")
+        .select("id")
+        .eq("id", notificationId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (personal) {
+        const { error } = await supabase
+          .from("user_in_app_notifications")
+          .update({ dismissed_at: now, is_read: true })
+          .eq("id", notificationId)
+          .eq("user_id", userId);
+        return !error;
+      }
+
+      // Otherwise treat as announcement
       const { error } = await supabase
         .from("user_announcement_reads" as any)
         .upsert(
           {
             user_id: userId,
-            announcement_id: announcementId,
+            announcement_id: notificationId,
             dismissed_at: now,
             read_at: now,
           },

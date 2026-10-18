@@ -30,8 +30,11 @@ export function PushNotificationPromptBanner() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Do not show if dismissed in this session
+    // Do not show if dismissed in this session or in storage
     if (sessionStorage.getItem("dismissed_push_prompt") === "true") return;
+    if (sessionStorage.getItem("vocabee_push_prompt_session_dismissed") === "true") return;
+    const promptStatus = localStorage.getItem("vocabee_push_prompt_status");
+    if (promptStatus === "enabled" || promptStatus === "dismissed" || promptStatus === "blocked") return;
 
     // Check secure context
     if (!window.isSecureContext) return;
@@ -59,6 +62,17 @@ export function PushNotificationPromptBanner() {
     if (Notification.permission === "default") {
       setIsVisible(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleStatusSync = () => {
+      const status = localStorage.getItem("vocabee_push_prompt_status");
+      if (status === "enabled" || status === "dismissed" || status === "blocked") {
+        setIsVisible(false);
+      }
+    };
+    window.addEventListener("vocabee_push_status_changed", handleStatusSync);
+    return () => window.removeEventListener("vocabee_push_status_changed", handleStatusSync);
   }, []);
 
   const handleDismiss = () => {

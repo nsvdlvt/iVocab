@@ -108,6 +108,9 @@ export function PushNotificationSettings() {
           if (sub) {
             const statusRes = await checkDevicePushStatusAction(sub.endpoint);
             setIsSubscribed(statusRes.isSubscribed);
+            if (statusRes.isSubscribed) {
+              localStorage.setItem("vocabee_push_prompt_status", "enabled");
+            }
           } else {
             setIsSubscribed(false);
           }
@@ -126,6 +129,14 @@ export function PushNotificationSettings() {
 
   useEffect(() => {
     checkStatus();
+  }, [checkStatus]);
+
+  useEffect(() => {
+    const handleStatusSync = () => {
+      checkStatus();
+    };
+    window.addEventListener("vocabee_push_status_changed", handleStatusSync);
+    return () => window.removeEventListener("vocabee_push_status_changed", handleStatusSync);
   }, [checkStatus]);
 
   const handleSubscribe = async () => {
@@ -195,6 +206,9 @@ export function PushNotificationSettings() {
       }
 
       setIsSubscribed(true);
+      localStorage.setItem("vocabee_push_prompt_status", "enabled");
+      sessionStorage.setItem("vocabee_push_prompt_session_dismissed", "true");
+      window.dispatchEvent(new CustomEvent("vocabee_push_status_changed"));
       setMessage({
         type: "success",
         text: "Đã bật thông báo đẩy thành công trên thiết bị này! Bạn sẽ nhận được thông báo ngay cả khi đóng trang web.",
@@ -224,6 +238,8 @@ export function PushNotificationSettings() {
       }
 
       setIsSubscribed(false);
+      localStorage.setItem("vocabee_push_prompt_status", "dismissed");
+      window.dispatchEvent(new CustomEvent("vocabee_push_status_changed"));
       setMessage({
         type: "info",
         text: "Đã tắt thông báo đẩy trên thiết bị này. Bạn vẫn nhận được thông báo trong ứng dụng qua biểu tượng chuông.",

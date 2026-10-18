@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppearanceSettings } from "@/components/features/settings/AppearanceSettings";
 import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
+import { UserNotificationPreferencesClient } from "@/components/notifications/UserNotificationPreferencesClient";
 import { requireUser } from "@/lib/auth/require-user";
 
 export const dynamic = "force-dynamic";
@@ -147,31 +148,10 @@ export default async function SettingsPage() {
 
           <SectionCard className="space-y-6">
             <SectionHeader
-              title="Nhắc nhở học tập hàng ngày"
-              description="Cấu hình hệ thống gửi thông báo nhắc nhở rèn luyện theo khung giờ mong muốn"
+              title="Tùy chọn nhận thông báo & Nhắc nhở thông minh"
+              description="Chủ động lựa chọn các loại thông báo bạn muốn nhận và thiết lập khung giờ yên tĩnh."
             />
-            <div className="space-y-4 max-w-md">
-              <div className="flex items-center justify-between border border-border rounded-2xl p-4 bg-card shadow-sm">
-                <div className="space-y-0.5">
-                  <div className="text-sm font-bold text-foreground">Thông báo nhắc nhở</div>
-                  <p className="text-xs text-muted-foreground">Báo khi chưa học đủ chỉ tiêu từ vựng ngày</p>
-                </div>
-                <div className="h-6 w-11 bg-primary rounded-full p-0.5 flex items-center justify-end cursor-pointer transition-all">
-                  <div className="h-5 w-5 bg-background rounded-full shadow-sm" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Giờ gửi thông báo</label>
-                <Input type="time" defaultValue="20:00" className="rounded-xl h-10 border-border" />
-              </div>
-            </div>
-            <div className="pt-2">
-              <Button className="rounded-xl gap-2 cursor-pointer shadow-sm">
-                <Save className="h-4 w-4" />
-                Lưu cấu hình thông báo
-              </Button>
-            </div>
+            <UserNotificationPreferencesClient />
           </SectionCard>
         </TabsContent>
       </Tabs>
