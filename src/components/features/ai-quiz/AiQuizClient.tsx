@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpen, Loader2, RefreshCw, Sparkles, CheckCircle2, XCircle, Globe } from "lucide-react";
+import { BookOpen, RefreshCw, Sparkles, CheckCircle2, XCircle, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionCard } from "@/components/common/SectionCard";
+import { BeeLoading } from "@/components/common/BeeLoading";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -229,18 +230,9 @@ export function AiQuizClient({ setId, setTitle, initialQuiz = null }: AiQuizClie
 
   if (!hydrated || loading) {
     return (
-      <SectionCard className="max-w-3xl mx-auto space-y-5 p-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-full bg-primary/10 p-3 text-primary">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-foreground">Đang tạo AI Quiz</h2>
-            <p className="text-sm text-muted-foreground">AI đang ghép một bài đọc phù hợp với bộ từ vựng của bạn.</p>
-          </div>
-        </div>
-        <Progress value={65} className="h-1.5 rounded-full" />
-      </SectionCard>
+      <div className="max-w-2xl mx-auto py-8">
+        <BeeLoading variant="compact" context="ai-quiz" />
+      </div>
     );
   }
 
