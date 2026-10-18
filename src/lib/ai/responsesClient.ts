@@ -1,11 +1,12 @@
-import { AI_MODEL, DEFAULT_GEMINI_MODELS } from "@/lib/ai/constants";
+import { AI_MODEL, DEFAULT_AI_MODELS, getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
 import { AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
 import crypto from "crypto";
 
 export interface InputPart {
-  type: "input_text" | "input_image" | "input_file";
+  type: "input_text" | "input_image" | "input_file" | string;
   text?: string;
   image_url?: string;
+  image_base64?: string;
   file_id?: string;
   detail?: "low" | "high" | "auto";
 }
@@ -24,25 +25,26 @@ export interface ResponsesRequestPayload {
   [key: string]: unknown;
 }
 
-interface GeminiPart {
-  text?: string;
-  inlineData?: {
-    mimeType: string;
-    data: string;
-  };
-  thought?: boolean;
-}
-
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: GeminiPart[];
+interface OpenAIChatResponse {
+  choices?: Array<{
+    message?: {
+      role?: string;
+      content?: string;
     };
+    finish_reason?: string;
   }>;
+  output?: Array<{
+    content?: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+  output_text?: string;
+  content?: string;
   error?: {
-    code?: number;
+    code?: number | string;
     message?: string;
-    status?: string;
+    type?: string;
   };
 }
 
@@ -50,102 +52,71 @@ export async function request<T = unknown>(
   payload: Omit<ResponsesRequestPayload, "model"> & { model?: string },
   abortSignal?: AbortSignal
 ): Promise<T> {
-  const apiKey = (process.env.GEMINI_API_KEY ?? process.env.OPENAI_API_KEY)?.trim();
-  if (!apiKey) {
-    throw new AINetworkError("Thiếu cấu hình GEMINI_API_KEY trong biến môi trường (.env.local)");
+  const apiKey = getAiApiKey();
+  const baseURL = getAiBaseUrl();
+
+  let requestedModel = payload.model ?? AI_MODEL;
+  if (requestedModel.startsWith("gemini-")) {
+    requestedModel = AI_MODEL;
   }
 
-  const requestedModel = payload.model ?? AI_MODEL;
   const modelsToTry = [
     requestedModel,
-    ...DEFAULT_GEMINI_MODELS.filter((m) => m !== requestedModel),
+    ...DEFAULT_AI_MODELS.filter((m) => m !== requestedModel),
   ];
 
-  // Convert input to Gemini contents parts
-  const parts: GeminiPart[] = [];
-  const textObj = payload.text as { format?: { type?: string } } | undefined;
-  let isJsonExpected =
-    textObj?.format?.type === "json_object" ||
-    textObj?.format?.type === "json_schema";
+  // Convert input to OpenAI chat messages format
+  const messages: Array<{ role: string; content: unknown }> = [];
 
   if (typeof payload.input === "string") {
-    parts.push({ text: payload.input });
-    if (
-      payload.input.includes("strict JSON") ||
-      payload.input.includes("JSON array") ||
-      payload.input.includes("JSON object") ||
-      payload.input.includes("Return **strict JSON")
-    ) {
-      isJsonExpected = true;
-    }
+    messages.push({ role: "user", content: payload.input });
   } else if (Array.isArray(payload.input)) {
+    const userContentParts: Array<Record<string, unknown>> = [];
     for (const part of payload.input) {
-      if (part.type === "input_text" && part.text) {
-        parts.push({ text: part.text });
-        if (
-          part.text.includes("strict JSON") ||
-          part.text.includes("JSON array") ||
-          part.text.includes("Return **strict JSON")
-        ) {
-          isJsonExpected = true;
-        }
-      } else if (part.type === "input_image" && part.image_url) {
-        let mimeType = "image/jpeg";
-        let base64Data = part.image_url;
-
-        const match = part.image_url.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          mimeType = match[1];
-          base64Data = match[2];
-        }
-
-        parts.push({
-          inlineData: {
-            mimeType,
-            data: base64Data,
-          },
+      if ((part.type === "input_text" || part.type === "text") && part.text) {
+        userContentParts.push({ type: "text", text: part.text });
+      } else if (
+        (part.type === "input_image" || part.type === "image_url") &&
+        (part.image_url || part.image_base64)
+      ) {
+        userContentParts.push({
+          type: "image_url",
+          image_url: { url: part.image_url || part.image_base64! },
         });
       }
     }
-  }
-
-  if (parts.length === 0) {
-    throw new AIResponseError("Không có nội dung để gửi tới AI.");
-  }
-
-  const requestBody = {
-    contents: [
-      {
-        role: "user",
-        parts,
-      },
-    ],
-    generationConfig: {
-      temperature: 0.3,
-      ...(isJsonExpected ? { responseMimeType: "application/json" } : {}),
-    },
-  };
-
-  const bodyJson = JSON.stringify(requestBody);
-  const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
-  const callerFile = getCallerFile();
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("[responsesClient:gemini] Outbound payload", {
-      callerFile,
-      modelsToTry,
-      partsCount: parts.length,
-      isJsonExpected,
-      requestBodyHash: bodyHash,
+    messages.push({
+      role: "user",
+      content: userContentParts.length > 0 ? userContentParts : String(payload.input),
     });
   }
 
+  if (messages.length === 0) {
+    throw new AIResponseError("Không có nội dung để gửi tới AI.");
+  }
+
+  const callerFile = getCallerFile();
   let lastError: unknown = null;
 
   for (const model of modelsToTry) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      model
-    )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const endpoint = `${baseURL}/chat/completions`;
+    const requestBody: Record<string, unknown> = {
+      model,
+      messages,
+      temperature: 0.3,
+    };
+
+    const bodyJson = JSON.stringify(requestBody);
+    const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[responsesClient:modelapi] Outbound payload", {
+        callerFile,
+        endpoint,
+        model,
+        requestBodyHash: bodyHash,
+      });
+    }
 
     const maxAttempts = 2;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -169,6 +140,7 @@ export async function request<T = unknown>(
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
           },
           body: bodyJson,
           signal: controller.signal,
@@ -180,7 +152,7 @@ export async function request<T = unknown>(
           const txt = await response.text();
           let parsedErrorMsg = txt;
           try {
-            const errObj = JSON.parse(txt) as GeminiResponse;
+            const errObj = JSON.parse(txt) as OpenAIChatResponse;
             if (errObj.error?.message) {
               parsedErrorMsg = errObj.error.message;
             }
@@ -188,7 +160,7 @@ export async function request<T = unknown>(
             // keep raw txt
           }
 
-          const error = new AIResponseError(`Gemini API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);
+          const error = new AIResponseError(`API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);
 
           // Fallback to next model if model unavailable / deprecated / high demand
           if (
@@ -199,7 +171,7 @@ export async function request<T = unknown>(
             response.status === 504
           ) {
             lastError = error;
-            break; // Break inner retry loop to try next model in outer loop
+            break; // Break inner retry loop to try next model
           }
 
           if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
@@ -212,20 +184,23 @@ export async function request<T = unknown>(
         }
 
         const txt = await response.text();
-        const data = JSON.parse(txt) as GeminiResponse;
+        const data = JSON.parse(txt) as OpenAIChatResponse;
 
-        const candidateParts = data.candidates?.[0]?.content?.parts ?? [];
-        const replyText = candidateParts
-          .filter((part) => !part.thought && typeof part.text === "string")
-          .map((part) => part.text)
-          .join("")
-          .trim();
+        // Parse content from chat completions choice or responses fallback
+        const replyText =
+          data.choices?.[0]?.message?.content ??
+          data.output?.[0]?.content?.[0]?.text ??
+          data.output_text ??
+          (typeof data.content === "string" ? data.content : null);
 
-        if (!replyText && candidateParts.length === 0) {
-          throw new AIResponseError("Gemini không trả về nội dung hợp lệ.");
+        if (!replyText && typeof txt === "string") {
+          return txt as unknown as T;
         }
 
-        // Return reply text, compatible with string or { content: string }
+        if (replyText === null || replyText === undefined) {
+          throw new AIResponseError("AI không trả về nội dung hợp lệ.");
+        }
+
         return replyText as unknown as T;
       } catch (err: unknown) {
         if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
@@ -243,7 +218,6 @@ export async function request<T = unknown>(
             await delay(backoffMs(attempt));
             continue;
           }
-          // If this was a model-level failure, break to try next model
           break;
         }
         const msg = err instanceof Error ? err.message : String(err);
@@ -257,7 +231,7 @@ export async function request<T = unknown>(
     }
   }
 
-  throw (lastError as Error) ?? new AIResponseError("Không thể kết nối hoặc nhận phản hồi từ Gemini AI.");
+  throw (lastError as Error) ?? new AIResponseError("Không thể kết nối hoặc nhận phản hồi từ AI API.");
 }
 
 function getCallerFile(): string {
@@ -277,7 +251,7 @@ function isRetryableResponseStatus(status: number): boolean {
 
 function isRetryableMessage(message: string): boolean {
   const lower = message.toLowerCase();
-  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("high demand");
+  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("high demand") || lower.includes("no available channel");
 }
 
 function backoffMs(attempt: number): number {

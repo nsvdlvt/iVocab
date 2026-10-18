@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const crypto = require("crypto");
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.MODELAPI_API_KEY || process.env.GEMINI_API_KEY;
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || "https://api.modelapi.vn/v1";
 
 if (!OPENAI_API_KEY) {
   console.error("Missing OPENAI_API_KEY");
@@ -15,7 +15,7 @@ const EXAMPLE_INPUT = "Generate 10 TOEIC Business vocabulary words.";
 
 function buildRequestBody(prompt) {
   return {
-    model: "gpt-5.4-mini",
+    model: "gpt-6-luna",
     input: prompt,
     text: {
       format: {

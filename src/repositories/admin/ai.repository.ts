@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { request as sendAiRequest } from "@/lib/ai/responsesClient";
 import { adminFallbackStore, FallbackAiLog } from "@/lib/admin/fallback-store";
+import { getAiApiKey } from "@/lib/ai/constants";
 
 export interface AiTelemetryStats {
   totalRequests: number;
@@ -35,7 +36,7 @@ export class AdminAiRepository {
   }
 
   static async getTelemetry(): Promise<AiTelemetryStats> {
-    const apiKey = (process.env.GEMINI_API_KEY ?? process.env.OPENAI_API_KEY)?.trim();
+    const apiKey = getAiApiKey();
     const isApiKeyConfigured = Boolean(apiKey && apiKey.length > 5);
 
     try {
@@ -63,8 +64,8 @@ export class AdminAiRepository {
           avgDurationMs: avgDuration,
           totalTokens,
           estimatedCostUsd: estimatedCost,
-          activeProvider: "Google Gemini",
-          configuredModel: "gemini-2.5-flash",
+          activeProvider: "ModelAPI",
+          configuredModel: process.env.AI_MODEL || "gpt-6-luna",
           isApiKeyConfigured,
           isDatabaseLive: true,
         };
@@ -89,8 +90,8 @@ export class AdminAiRepository {
       avgDurationMs: avgDuration,
       totalTokens,
       estimatedCostUsd: estimatedCost,
-      activeProvider: "Google Gemini",
-      configuredModel: "gemini-2.5-flash",
+      activeProvider: "ModelAPI",
+      configuredModel: process.env.AI_MODEL || "gpt-6-luna",
       isApiKeyConfigured,
       isDatabaseLive: false,
     };
@@ -161,8 +162,8 @@ export class AdminAiRepository {
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: "gemini",
-        model: "gemini-2.5-flash",
+        provider: "modelapi",
+        model: process.env.AI_MODEL || "gpt-6-luna",
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: Math.round(textOutput.length / 4),
         total_tokens: Math.round((promptText.length + textOutput.length) / 4),
@@ -184,8 +185,8 @@ export class AdminAiRepository {
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: "gemini",
-        model: "gemini-2.5-flash",
+        provider: "modelapi",
+        model: process.env.AI_MODEL || "gpt-6-luna",
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: 0,
         total_tokens: Math.round(promptText.length / 4),

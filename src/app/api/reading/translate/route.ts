@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const FALLBACK_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-latest",
+  "gpt-6-luna",
+  "gpt-6.1-sol",
+  "gpt-5.6-terra",
+  "gpt-6-sol",
+  "gpt-5.6-luna",
 ];
 
 async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promise<string | null> {
@@ -35,36 +37,34 @@ async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promi
 }
 
 async function translateWithGemini(text: string, signal?: AbortSignal): Promise<string | null> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = getAiApiKey();
+  const baseURL = getAiBaseUrl();
   if (!apiKey) return null;
 
   for (const model of FALLBACK_MODELS) {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model
-      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const endpoint = `${baseURL}/chat/completions`;
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text: "Bạn là dịch giả tiếng Anh - tiếng Việt chuyên nghiệp. Hãy dịch đoạn văn bản bài đọc sang tiếng Việt tự nhiên, chính xác, giữ nguyên ngữ cảnh học thuật và sắc thái nghĩa. Chỉ trả về kết quả dịch tiếng Việt, không kèm lời giải thích, không kèm markdown thừa.",
-              },
-            ],
-          },
-          contents: [
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "Bạn là dịch giả tiếng Anh - tiếng Việt chuyên nghiệp. Hãy dịch đoạn văn bản bài đọc sang tiếng Việt tự nhiên, chính xác, giữ nguyên ngữ cảnh học thuật và sắc thái nghĩa. Chỉ trả về kết quả dịch tiếng Việt, không kèm lời giải thích, không kèm markdown thừa.",
+            },
             {
               role: "user",
-              parts: [{ text: `Dịch đoạn văn bản tiếng Anh sau sang tiếng Việt:\n\n${text}` }],
+              content: `Dịch đoạn văn bản tiếng Anh sau sang tiếng Việt:\n\n${text}`,
             },
           ],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          },
+          temperature: 0.3,
         }),
         signal: signal ?? AbortSignal.timeout(12000),
       });
@@ -72,20 +72,10 @@ async function translateWithGemini(text: string, signal?: AbortSignal): Promise<
       if (!response.ok) continue;
 
       const data = (await response.json().catch(() => null)) as {
-        candidates?: Array<{
-          content?: {
-            parts?: Array<{ text?: string; thought?: boolean }>;
-          };
-        }>;
+        choices?: Array<{ message?: { content?: string } }>;
       } | null;
 
-      const parts = data?.candidates?.[0]?.content?.parts ?? [];
-      const translated = parts
-        .filter((part) => !part.thought && typeof part.text === "string")
-        .map((part) => part.text)
-        .join("")
-        .trim();
-
+      const translated = data?.choices?.[0]?.message?.content?.trim();
       if (translated) return translated;
     } catch {
       continue;

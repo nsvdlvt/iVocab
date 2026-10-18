@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { DEFAULT_AI_MODELS, AI_MODEL, getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,29 +9,18 @@ interface ChatHistoryItem {
   content: string;
 }
 
-interface GeminiPart {
-  text?: string;
-  thought?: boolean;
-}
-
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: GeminiPart[];
+interface OpenAIChatResponse {
+  choices?: Array<{
+    message?: {
+      role?: string;
+      content?: string;
     };
   }>;
   error?: {
-    code?: number;
+    code?: number | string;
     message?: string;
   };
 }
-
-const DEFAULT_GEMINI_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-latest",
-];
 
 const SYSTEM_INSTRUCTION = `Bạn là Trợ lý học tập AI thông minh của ứng dụng học từ vựng tiếng Anh iVocab.
 Nhiệm vụ của bạn:
@@ -42,12 +32,14 @@ Nhiệm vụ của bạn:
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    const apiKey = getAiApiKey();
+    const baseURL = getAiBaseUrl();
+
     if (!apiKey) {
       return NextResponse.json(
         {
           success: false,
-          error: "Thiếu cấu hình GEMINI_API_KEY trong .env.local",
+          error: "Thiếu cấu hình OPENAI_API_KEY trong .env.local",
         },
         { status: 500 }
       );
@@ -79,53 +71,51 @@ export async function POST(request: Request) {
       );
     }
 
-    const contents = rawMessages.slice(-20).map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
+    const messages = [
+      { role: "system", content: SYSTEM_INSTRUCTION },
+      ...rawMessages.slice(-20).map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+    ];
 
-    const configuredModel = process.env.GEMINI_MODEL?.trim();
-    const modelsToTry = configuredModel
-      ? [
-          configuredModel,
-          ...DEFAULT_GEMINI_MODELS.filter((m) => m !== configuredModel),
-        ]
-      : DEFAULT_GEMINI_MODELS;
+    let configuredModel = process.env.AI_MODEL?.trim() || process.env.OPENAI_MODEL?.trim() || AI_MODEL;
+    if (configuredModel.startsWith("gemini-")) {
+      configuredModel = "gpt-6-luna";
+    }
 
-    let lastErrorMessage = "Không thể kết nối tới Gemini API.";
+    const modelsToTry = [
+      configuredModel,
+      ...DEFAULT_AI_MODELS.filter((m) => m !== configuredModel),
+    ];
+
+    let lastErrorMessage = "Không thể kết nối tới AI API.";
     let lastStatus = 502;
 
     for (const model of modelsToTry) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        model
-      )}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const endpoint = `${baseURL}/chat/completions`;
 
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }],
-          },
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1500,
-          },
+          model,
+          messages,
+          temperature: 0.7,
         }),
         signal: request.signal,
       });
 
-      const data = (await response.json().catch(() => null)) as GeminiResponse | null;
+      const data = (await response.json().catch(() => null)) as OpenAIChatResponse | null;
 
       if (!response.ok) {
         lastStatus = response.status;
         lastErrorMessage =
-          data?.error?.message || `Gemini API trả về lỗi (${response.status}).`;
+          data?.error?.message || `AI API trả về lỗi (${response.status}).`;
 
-        // Retry with fallback model on overloaded / unavailable / not found / rate-limited model
         if (
           response.status === 404 ||
           response.status === 429 ||
@@ -139,15 +129,10 @@ export async function POST(request: Request) {
         break;
       }
 
-      const parts = data?.candidates?.[0]?.content?.parts ?? [];
-      const reply = parts
-        .filter((part) => !part.thought && typeof part.text === "string")
-        .map((part) => part.text)
-        .join("")
-        .trim();
+      const reply = data?.choices?.[0]?.message?.content?.trim();
 
       if (!reply) {
-        lastErrorMessage = "Gemini không trả về nội dung phản hồi.";
+        lastErrorMessage = "AI không trả về nội dung phản hồi.";
         continue;
       }
 
@@ -173,7 +158,7 @@ export async function POST(request: Request) {
         error:
           error instanceof Error
             ? error.message
-            : "Đã xảy ra lỗi khi kết nối với Gemini AI.",
+            : "Đã xảy ra lỗi khi kết nối với AI.",
       },
       { status: 500 }
     );

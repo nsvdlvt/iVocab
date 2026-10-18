@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 import { getQuestionsForArticle, DEFAULT_READING_QUESTIONS } from "@/lib/reading/reading-questions";
 import type { ComprehensionQuestion } from "@/components/features/reading/reading-types";
+import { DEFAULT_AI_MODELS, getAiApiKey, getAiBaseUrl, AI_MODEL } from "@/lib/ai/constants";
+import { extractJsonPayload, requestTextResponse } from "@/lib/ai/json-response";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-const GEMINI_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-latest",
-];
 
 export async function POST(request: Request) {
   try {
@@ -46,9 +41,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    const apiKey = getAiApiKey();
+    const baseURL = getAiBaseUrl();
+
     if (!apiKey) {
-      // Fallback: Return curated questions if slug matches, otherwise empty
       const fallback = slug ? DEFAULT_READING_QUESTIONS[slug] ?? [] : [];
       return NextResponse.json({ questions: fallback, source: "curated" });
     }
@@ -82,46 +78,10 @@ Yêu cầu định dạng đầu ra BẮT BUỘC là một JSON Array hợp lệ
 ]`;
 
     let generatedQuestions: ComprehensionQuestion[] | null = null;
-
-    for (const model of GEMINI_MODELS) {
-      try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-          model
-        )}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 2048,
-              responseMimeType: "application/json",
-            },
-          }),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) continue;
-
-        const data = (await response.json().catch(() => null)) as {
-          candidates?: Array<{
-            content?: {
-              parts?: Array<{ text?: string; thought?: boolean }>;
-            };
-          }>;
-        } | null;
-
-        const rawText = (data?.candidates?.[0]?.content?.parts ?? [])
-          .filter((part) => !part.thought && typeof part.text === "string")
-          .map((part) => part.text)
-          .join("")
-          .trim();
-
-        if (!rawText) continue;
-
-        const parsed = JSON.parse(rawText) as unknown;
+    try {
+      const rawText = await requestTextResponse(prompt, request.signal);
+      if (rawText) {
+        const parsed = extractJsonPayload(rawText) as unknown;
         if (Array.isArray(parsed) && parsed.length > 0) {
           const validated: ComprehensionQuestion[] = [];
           for (let i = 0; i < parsed.length; i++) {
@@ -146,12 +106,11 @@ Yêu cầu định dạng đầu ra BẮT BUỘC là một JSON Array hợp lệ
 
           if (validated.length > 0) {
             generatedQuestions = validated;
-            break;
           }
         }
-      } catch {
-        continue;
       }
+    } catch (aiErr) {
+      console.warn("[Reading Questions] AI generation error:", aiErr);
     }
 
     if (generatedQuestions && generatedQuestions.length > 0) {

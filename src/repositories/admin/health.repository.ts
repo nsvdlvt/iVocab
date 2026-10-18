@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 import { Database } from "@/types/database";
+import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
 
 export type HealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
 
@@ -70,14 +71,15 @@ export class AdminHealthRepository {
   }
 
   static async checkAiProvider(): Promise<SystemHealthResult> {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-    if (!apiKey) {
-      return { service: "Gemini AI", status: "unhealthy", message: "Missing GEMINI_API_KEY" };
-    }
+    const apiKey = getAiApiKey();
+    const baseURL = getAiBaseUrl();
 
     const start = performance.now();
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`, {
+      const res = await fetch(`${baseURL}/models`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
         signal: AbortSignal.timeout(5000),
       });
       const latencyMs = Math.round(performance.now() - start);

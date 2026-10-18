@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requestTextResponse, extractJsonPayload } from "@/lib/ai/json-response";
+import { getAiApiKey } from "@/lib/ai/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,10 +68,10 @@ interface RoleplayRequestBody {
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+    const apiKey = getAiApiKey();
     if (!apiKey) {
       return NextResponse.json(
-        { success: false, error: "Thiếu cấu hình GEMINI_API_KEY trong .env.local" },
+        { success: false, error: "Thiếu cấu hình AI API key trong .env.local" },
         { status: 500 }
       );
     }
