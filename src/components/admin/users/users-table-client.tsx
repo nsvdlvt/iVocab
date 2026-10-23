@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Search, Shield, User, ExternalLink, MoreHorizontal, Flame, AlertTriangle } from "lucide-react";
+import { Search, Shield, User, ExternalLink, MoreHorizontal, Flame, AlertTriangle, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -29,6 +29,7 @@ import {
 import { changeUserRoleAction } from "@/actions/admin/users";
 import { toast } from "sonner";
 import { ProfileRow } from "@/repositories/admin/user.repository";
+import { normalizeRole, ROLE_DISPLAY_NAMES } from "@/lib/auth/roles";
 
 interface UsersTableClientProps {
   users: ProfileRow[];
@@ -52,7 +53,7 @@ export function UsersTableClient({
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [selectedUser, setSelectedUser] = useState<ProfileRow | null>(null);
-  const [newRoleToApply, setNewRoleToApply] = useState<"user" | "admin" | null>(null);
+  const [newRoleToApply, setNewRoleToApply] = useState<"user" | "member" | "e_team" | "admin" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const applyFilters = (newSearch: string, newRole: string, newPage: number = 1) => {
@@ -75,11 +76,12 @@ export function UsersTableClient({
     try {
       const res = await changeUserRoleAction(selectedUser.id, newRoleToApply);
       if (res.ok) {
+        const targetRoleName = ROLE_DISPLAY_NAMES[normalizeRole(newRoleToApply)];
         toast.success(
-          `Đã chuyển người dùng ${selectedUser.email} thành ${newRoleToApply === "admin" ? "Quản trị viên" : "Học viên"}`
+          `Đã chuyển người dùng ${selectedUser.email} thành ${targetRoleName}`
         );
         setSelectedUser(null);
-        newRoleToApply === null;
+        setNewRoleToApply(null);
         router.refresh();
       } else {
         toast.error(res.error || "Không thể cập nhật quyền người dùng");
@@ -118,8 +120,9 @@ export function UsersTableClient({
             className="h-10 px-3 rounded-md border border-input bg-background text-sm font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="all">Tất cả phân quyền</option>
-            <option value="user">Học viên (User)</option>
-            <option value="admin">Quản trị viên (Admin)</option>
+            <option value="user">Member (Học viên)</option>
+            <option value="e_team">E-Team</option>
+            <option value="admin">Admin (Quản trị viên)</option>
           </select>
         </div>
       </div>
@@ -167,19 +170,30 @@ export function UsersTableClient({
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge
-                        variant={u.role === "admin" ? "default" : "secondary"}
-                        className={
-                          u.role === "admin"
-                            ? "bg-[#030f31] text-white"
-                            : "bg-muted text-muted-foreground"
+                      {(() => {
+                        const norm = normalizeRole(u.role);
+                        if (norm === "admin") {
+                          return (
+                            <Badge variant="default" className="bg-[#030f31] text-white">
+                              <Shield className="h-3 w-3 mr-1 text-[#f9971d]" />
+                              Admin
+                            </Badge>
+                          );
                         }
-                      >
-                        {u.role === "admin" ? (
-                          <Shield className="h-3 w-3 mr-1 text-[#f9971d]" />
-                        ) : null}
-                        {u.role === "admin" ? "Admin" : "Học viên"}
-                      </Badge>
+                        if (norm === "e_team") {
+                          return (
+                            <Badge variant="outline" className="border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10">
+                              <Briefcase className="h-3 w-3 mr-1" />
+                              E-Team
+                            </Badge>
+                          );
+                        }
+                        return (
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                            Member
+                          </Badge>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground font-medium">
                       {u.level || "A1 - Mới bắt đầu"}
@@ -201,36 +215,55 @@ export function UsersTableClient({
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Tùy chọn tài khoản</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => router.push(`/admin/users/${u.id}`)}>
-                            <div className="flex items-center gap-2 cursor-pointer w-full">
-                              <ExternalLink className="h-4 w-4" />
-                              <span>Xem chi tiết hồ sơ</span>
-                            </div>
-                          </DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Tùy chọn tài khoản</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => router.push(`/admin/users/${u.id}`)}>
+                              <div className="flex items-center gap-2 cursor-pointer w-full">
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Xem chi tiết hồ sơ</span>
+                              </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
                           <DropdownMenuSeparator />
-                          {u.role === "admin" ? (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(u);
-                                setNewRoleToApply("user");
-                              }}
-                              className="text-amber-600 focus:text-amber-600 cursor-pointer"
-                            >
-                              Hạ cấp xuống Học viên
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(u);
-                                setNewRoleToApply("admin");
-                              }}
-                              className="text-primary focus:text-primary cursor-pointer font-medium"
-                            >
-                              Thăng cấp lên Quản trị viên
-                            </DropdownMenuItem>
-                          )}
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase font-bold">
+                              Chuyển đổi phân quyền
+                            </DropdownMenuLabel>
+                            {normalizeRole(u.role) !== "member" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setNewRoleToApply("member");
+                                }}
+                                className="text-foreground focus:text-primary cursor-pointer"
+                              >
+                                Gán vai trò: Member
+                              </DropdownMenuItem>
+                            )}
+                            {normalizeRole(u.role) !== "e_team" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setNewRoleToApply("e_team");
+                                }}
+                                className="text-purple-600 dark:text-purple-400 focus:text-purple-600 cursor-pointer font-medium"
+                              >
+                                Gán vai trò: E-Team
+                              </DropdownMenuItem>
+                            )}
+                            {normalizeRole(u.role) !== "admin" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setNewRoleToApply("admin");
+                                }}
+                                className="text-amber-600 focus:text-amber-600 cursor-pointer font-medium"
+                              >
+                                Thăng cấp: Admin
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -281,7 +314,7 @@ export function UsersTableClient({
               Bạn có chắc chắn muốn thay đổi phân quyền của tài khoản{" "}
               <strong>{selectedUser?.email}</strong> thành{" "}
               <strong className="text-foreground">
-                {newRoleToApply === "admin" ? "Quản trị viên (Admin)" : "Học viên (User)"}
+                {newRoleToApply ? ROLE_DISPLAY_NAMES[normalizeRole(newRoleToApply)] : ""}
               </strong>
               ?
             </DialogDescription>

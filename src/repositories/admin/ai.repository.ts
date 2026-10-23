@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { request as sendAiRequest } from "@/lib/ai/responsesClient";
 import { adminFallbackStore, FallbackAiLog } from "@/lib/admin/fallback-store";
-import { getAiApiKey } from "@/lib/ai/constants";
+import { getAiApiKey, AI_MODEL } from "@/lib/ai/constants";
 
 export interface AiTelemetryStats {
   totalRequests: number;
@@ -65,7 +65,7 @@ export class AdminAiRepository {
           totalTokens,
           estimatedCostUsd: estimatedCost,
           activeProvider: "ModelAPI",
-          configuredModel: process.env.AI_MODEL || "gpt-6-luna",
+          configuredModel: AI_MODEL,
           isApiKeyConfigured,
           isDatabaseLive: true,
         };
@@ -91,7 +91,7 @@ export class AdminAiRepository {
       totalTokens,
       estimatedCostUsd: estimatedCost,
       activeProvider: "ModelAPI",
-      configuredModel: process.env.AI_MODEL || "gpt-6-luna",
+      configuredModel: AI_MODEL,
       isApiKeyConfigured,
       isDatabaseLive: false,
     };
@@ -163,7 +163,7 @@ export class AdminAiRepository {
         user_id: null,
         feature: "admin_test",
         provider: "modelapi",
-        model: process.env.AI_MODEL || "gpt-6-luna",
+        model: AI_MODEL,
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: Math.round(textOutput.length / 4),
         total_tokens: Math.round((promptText.length + textOutput.length) / 4),
@@ -186,7 +186,7 @@ export class AdminAiRepository {
         user_id: null,
         feature: "admin_test",
         provider: "modelapi",
-        model: process.env.AI_MODEL || "gpt-6-luna",
+        model: AI_MODEL,
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: 0,
         total_tokens: Math.round(promptText.length / 4),

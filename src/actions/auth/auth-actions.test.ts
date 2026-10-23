@@ -261,7 +261,7 @@ describe("Authentication Server Actions", () => {
           token: "123456",
           type: "signup",
         })
-      ).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+      ).rejects.toThrow("NEXT_REDIRECT:/select-workspace");
 
       expect(mockVerifyOtp).toHaveBeenCalledWith({
         email: "user@example.com",

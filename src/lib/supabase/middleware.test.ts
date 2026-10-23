@@ -72,7 +72,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/dashboard");
+    expect(location).toBe("http://localhost:3000/select-workspace");
   });
 
   it("should redirect authenticated users on /login to preserved next parameter if safe", async () => {
@@ -103,7 +103,36 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/dashboard");
+    expect(location).toBe("http://localhost:3000/select-workspace");
+  });
+
+  it("should permit unauthenticated visitors on /dictionary and /dictionary?q=word", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+    const request = new NextRequest("http://localhost:3000/dictionary?q=eloquent");
+    const response = await updateSession(request);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("should permit unauthenticated visitors on /api/dictionary/lookup", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+    const request = new NextRequest("http://localhost:3000/api/dictionary/lookup?q=eloquent");
+    const response = await updateSession(request);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("should return 401 JSON (not 307 redirect) for unauthenticated protected API requests", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+    const request = new NextRequest("http://localhost:3000/api/dictionary/save", { method: "POST" });
+    const response = await updateSession(request);
+
+    expect(response.status).toBe(401);
+    const data = await response.json();
+    expect(data.success).toBe(false);
   });
 
   it("should block malicious next parameter on guest-only page redirect", async () => {
@@ -114,6 +143,6 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/dashboard");
+    expect(location).toBe("http://localhost:3000/select-workspace");
   });
 });

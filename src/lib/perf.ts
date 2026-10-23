@@ -4,6 +4,8 @@ type StageLabel =
   | "route"
   | "route:root-layout"
   | "route:app-layout"
+  | "route:vocabeer-layout"
+  | "route:e-team-layout"
   | "requireUser"
   | "getCurrentUser"
   | "createServerClient";

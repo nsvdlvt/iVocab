@@ -41,8 +41,8 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
     },
     {
       id: "learn",
-      title: "Learn",
-      description: "Luyện tập thích ứng trắc nghiệm và gõ từ.",
+      title: "Học thích ứng",
+      description: "Chọn từ, học flashcards & luyện tập thích ứng theo năng lực.",
       icon: BookOpen,
       href: `${basePath}/${setId}/learn`,
       iconStyle:

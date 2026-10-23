@@ -199,7 +199,12 @@ export function VocabularyEditor({
           : card.synonyms || "",
         antonyms: "",
         note: "",
-        example_translation: "",
+        example_translation:
+          (card as { example_translation?: string; exampleTranslation?: string })
+            .example_translation ||
+          (card as { example_translation?: string; exampleTranslation?: string })
+            .exampleTranslation ||
+          "",
       }));
 
       setItems((prev) => {

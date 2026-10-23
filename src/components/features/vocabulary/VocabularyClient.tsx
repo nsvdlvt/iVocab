@@ -10,7 +10,7 @@ import { RestoreConfirmDialog } from "./RestoreConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Database } from "@/types/database";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, FolderOpen, Plus, RotateCcw } from "lucide-react";
+import { BookA, ChevronLeft, ChevronRight, FolderOpen, Plus, RotateCcw } from "lucide-react";
 import type { VocabSetProgressSummary } from "@/lib/statistics/vocab-set-summary.service";
 
 type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
@@ -62,11 +62,11 @@ export function VocabularyClient({
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", page.toString());
-    router.push(`/vocabulary?${params.toString()}`, { scroll: false });
+    router.push(`/u/vocabulary?${params.toString()}`, { scroll: false });
   };
 
   const handleResetFilters = () => {
-    router.push("/vocabulary", { scroll: false });
+    router.push("/u/vocabulary", { scroll: false });
   };
 
   const hasFilters =
@@ -76,7 +76,7 @@ export function VocabularyClient({
 
   return (
     <div className="space-y-5">
-      <FilterBar onAddClick={() => router.push("/vocabulary/new")} />
+      <FilterBar onAddClick={() => router.push("/u/vocabulary/new")} />
 
       {sets.length > 0 ? (
         <>
@@ -147,7 +147,7 @@ export function VocabularyClient({
                 ? "Không có bộ từ vựng nào bị xóa tạm thời."
                 : hasFilters
                   ? "Thử thay đổi từ khóa tìm kiếm hoặc xóa bộ lọc hiện tại để xem tất cả bộ từ."
-                  : "Tạo bộ từ vựng đầu tiên của bạn để bắt đầu lưu trữ, phân loại và ôn tập thông minh với SRS."}
+                  : "Bạn chưa có bộ từ vựng nào để bắt đầu học. Hãy tạo bộ từ mới hoặc khám phá kho từ vựng cá nhân để xây dựng lộ trình học thông minh."}
             </p>
           </div>
           {hasFilters ? (
@@ -161,14 +161,25 @@ export function VocabularyClient({
               Xóa bộ lọc
             </Button>
           ) : (
-            <Button
-              onClick={() => router.push("/vocabulary/new")}
-              size="sm"
-              className="gap-1.5 font-semibold"
-            >
-              <Plus className="h-4 w-4" />
-              Tạo bộ từ mới
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <Button
+                onClick={() => router.push("/u/vocabulary/new")}
+                size="sm"
+                className="gap-1.5 font-semibold"
+              >
+                <Plus className="h-4 w-4" />
+                Tạo bộ từ mới
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/u/vocabulary-management")}
+                className="gap-1.5"
+              >
+                <BookA className="h-3.5 w-3.5" />
+                Kho từ vựng cá nhân
+              </Button>
+            </div>
           )}
         </div>
       )}

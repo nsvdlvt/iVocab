@@ -19,7 +19,6 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  FolderOpen,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { BeeMascot } from "@/components/mascot/BeeMascot";
@@ -70,6 +69,7 @@ import {
   EditVocabularyDialog,
   type EditableVocabulary,
 } from "@/components/features/vocabulary/EditVocabularyDialog";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 import type { LibraryVocabularyRow } from "@/repositories/vocabulary.repository";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { useSpeak } from "@/hooks/use-speak";
@@ -455,6 +455,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
         ipa: selected.ipa,
         part_of_speech: selected.part_of_speech,
         example: selected.example,
+        example_translation: selected.example_translation,
         synonyms: selected.synonyms,
         note: selected.note,
       }
@@ -759,7 +760,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
             <Button
               size="sm"
               className="h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-semibold"
-              onClick={() => router.push("/vocabulary/new")}
+              onClick={() => router.push("/u/vocabulary/new")}
             >
               <Plus className="h-4 w-4" />
               <span>Thêm từ</span>
@@ -801,7 +802,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
             ) : (
               <Button
                 size="sm"
-                onClick={() => router.push("/vocabulary/new")}
+                onClick={() => router.push("/u/vocabulary/new")}
                 className="rounded-full gap-1.5 text-xs font-semibold px-4"
               >
                 <Plus className="h-4 w-4" />
@@ -1194,15 +1195,15 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                     <Detail
                       title="Câu ví dụ"
                       value={
-                        selected.example ? (
-                          <div className="space-y-1">
-                            <p className="italic">&ldquo;{selected.example}&rdquo;</p>
-                            {selected.example_translation && (
-                              <p className="text-xs text-muted-foreground not-italic">
-                                {selected.example_translation}
-                              </p>
-                            )}
-                          </div>
+                        selected.example || selected.example_translation ? (
+                          <HighlightedExample
+                            word={selected.word}
+                            meaning={selected.meaning}
+                            example={selected.example}
+                            exampleTranslation={selected.example_translation}
+                            compact
+                            className="bg-transparent border-0 p-0"
+                          />
                         ) : (
                           "Chưa có câu ví dụ"
                         )

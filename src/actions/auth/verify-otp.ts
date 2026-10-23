@@ -54,7 +54,7 @@ export async function verifyOtpAction(values: VerifyOtpFormValues): Promise<Veri
       };
     }
 
-    const destination = getSafeRedirectUrl(redirectTo, ROUTES.DASHBOARD);
+    const destination = getSafeRedirectUrl(redirectTo, ROUTES.SELECT_WORKSPACE);
     redirect(destination);
   }
 

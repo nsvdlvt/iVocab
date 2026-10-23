@@ -250,7 +250,7 @@ export function NotificationBell() {
           {/* Footer */}
           <div className="border-t p-2.5 bg-muted/20 text-center">
             <Link
-              href="/notifications"
+              href="/u/notifications"
               onClick={() => setIsOpen(false)}
               className="text-xs font-semibold text-primary hover:text-primary/80 inline-flex items-center gap-1.5 transition-colors"
             >

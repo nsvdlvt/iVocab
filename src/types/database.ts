@@ -13,7 +13,7 @@ export interface Database {
         Row: {
           id: string;
           email: string;
-          role: "user" | "admin";
+          role: "user" | "member" | "e_team" | "admin";
           display_name: string | null;
           avatar_url: string | null;
           level: string | null;
@@ -27,7 +27,7 @@ export interface Database {
         Insert: {
           id: string;
           email: string;
-          role?: "user" | "admin";
+          role?: "user" | "member" | "e_team" | "admin";
           display_name?: string | null;
           avatar_url?: string | null;
           level?: string | null;
@@ -41,7 +41,7 @@ export interface Database {
         Update: {
           id?: string;
           email?: string;
-          role?: "user" | "admin";
+          role?: "user" | "member" | "e_team" | "admin";
           display_name?: string | null;
           avatar_url?: string | null;
           level?: string | null;
@@ -759,6 +759,93 @@ export interface Database {
           }
         ];
       };
+      learning_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          vocabulary_set_id: string;
+          status: "active" | "completed" | "abandoned";
+          stage: "flashcards" | "practice" | "results";
+          selected_word_ids: string[];
+          current_card_index: number;
+          reviewed_card_ids: string[];
+          question_bank: Json;
+          asked_question_ids: string[];
+          current_question_id: string | null;
+          word_states: Json;
+          answers_history: Json;
+          score: number;
+          streak: number;
+          highest_streak: number;
+          summary: Json | null;
+          is_mastery_updated: boolean;
+          created_at: string;
+          updated_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          vocabulary_set_id: string;
+          status?: "active" | "completed" | "abandoned";
+          stage?: "flashcards" | "practice" | "results";
+          selected_word_ids?: string[];
+          current_card_index?: number;
+          reviewed_card_ids?: string[];
+          question_bank?: Json;
+          asked_question_ids?: string[];
+          current_question_id?: string | null;
+          word_states?: Json;
+          answers_history?: Json;
+          score?: number;
+          streak?: number;
+          highest_streak?: number;
+          summary?: Json | null;
+          is_mastery_updated?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          vocabulary_set_id?: string;
+          status?: "active" | "completed" | "abandoned";
+          stage?: "flashcards" | "practice" | "results";
+          selected_word_ids?: string[];
+          current_card_index?: number;
+          reviewed_card_ids?: string[];
+          question_bank?: Json;
+          asked_question_ids?: string[];
+          current_question_id?: string | null;
+          word_states?: Json;
+          answers_history?: Json;
+          score?: number;
+          streak?: number;
+          highest_streak?: number;
+          summary?: Json | null;
+          is_mastery_updated?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "learning_sessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "learning_sessions_vocabulary_set_id_fkey";
+            columns: ["vocabulary_set_id"];
+            isOneToOne: false;
+            referencedRelation: "vocab_sets";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       push_subscriptions: {
         Row: {
           id: string;
@@ -1272,7 +1359,7 @@ export interface Database {
       };
     };
     Enums: {
-      user_role_enum: "user" | "admin";
+      user_role_enum: "user" | "member" | "e_team" | "admin";
     };
     CompositeTypes: {
       [_ in never]: never;

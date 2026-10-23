@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const providerErrorDescription = searchParams.get("error_description");
 
   // Validate and sanitize the target redirect destination to prevent open-redirect attacks
-  const next = getSafeRedirectUrl(nextRaw, ROUTES.DASHBOARD);
+  const next = getSafeRedirectUrl(nextRaw, ROUTES.SELECT_WORKSPACE);
   const isResetPasswordFlow = next === ROUTES.RESET_PASSWORD || next.startsWith("/reset-password") || type === "recovery";
 
   // Handle provider cancellation or errors (e.g. Google OAuth access denied)

@@ -10,6 +10,7 @@ type UpdateVocabularyInput = {
   ipa?: string | null;
   partOfSpeech?: string | null;
   example?: string | null;
+  example_translation?: string | null;
   synonyms?: string[] | null;
   note?: string | null;
 };
@@ -24,6 +25,7 @@ export async function updateVocabulary(id: string, values: UpdateVocabularyInput
     ipa: values.ipa?.trim() || null,
     part_of_speech: values.partOfSpeech?.trim() || null,
     example: values.example?.trim() || null,
+    example_translation: values.example_translation?.trim() || null,
     synonyms: values.synonyms ?? null,
     note: values.note?.trim() || null,
     updated_at: new Date().toISOString(),
@@ -39,7 +41,7 @@ export async function updateVocabulary(id: string, values: UpdateVocabularyInput
     return { success: false, error: error.message || "Không thể cập nhật từ vựng." };
   }
 
-  revalidatePath("/vocabulary-management");
-  revalidatePath("/vocabulary");
+  revalidatePath("/u/vocabulary-management");
+  revalidatePath("/u/vocabulary");
   return { success: true };
 }

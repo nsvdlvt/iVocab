@@ -7,12 +7,14 @@ import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { format } from "date-fns";
+import { normalizeRole, ROLE_DISPLAY_NAMES } from "@/lib/auth/roles";
 
 export type UserRow = {
   id: string;
@@ -59,9 +61,17 @@ export const columns: ColumnDef<UserRow>[] = [
     header: "Role",
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
+      const norm = normalizeRole(role);
       return (
-        <Badge variant={role === "admin" ? "default" : "secondary"}>
-          {role}
+        <Badge
+          variant={norm === "admin" ? "default" : "secondary"}
+          className={
+            norm === "e_team"
+              ? "border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10"
+              : ""
+          }
+        >
+          {ROLE_DISPLAY_NAMES[norm]}
         </Badge>
       );
     },
@@ -86,11 +96,13 @@ export const columns: ColumnDef<UserRow>[] = [
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Link href={`/admin/users/${user.id}`} className="w-full">View details</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Suspend User</DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <Link href={`/admin/users/${user.id}`} className="w-full">View details</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">Suspend User</DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       );

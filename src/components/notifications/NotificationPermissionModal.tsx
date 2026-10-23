@@ -101,6 +101,11 @@ export function NotificationPermissionModal() {
   const checkEligibility = useCallback(async (forceTrigger = false) => {
     if (typeof window === "undefined") return;
 
+    // Do not auto-popup on public dictionary or share pages unless explicitly requested
+    if (!forceTrigger && (window.location.pathname.startsWith("/dictionary") || window.location.pathname.startsWith("/share"))) {
+      return;
+    }
+
     // Detect iOS & Standalone
     const userAgent = window.navigator.userAgent || "";
     const appleMobile =
@@ -342,7 +347,7 @@ export function NotificationPermissionModal() {
 
   const handleGoToSettings = () => {
     handleDismiss();
-    router.push("/settings");
+    router.push("/u/settings");
   };
 
   return (

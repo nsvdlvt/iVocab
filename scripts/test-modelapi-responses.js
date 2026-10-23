@@ -15,7 +15,7 @@ const EXAMPLE_INPUT = "Generate 10 TOEIC Business vocabulary words.";
 
 function buildRequestBody(prompt) {
   return {
-    model: "gpt-6-luna",
+    model: process.env.AI_MODEL || "gpt-5.6-luna",
     input: prompt,
     text: {
       format: {

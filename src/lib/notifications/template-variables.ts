@@ -319,9 +319,9 @@ export const TEMPLATE_VARIABLES: TemplateVariableDefinition[] = [
     category: "system",
     dataType: "url",
     description: "Đường dẫn tương đối hợp lệ đến trang ôn tập SRS",
-    sampleValue: "/review",
+    sampleValue: "/u/review",
     formattingRule: "Đường dẫn nội bộ an toàn",
-    dataSource: "Route ứng dụng '/review'",
+    dataSource: "Route ứng dụng '/u/review'",
   },
   {
     key: "learn_link",
@@ -330,9 +330,9 @@ export const TEMPLATE_VARIABLES: TemplateVariableDefinition[] = [
     category: "system",
     dataType: "url",
     description: "Đường dẫn tương đối hợp lệ đến kho từ vựng",
-    sampleValue: "/vocabulary",
+    sampleValue: "/u/vocabulary",
     formattingRule: "Đường dẫn nội bộ an toàn",
-    dataSource: "Route ứng dụng '/vocabulary'",
+    dataSource: "Route ứng dụng '/u/vocabulary'",
   },
   {
     key: "quiz_link",
@@ -341,9 +341,9 @@ export const TEMPLATE_VARIABLES: TemplateVariableDefinition[] = [
     category: "system",
     dataType: "url",
     description: "Đường dẫn tương đối hợp lệ đến trang làm quiz",
-    sampleValue: "/quiz",
+    sampleValue: "/u/quiz",
     formattingRule: "Đường dẫn nội bộ an toàn",
-    dataSource: "Route ứng dụng '/quiz'",
+    dataSource: "Route ứng dụng '/u/quiz'",
   },
 ];
 

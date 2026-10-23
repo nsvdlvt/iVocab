@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 
 interface VocabularyItem {
   id: string;
@@ -46,7 +47,6 @@ function VocabularyCardComponent({
 }: VocabularyCardProps) {
   const hasAdvancedContent = Boolean(
     item.antonyms?.trim() ||
-      item.example_translation?.trim() ||
       item.note?.trim()
   );
   const [isExpanded, setIsExpanded] = useState(hasAdvancedContent);
@@ -69,6 +69,7 @@ function VocabularyCardComponent({
   };
 
   const hasErrors = Boolean(errors?.word || errors?.meaning);
+  const hasExamplePreview = Boolean(draft.example.trim() || draft.example_translation.trim());
 
   return (
     <motion.div
@@ -105,7 +106,7 @@ function VocabularyCardComponent({
             size="xs"
             onClick={() => setIsExpanded(!isExpanded)}
             title={isExpanded ? "Thu gọn chi tiết" : "Mở rộng chi tiết"}
-            className="h-7 gap-1 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 gap-1 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
             {hasAdvancedContent && !isExpanded && (
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -124,7 +125,7 @@ function VocabularyCardComponent({
             size="icon-xs"
             onClick={() => onRemove(item.id)}
             disabled={isPending}
-            className="h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            className="h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
             title="Xóa thẻ từ vựng"
             aria-label={`Xóa thẻ ${index + 1}`}
           >
@@ -135,7 +136,7 @@ function VocabularyCardComponent({
 
       {/* Main Fields Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Left Column: Word, IPA, Example */}
+        {/* Left Column: Word, IPA, Example, Example Translation */}
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-foreground">
@@ -180,9 +181,25 @@ function VocabularyCardComponent({
             </Label>
             <input
               type="text"
-              placeholder="Ví dụ: Reading daily helps expand your vocabulary."
+              placeholder="Ví dụ: She was reluctant to share her opinion."
               value={draft.example}
               onChange={(e) => handleFieldChange("example", e.target.value)}
+              disabled={isPending}
+              className={inputBaseClass}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">
+              Nghĩa của ví dụ
+            </Label>
+            <input
+              type="text"
+              placeholder="Ví dụ: Cô ấy miễn cưỡng chia sẻ ý kiến của mình."
+              value={draft.example_translation}
+              onChange={(e) =>
+                handleFieldChange("example_translation", e.target.value)
+              }
               disabled={isPending}
               className={inputBaseClass}
             />
@@ -197,7 +214,7 @@ function VocabularyCardComponent({
             </Label>
             <input
               type="text"
-              placeholder="Ví dụ: kiên cường, bền bỉ..."
+              placeholder="Ví dụ: miễn cưỡng, không sẵn lòng..."
               value={draft.meaning}
               onChange={(e) => handleFieldChange("meaning", e.target.value)}
               disabled={isPending}
@@ -247,7 +264,7 @@ function VocabularyCardComponent({
             </Label>
             <input
               type="text"
-              placeholder="Ví dụ: tough, adaptable, strong..."
+              placeholder="Ví dụ: unwilling, hesitant..."
               value={draft.synonyms}
               onChange={(e) => handleFieldChange("synonyms", e.target.value)}
               disabled={isPending}
@@ -256,6 +273,23 @@ function VocabularyCardComponent({
           </div>
         </div>
       </div>
+
+      {/* Live Preview of Example and Example Translation */}
+      {hasExamplePreview && (
+        <div className="pt-2 border-t border-border/60 space-y-1.5">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+            Xem trước ví dụ & nghĩa câu:
+          </span>
+          <HighlightedExample
+            word={draft.word}
+            meaning={draft.meaning}
+            example={draft.example}
+            exampleTranslation={draft.example_translation}
+            compact
+            showLabels
+          />
+        </div>
+      )}
 
       {/* Expandable Advanced Fields */}
       <AnimatePresence initial={false}>
@@ -267,33 +301,17 @@ function VocabularyCardComponent({
             transition={{ duration: 0.18, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="grid grid-cols-1 gap-3 border-t border-dashed border-border/70 pt-3.5 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 border-t border-dashed border-border/70 pt-3.5 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">
                   Từ trái nghĩa
                 </Label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: fragile, weak..."
+                  placeholder="Ví dụ: willing, eager..."
                   value={draft.antonyms}
                   onChange={(e) =>
                     handleFieldChange("antonyms", e.target.value)
-                  }
-                  disabled={isPending}
-                  className={inputBaseClass}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Dịch câu ví dụ
-                </Label>
-                <input
-                  type="text"
-                  placeholder="Bản dịch tiếng Việt cho câu ví dụ..."
-                  value={draft.example_translation}
-                  onChange={(e) =>
-                    handleFieldChange("example_translation", e.target.value)
                   }
                   disabled={isPending}
                   className={inputBaseClass}

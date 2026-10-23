@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/common/SectionCard";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/types/database";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -92,15 +93,15 @@ export function FlashcardViewer({ word }: FlashcardViewerProps) {
                 <p className="text-sm font-semibold tracking-wider text-muted-foreground uppercase">Ý NGHĨA</p>
                 <p className="text-2xl font-bold text-foreground">{word.meaning}</p>
               </div>
-              {word.example && (
-                <div className="border-t border-border pt-4 space-y-2 max-w-md mx-auto text-left">
-                  <p className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">VÍ DỤ</p>
-                  <p className="text-sm font-medium italic text-foreground/90 leading-relaxed">
-                    &ldquo;{word.example}&rdquo;
-                  </p>
-                  {word.example_translation && (
-                    <p className="text-xs text-muted-foreground">{word.example_translation}</p>
-                  )}
+              {(word.example || word.example_translation) && (
+                <div className="border-t border-border pt-4 max-w-md mx-auto text-left">
+                  <HighlightedExample
+                    word={word.word}
+                    meaning={word.meaning}
+                    example={word.example}
+                    exampleTranslation={word.example_translation}
+                    showLabels
+                  />
                 </div>
               )}
             </div>

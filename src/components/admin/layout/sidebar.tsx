@@ -167,7 +167,7 @@ export function AdminSidebar() {
       {/* Footer Return Link */}
       <div className="border-t border-slate-800 p-3 shrink-0 bg-[#030f31]">
         <Link
-          href="/dashboard"
+          href="/u"
           className={cn(
             buttonVariants({ variant: "outline" }),
             "w-full justify-start border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-900/60",

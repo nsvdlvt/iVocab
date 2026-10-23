@@ -5,7 +5,7 @@ import { assertAdmin } from "@/lib/auth/admin";
 import { AdminUserRepository } from "@/repositories/admin/user.repository";
 import { AdminAuditRepository } from "@/repositories/admin/audit.repository";
 
-export async function changeUserRoleAction(userId: string, newRole: "user" | "admin") {
+export async function changeUserRoleAction(userId: string, newRole: "user" | "member" | "e_team" | "admin") {
   const { user } = await assertAdmin();
 
   // Prevent self-demotion to avoid locking out the current administrator

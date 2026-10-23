@@ -190,45 +190,11 @@ export const ReviewRepository = {
   },
 
   async getSummary(userId: string): Promise<SrsSummary> {
-    const rows = await getSrsVocabularyRows(userId);
-    const dueRows = rows.filter((row) => {
-      const review = getReviewRow(row);
-      return classifyForecastRow({ next_review: review?.next_review ?? null, status: review?.status ?? null }, new Date()) === "today";
-    });
-    console.log(
-      "[SRS DEBUG]",
-      "[ReviewRepository.getSummary dueRows]",
-      "dueRows.length=",
-      dueRows.length,
-      "dueRows=",
-      dueRows.map((row) => ({
-        vocabularyId: row.id,
-        reviewId: getReviewRow(row)?.id ?? null,
-        status: getReviewRow(row)?.status ?? null,
-        nextReview: getReviewRow(row)?.next_review ?? null,
-      }))
-    );
-
-    const forecast = summarizeSrsForecast(
-      rows.map((row) => {
-        const review = getReviewRow(row);
-        return { next_review: review?.next_review ?? null, status: review?.status ?? null };
-      }),
-      7,
-      new Date()
-    );
-
+    const stats = await VocabularyStatsService.getUserVocabularyStats(userId);
     return {
-      dueToday: forecast.summary.today,
-      masteredWords: rows.filter((row) => {
-        const review = getReviewRow(row);
-        return review?.status === "lv5" || review?.status === "mastered";
-      }).length,
-      learningWords: rows.filter((row) => {
-        const review = getReviewRow(row);
-        const level = review?.status?.startsWith("lv") ? Number(review.status.slice(2)) : null;
-        return review?.status === "new" || review?.status === "learning" || (level !== null && level < 2) || !review?.next_review;
-      }).length,
+      dueToday: stats.dueToday,
+      masteredWords: stats.masteredWords,
+      learningWords: stats.learningWords,
     };
   },
 

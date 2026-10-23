@@ -10,6 +10,8 @@ export interface QuizQuestion {
   options: string[]; // 4 shuffled choices
   correctIndex: number;
   explanation: string;
+  example?: string | null;
+  example_translation?: string | null;
 }
 
 /** Minimum number of vocabulary items required to generate a quiz. */
@@ -61,15 +63,21 @@ export const QuizRepository = {
       const allOptions = shuffle([correctAnswer, ...distractors]);
       const correctIndex = allOptions.indexOf(correctAnswer);
 
+      const explanation = vocabItem.example
+        ? vocabItem.example_translation
+          ? `Ví dụ: "${vocabItem.example}" (${vocabItem.example_translation})`
+          : `Ví dụ: "${vocabItem.example}"`
+        : `Nghĩa: ${correctAnswer}`;
+
       return {
         id: vocabItem.id,
         word: vocabItem.word,
         correctAnswer,
         options: allOptions,
         correctIndex,
-        explanation: vocabItem.example
-          ? `Ví dụ: "${vocabItem.example}"`
-          : `Nghĩa: ${correctAnswer}`,
+        explanation,
+        example: vocabItem.example,
+        example_translation: vocabItem.example_translation,
       };
     });
   },

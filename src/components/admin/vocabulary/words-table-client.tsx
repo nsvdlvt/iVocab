@@ -53,6 +53,7 @@ export function WordsTableClient({
     ipa: "",
     part_of_speech: "",
     example: "",
+    example_translation: "",
     difficulty: "",
   });
   const [isUpdating, setIsUpdating] = useState(false);
@@ -86,6 +87,7 @@ export function WordsTableClient({
       ipa: w.ipa || "",
       part_of_speech: w.part_of_speech || "",
       example: w.example || "",
+      example_translation: w.example_translation || "",
       difficulty: w.difficulty || "medium",
     });
   };
@@ -222,6 +224,11 @@ export function WordsTableClient({
                             "{w.example}"
                           </span>
                         )}
+                        {w.example_translation && (
+                          <span className="text-[11px] text-muted-foreground/80 truncate">
+                            {w.example_translation}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs">
@@ -345,6 +352,14 @@ export function WordsTableClient({
                 value={wordForm.example}
                 placeholder="Example sentence..."
                 onChange={(e) => setWordForm({ ...wordForm, example: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Nghĩa của ví dụ</Label>
+              <Input
+                value={wordForm.example_translation}
+                placeholder="Dịch câu ví dụ sang tiếng Việt..."
+                onChange={(e) => setWordForm({ ...wordForm, example_translation: e.target.value })}
               />
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
@@ -30,7 +31,7 @@ function getState(review: ReviewRow | null) {
 }
 
 export const VocabSetSummaryService = {
-  async getUserVocabSetSummaries(userId: string): Promise<Record<string, VocabSetProgressSummary>> {
+  getUserVocabSetSummaries: cache(async (userId: string): Promise<Record<string, VocabSetProgressSummary>> => {
     const supabase = await createClient();
 
     const summaries: Record<string, VocabSetProgressSummary> = {};
@@ -139,5 +140,5 @@ export const VocabSetSummaryService = {
     }
 
     return summaries;
-  },
+  }),
 };

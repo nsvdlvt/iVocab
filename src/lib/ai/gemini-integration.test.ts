@@ -59,4 +59,30 @@ describe.sequential("Gemini AI Integration", () => {
     expect(vocabList.length).toBeGreaterThanOrEqual(1);
     expect(vocabList.some((item) => item.word.toLowerCase().includes("apple"))).toBe(true);
   }, 30000);
+
+  it("should generate vocabulary by topic with options", async () => {
+    const vocabList = await importVocabulary({
+      prompt: "IELTS Environment",
+      mode: "topic",
+      count: 5,
+      level: "B1-B2",
+    });
+    expect(vocabList.length).toBeGreaterThanOrEqual(3);
+    expect(vocabList[0].word).toBeDefined();
+    expect(vocabList[0].meaning).toBeDefined();
+    expect(vocabList[0].ipa).toBeDefined();
+  }, 35000);
+
+  it("should extract vocabulary from a reading passage", async () => {
+    const passage =
+      "Artificial intelligence is rapidly transforming modern workplaces. Rather than making workers obsolete, it serves as an indispensable tool.";
+    const vocabList = await importVocabulary({
+      prompt: passage,
+      mode: "passage",
+      count: 3,
+    });
+    expect(vocabList.length).toBeGreaterThanOrEqual(1);
+    expect(vocabList[0].word).toBeDefined();
+    expect(vocabList[0].meaning).toBeDefined();
+  }, 35000);
 });

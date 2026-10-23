@@ -343,9 +343,9 @@ export function VocabSetCard({
           </span>
 
           {!isDeleted && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground group-hover:bg-primary group-hover:text-primary-foreground">
               <Play className="h-3 w-3 fill-current" />
-              Học ngay
+              <span>Học ngay</span>
             </span>
           )}
         </div>

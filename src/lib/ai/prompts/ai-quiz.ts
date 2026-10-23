@@ -5,6 +5,7 @@ export interface AiQuizVocabularyItem {
   partOfSpeech: string | null;
   srsLevel: number;
   example?: string | null;
+  example_translation?: string | null;
 }
 
 export function buildAiQuizPrompt(items: AiQuizVocabularyItem[]): string {
@@ -16,6 +17,7 @@ export function buildAiQuizPrompt(items: AiQuizVocabularyItem[]): string {
         `part_of_speech: ${item.partOfSpeech ?? "unknown"}`,
         `srs_level: Lv${item.srsLevel}`,
         item.example ? `example: ${item.example}` : null,
+        item.example_translation ? `example_translation: ${item.example_translation}` : null,
       ]
         .filter(Boolean)
         .join(" | ");
@@ -62,12 +64,7 @@ Output rules:
   ]
 }
 
-Rules for the passage:
-- Keep blanks in order and make sure every blank appears exactly once in the passage.
-- The passage must remain grammatical with the blanks inserted.
-- Avoid giving away answers via grammar patterns or obvious clues.
-- Use the provided vocabulary metadata as the source of truth.
-
-Provided vocabulary:
-${vocabLines}`;
+Input vocabulary list:
+${vocabLines}
+`;
 }

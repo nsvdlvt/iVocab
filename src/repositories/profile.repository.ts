@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { Client } from "pg";
@@ -26,7 +27,7 @@ async function queryProfileById(userId: string): Promise<Pick<ProfileRow, "id" |
 }
 
 export const ProfileRepository = {
-  async getProfile(userId: string): Promise<ProfileRow | null> {
+  getProfile: cache(async (userId: string): Promise<ProfileRow | null> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("profiles")
@@ -36,7 +37,7 @@ export const ProfileRepository = {
 
     if (error) throw error;
     return data;
-  },
+  }),
 
   async getPublicProfile(userId: string): Promise<Pick<ProfileRow, "id" | "display_name" | "avatar_url"> | null> {
     try {

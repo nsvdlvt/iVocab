@@ -5,6 +5,7 @@ export interface ParsedItem {
   ipa: string;
   partOfSpeech: string;
   example: string;
+  example_translation: string;
   synonyms: string; // Comma separated raw string
   isValid: boolean;
   rawIndex: number;
@@ -17,7 +18,15 @@ export interface ParseOptions {
   customCardDelimiter: string;
 }
 
-type MarkdownField = "word" | "meaning" | "ipa" | "partOfSpeech" | "example" | "synonyms" | null;
+type MarkdownField =
+  | "word"
+  | "meaning"
+  | "ipa"
+  | "partOfSpeech"
+  | "example"
+  | "example_translation"
+  | "synonyms"
+  | null;
 
 const markdownHeaderMap: Record<string, MarkdownField> = {
   "từ vựng": "word",
@@ -25,6 +34,7 @@ const markdownHeaderMap: Record<string, MarkdownField> = {
   word: "word",
   term: "word",
   "nghĩa": "meaning",
+  "ý nghĩa": "meaning",
   meaning: "meaning",
   vietnamese: "meaning",
   definition: "meaning",
@@ -36,9 +46,20 @@ const markdownHeaderMap: Record<string, MarkdownField> = {
   "ví dụ": "example",
   example: "example",
   sentence: "example",
+  "câu ví dụ": "example",
+  "nghĩa của ví dụ": "example_translation",
+  "nghĩa ví dụ": "example_translation",
+  "dịch ví dụ": "example_translation",
+  "dịch câu ví dụ": "example_translation",
+  "bản dịch ví dụ": "example_translation",
+  "example translation": "example_translation",
+  example_translation: "example_translation",
+  "sentence translation": "example_translation",
+  translation: "example_translation",
   synonyms: "synonyms",
   synonym: "synonyms",
   "đồng nghĩa": "synonyms",
+  "từ đồng nghĩa": "synonyms",
 };
 
 function normalizeMarkdownCellValue(value: string): string {
@@ -98,21 +119,25 @@ export function detectMarkdownTable(text: string): boolean {
   const headerIndex = lines.findIndex((line) => line.startsWith("|") && line.endsWith("|"));
   if (headerIndex < 0 || headerIndex + 1 >= lines.length) return false;
 
-  const header = lines[headerIndex];
-  const separator = lines[headerIndex + 1];
-  return splitMarkdownRow(header).length >= 2 && isMarkdownSeparatorRow(separator);
+  return isMarkdownSeparatorRow(lines[headerIndex + 1]);
 }
 
-function mapMarkdownHeader(header: string): MarkdownField {
-  const normalized = header
+function mapMarkdownHeader(rawHeader: string): MarkdownField {
+  const cleaned = rawHeader
     .toLowerCase()
-    .replace(/\s+/g, " ")
+    .replace(/[*_`]/g, "")
     .trim();
-  return markdownHeaderMap[normalized] ?? null;
+
+  return markdownHeaderMap[cleaned] ?? null;
 }
 
 export function parseMarkdownTable(text: string): ParsedItem[] {
-  const lines = text.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = text
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   const headerIndex = lines.findIndex((line) => line.startsWith("|") && line.endsWith("|"));
   if (headerIndex < 0 || headerIndex + 1 >= lines.length) return [];
 
@@ -138,6 +163,7 @@ export function parseMarkdownTable(text: string): ParsedItem[] {
       ipa: "",
       partOfSpeech: "",
       example: "",
+      example_translation: "",
       synonyms: "",
     };
 
@@ -158,6 +184,7 @@ export function parseMarkdownTable(text: string): ParsedItem[] {
       ipa: row.ipa,
       partOfSpeech: row.partOfSpeech,
       example: row.example,
+      example_translation: row.example_translation,
       synonyms: row.synonyms,
       isValid,
       rawIndex: i,
@@ -207,18 +234,42 @@ export function parseQuickImportText(
     const parts = trimmedLine.split(termSep).map((p) => p.trim());
     
     // Support formats:
-    // parts[0] -> word
-    // parts[1] -> meaning
-    // parts[2] -> ipa
-    // parts[3] -> partOfSpeech
-    // parts[4] -> example
-    // parts[5] -> synonyms
+    // 2 parts: word, meaning
+    // 3 parts: word, meaning, example
+    // 4 parts: word, meaning, ipa, example
+    // 5 parts: word, meaning, ipa, partOfSpeech, example
+    // 6 parts: word, meaning, ipa, partOfSpeech, example, example_translation (or synonyms)
+    // 7 parts: word, meaning, ipa, partOfSpeech, example, example_translation, synonyms
     const word = parts[0] || "";
     const meaning = parts[1] || "";
-    const ipa = parts[2] || "";
-    const partOfSpeech = parts[3] || "";
-    const example = parts[4] || "";
-    const synonyms = parts[5] || "";
+    let ipa = "";
+    let partOfSpeech = "";
+    let example = "";
+    let example_translation = "";
+    let synonyms = "";
+
+    if (parts.length === 3) {
+      example = parts[2] || "";
+    } else if (parts.length === 4) {
+      ipa = parts[2] || "";
+      example = parts[3] || "";
+    } else if (parts.length === 5) {
+      ipa = parts[2] || "";
+      partOfSpeech = parts[3] || "";
+      example = parts[4] || "";
+    } else if (parts.length === 6) {
+      ipa = parts[2] || "";
+      partOfSpeech = parts[3] || "";
+      example = parts[4] || "";
+      // Check if parts[5] is likely an example translation or synonyms
+      example_translation = parts[5] || "";
+    } else if (parts.length >= 7) {
+      ipa = parts[2] || "";
+      partOfSpeech = parts[3] || "";
+      example = parts[4] || "";
+      example_translation = parts[5] || "";
+      synonyms = parts[6] || "";
+    }
 
     const isValid = word.length > 0 && meaning.length > 0;
 
@@ -229,6 +280,7 @@ export function parseQuickImportText(
       ipa,
       partOfSpeech,
       example,
+      example_translation,
       synonyms,
       isValid,
       rawIndex: i,

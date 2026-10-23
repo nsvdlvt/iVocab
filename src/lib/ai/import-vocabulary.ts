@@ -1,9 +1,20 @@
 import { z } from "zod";
 import { LRUCache } from "@/lib/utils/lruCache";
-import { AIValidationError, AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
-import { buildImportPrompt } from "@/lib/ai/prompts/import-vocabulary";
+import {
+  AIValidationError,
+  AIResponseError,
+  AIAbortError,
+  AINetworkError,
+} from "@/lib/ai/errors";
+import {
+  buildImportPrompt,
+  ImportPromptOptions,
+} from "@/lib/ai/prompts/import-vocabulary";
 import { performance } from "perf_hooks";
-import { extractJsonPayload, requestTextResponse } from "@/lib/ai/json-response";
+import {
+  extractJsonPayload,
+  requestTextResponse,
+} from "@/lib/ai/json-response";
 
 export const importVocabItemSchema = z.object({
   word: z.string().min(1),
@@ -11,12 +22,22 @@ export const importVocabItemSchema = z.object({
   meaning: z.string().nullish().transform((v) => v ?? ""),
   partOfSpeech: z.string().nullish().transform((v) => v ?? ""),
   exampleSentence: z.string().nullish().transform((v) => v ?? ""),
+  exampleTranslation: z.string().nullish().transform((v) => v ?? ""),
   synonyms: z.array(z.string()).nullish().transform((v) => v ?? []),
   topic: z.string().nullish().transform((v) => v ?? ""),
 });
 
 export const importVocabListSchema = z.array(importVocabItemSchema);
 export type AIVocabItem = z.infer<typeof importVocabItemSchema>;
+
+export interface ImportVocabularyOptions {
+  prompt: string;
+  mode?: "topic" | "passage" | "words";
+  count?: number;
+  level?: string;
+  tone?: string;
+  signal?: AbortSignal;
+}
 
 const importCache = new LRUCache<string, AIVocabItem[]>(100);
 
@@ -49,7 +70,18 @@ function standardizeItem(raw: unknown): unknown {
   obj.ipa = normalizeWhitespace(String(obj.ipa ?? ""));
   obj.meaning = normalizeWhitespace(String(obj.meaning ?? ""));
   obj.partOfSpeech = normalizeWhitespace(String(obj.partOfSpeech ?? ""));
-  obj.exampleSentence = normalizeWhitespace(String(obj.exampleSentence ?? ""));
+  obj.exampleSentence = normalizeWhitespace(
+    String(obj.exampleSentence ?? obj.example ?? "")
+  );
+  obj.exampleTranslation = normalizeWhitespace(
+    String(
+      obj.exampleTranslation ??
+        obj.example_translation ??
+        obj.exampleVi ??
+        obj.translation ??
+        ""
+    )
+  );
   obj.synonyms = dedupeStrings(obj.synonyms);
   obj.topic = normalizeWhitespace(String(obj.topic ?? ""));
   return obj;
@@ -60,7 +92,10 @@ function standardizeList(raw: unknown): unknown {
   const seen = new Set<string>();
   return raw
     .map((item) => standardizeItem(item))
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    .filter(
+      (item): item is Record<string, unknown> =>
+        !!item && typeof item === "object"
+    )
     .filter((item) => {
       const key = normalizeWord(String(item.word ?? ""));
       if (!key) return false;
@@ -70,7 +105,10 @@ function standardizeList(raw: unknown): unknown {
     });
 }
 
-async function singleRequest(prompt: string, signal?: AbortSignal): Promise<AIVocabItem[]> {
+async function singleRequest(
+  prompt: string,
+  signal?: AbortSignal
+): Promise<AIVocabItem[]> {
   const requestStart = performance.now();
   const rawText = await requestTextResponse(prompt, signal);
   const aiRequestMs = performance.now() - requestStart;
@@ -85,7 +123,9 @@ async function singleRequest(prompt: string, signal?: AbortSignal): Promise<AIVo
   const validationMs = performance.now() - validationStart;
 
   if (!validated.success) {
-    throw new AIValidationError(`Zod Validation Error: ${validated.error.message}`);
+    throw new AIValidationError(
+      `Zod Validation Error: ${validated.error.message}`
+    );
   }
 
   if (process.env.NODE_ENV === "development") {
@@ -99,36 +139,105 @@ async function singleRequest(prompt: string, signal?: AbortSignal): Promise<AIVo
   return validated.data;
 }
 
-export async function importVocabulary(input: string, imageFileBase64?: string, signal?: AbortSignal): Promise<AIVocabItem[]> {
+export async function importVocabulary(
+  inputOrOptions: string | ImportVocabularyOptions,
+  legacyImageFileBase64?: string,
+  legacySignal?: AbortSignal
+): Promise<AIVocabItem[]> {
   const overallStart = performance.now();
-  const cacheKey = imageFileBase64 ? `img:${imageFileBase64.substring(0, 100)}` : `prompt:${input}`;
+
+  const isOptions =
+    typeof inputOrOptions === "object" && inputOrOptions !== null;
+  const promptText = isOptions ? inputOrOptions.prompt : inputOrOptions;
+  const signal = isOptions ? inputOrOptions.signal : legacySignal;
+
+  const promptOptions: ImportPromptOptions = isOptions
+    ? {
+        input: inputOrOptions.prompt,
+        mode: inputOrOptions.mode,
+        count: inputOrOptions.count,
+        level: inputOrOptions.level,
+        tone: inputOrOptions.tone,
+      }
+    : { input: inputOrOptions };
+
+  const cacheKey = `opt:${JSON.stringify(promptOptions)}`;
   const cached = importCache.get(cacheKey);
   if (cached) return cached;
 
-  if (imageFileBase64) {
-    throw new AIResponseError("Current provider does not support image import.");
-  }
-
   const promptStart = performance.now();
-  const prompt = buildImportPrompt(input);
+  const prompt = buildImportPrompt(promptOptions);
   const promptGenerationMs = performance.now() - promptStart;
 
   const result = await singleRequest(prompt, signal).catch((err) => {
-    if (err instanceof AIAbortError || err instanceof AINetworkError || err instanceof AIValidationError || err instanceof AIResponseError) {
+    if (
+      err instanceof AIAbortError ||
+      err instanceof AINetworkError ||
+      err instanceof AIValidationError ||
+      err instanceof AIResponseError
+    ) {
       throw err;
     }
-    throw new AIResponseError("KhÃƒÂ´ng thÃ¡Â»Æ’ tÃ¡ÂºÂ¡o danh sÃƒÂ¡ch tÃ¡Â»Â« vÃ¡Â»Â±ng. Vui lÃƒÂ²ng thÃ¡Â»Â­ lÃ¡ÂºÂ¡i.");
+    const message = err instanceof Error ? err.message : String(err);
+    throw new AIResponseError(
+      `Không thể tạo danh sách từ vựng từ AI (${message}). Vui lòng thử lại.`
+    );
   });
 
   importCache.set(cacheKey, result);
   if (process.env.NODE_ENV === "development") {
-    console.log("[AI Import] Prompt generation", Math.round(promptGenerationMs), "ms");
-    console.log("[AI Import] Total text import", Math.round(performance.now() - overallStart), "ms");
+    console.log(
+      "[AI Import] Prompt generation",
+      Math.round(promptGenerationMs),
+      "ms"
+    );
+    console.log(
+      "[AI Import] Total text import",
+      Math.round(performance.now() - overallStart),
+      "ms"
+    );
   }
   return result;
 }
 
-export async function enrichVocabulary(...args: unknown[]): Promise<never> {
-  void args;
-  throw new AIResponseError("KhÃƒÂ´ng hÃ¡Â»â€” trÃ¡Â»Â£ lÃƒÂ m giÃƒÂ u dÃ¡Â»Â¯ liÃ¡Â»â€¡u trong chÃ¡ÂºÂ¿ Ã„â€˜Ã¡Â»â„¢ rÃƒÂºt gÃ¡Â»Ân nÃƒÂ y.");
+export async function enrichVocabulary(
+  item: {
+    word: string;
+    meaning?: string;
+    ipa?: string;
+    partOfSpeech?: string;
+    exampleSentence?: string;
+    synonyms?: string[];
+  },
+  missingFields: string[],
+  signal?: AbortSignal
+): Promise<Record<string, unknown>> {
+  const prompt = `Return strict JSON only.
+You are an English-Vietnamese vocabulary expert.
+Provide missing vocabulary fields for the English word: "${item.word}".
+Current available info:
+- Word: ${item.word}
+${item.meaning ? `- Current Meaning: ${item.meaning}` : ""}
+${item.partOfSpeech ? `- Part of Speech: ${item.partOfSpeech}` : ""}
+
+Missing fields to generate: ${missingFields.join(", ")}.
+
+Requirements:
+- "ipa": standard IPA between slashes, e.g. "/.../".
+- "meaning": Concise Vietnamese meaning (2-6 words, flashcard-friendly, NEVER English).
+- "partOfSpeech": noun, verb, adjective, adverb, or phrasal verb.
+- "exampleSentence": natural CEFR B1-B2 English sentence (8-16 words).
+- "synonyms": array of 2-4 English synonyms.
+
+Return JSON object containing ONLY the requested missing fields:
+{
+  ${missingFields.map((f) => `"${f}": ...`).join(",\n  ")}
+}`;
+
+  const rawText = await requestTextResponse(prompt, signal);
+  const parsed = extractJsonPayload(rawText);
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    return parsed as Record<string, unknown>;
+  }
+  throw new AIResponseError("Phản hồi làm giàu từ vựng không hợp lệ.");
 }

@@ -164,7 +164,7 @@ export async function updateVocabularySetWithWords(
     };
   }
 
-  revalidatePath("/vocabulary");
-  revalidatePath(`/vocabulary/${setId}`);
+  revalidatePath("/u/vocabulary");
+  revalidatePath(`/u/vocabulary/${setId}`);
   return { success: true };
 }

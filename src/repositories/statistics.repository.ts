@@ -83,12 +83,14 @@ export const StatisticsRepository = {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 7);
 
-    const sessions = await StudySessionRepository.getSessionsInRange(
-      userId, 
-      startOfWeek.toISOString(), 
-      endOfWeek.toISOString()
-    );
-    const allSessions = await StudySessionRepository.getAllSessions(userId);
+    const [sessions, allSessions] = await Promise.all([
+      StudySessionRepository.getSessionsInRange(
+        userId, 
+        startOfWeek.toISOString(), 
+        endOfWeek.toISOString()
+      ),
+      StudySessionRepository.getAllSessions(userId),
+    ]);
     const activeStudyDays = getActiveStudyDaysMap(allSessions);
     const streak = calculateCurrentStreak(allSessions, now);
 

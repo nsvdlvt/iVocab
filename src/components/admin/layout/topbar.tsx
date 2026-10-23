@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,15 +8,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, LayoutDashboard, Shield } from "lucide-react";
+import { User, LogOut, Settings, LayoutDashboard, Shield, Briefcase, ArrowLeftRight } from "lucide-react";
 import { AdminCommandPalette } from "@/components/admin/layout/command-palette";
 import { AdminMobileNav } from "@/components/admin/layout/mobile-nav";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { logoutAction } from "@/actions/auth/logout";
+import { ROUTES } from "@/constants/routes";
 
 interface AdminTopbarProps {
   user: { id?: string; email?: string; user_metadata?: { avatar_url?: string; full_name?: string } } | null | undefined;
@@ -61,9 +60,10 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
 
   const handleLogout = async () => {
     try {
-      await logoutAction();
+      const result = await logoutAction();
+      window.location.replace(result?.redirectTo || ROUTES.LOGIN);
     } catch {
-      window.location.href = "/login";
+      window.location.replace(ROUTES.LOGIN);
     }
   };
 
@@ -107,17 +107,29 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 p-2">
-            <DropdownMenuLabel className="font-normal">
+            <div className="px-1.5 py-1">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-semibold leading-none">{user?.user_metadata?.full_name || "Quản trị viên"}</p>
                 <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
               </div>
-            </DropdownMenuLabel>
+            </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+            <DropdownMenuItem onClick={() => router.push(ROUTES.SELECT_WORKSPACE)}>
+              <div className="flex items-center gap-2 cursor-pointer w-full text-primary font-medium">
+                <ArrowLeftRight className="h-4 w-4" />
+                <span>Chuyển đổi không gian</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(ROUTES.DASHBOARD)}>
               <div className="flex items-center gap-2 cursor-pointer w-full">
                 <LayoutDashboard className="h-4 w-4" />
-                <span>Trang người học</span>
+                <span>Không gian Vocabeer</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(ROUTES.ETEAM_DASHBOARD)}>
+              <div className="flex items-center gap-2 cursor-pointer w-full text-purple-600 dark:text-purple-400">
+                <Briefcase className="h-4 w-4" />
+                <span>Không gian E-Team</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/admin/settings")}>

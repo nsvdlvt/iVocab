@@ -14,6 +14,7 @@ import {
 import { Database } from "@/types/database";
 import { SrsService } from "@/lib/srs/srs-service";
 import { cn } from "@/lib/utils";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 import { toggleFavoriteVocabulary } from "@/actions/vocabulary/favorite";
 import { toast } from "sonner";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
@@ -163,6 +164,7 @@ export function WordTable({ words }: WordTableProps) {
       ipa: w.ipa,
       part_of_speech: w.part_of_speech,
       example: w.example,
+      example_translation: w.example_translation,
       synonyms: w.synonyms,
       note: w.note,
     });
@@ -179,7 +181,8 @@ export function WordTable({ words }: WordTableProps) {
         w.meaning.toLowerCase().includes(q) ||
         (w.ipa ?? "").toLowerCase().includes(q) ||
         (w.part_of_speech ?? "").toLowerCase().includes(q) ||
-        (w.example ?? "").toLowerCase().includes(q)
+        (w.example ?? "").toLowerCase().includes(q) ||
+        (w.example_translation ?? "").toLowerCase().includes(q)
       );
     });
   }, [localWords, searchQuery, onlyStarred, focusWord]);
@@ -347,12 +350,33 @@ export function WordTable({ words }: WordTableProps) {
                           </p>
                           {w.example && (
                             <p className="text-xs italic text-muted-foreground leading-relaxed">
-                              &ldquo;{w.example}&rdquo;
+                              &ldquo;
+                              <HighlightedSentence
+                                sentence={w.example}
+                                type="en"
+                                targetWord={w.word}
+                              />
+                              &rdquo;
                             </p>
                           )}
                           {w.example_translation && (
                             <p className="text-[11px] text-muted-foreground/80">
-                              {w.example_translation}
+                              <HighlightedSentence
+                                sentence={w.example_translation}
+                                type="vi"
+                                meaning={w.meaning}
+                              />
+                            </p>
+                          )}
+                          {w.synonyms && w.synonyms.length > 0 && (
+                            <p className="text-[11px] text-muted-foreground pt-0.5">
+                              <span className="font-semibold text-foreground/80">Cụm từ / Đồng nghĩa:</span>{" "}
+                              {w.synonyms.join(", ")}
+                            </p>
+                          )}
+                          {w.note && (
+                            <p className="text-[11px] text-muted-foreground/85 italic">
+                              <span className="font-medium not-italic text-foreground/80">Ghi chú:</span> {w.note}
                             </p>
                           )}
                         </div>
@@ -484,17 +508,40 @@ export function WordTable({ words }: WordTableProps) {
                     <p className="text-sm font-medium text-foreground">
                       {w.meaning}
                     </p>
-                    {w.example && (
+                    {(w.example || w.example_translation) && (
                       <div className="rounded-lg bg-muted/40 p-2.5 text-xs">
-                        <p className="italic text-foreground/90">
-                          &ldquo;{w.example}&rdquo;
-                        </p>
+                        {w.example && (
+                          <p className="italic text-foreground/90">
+                            &ldquo;
+                            <HighlightedSentence
+                              sentence={w.example}
+                              type="en"
+                              targetWord={w.word}
+                            />
+                            &rdquo;
+                          </p>
+                        )}
                         {w.example_translation && (
                           <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            {w.example_translation}
+                            <HighlightedSentence
+                              sentence={w.example_translation}
+                              type="vi"
+                              meaning={w.meaning}
+                            />
                           </p>
                         )}
                       </div>
+                    )}
+                    {w.synonyms && w.synonyms.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground/80">Cụm từ / Đồng nghĩa:</span>{" "}
+                        {w.synonyms.join(", ")}
+                      </p>
+                    )}
+                    {w.note && (
+                      <p className="text-xs text-muted-foreground/85 italic">
+                        <span className="font-medium not-italic text-foreground/80">Ghi chú:</span> {w.note}
+                      </p>
                     )}
                     <div className="flex items-center justify-between pt-0.5 text-[11px]">
                       <span className={statusMeta.tone}>{statusMeta.label}</span>

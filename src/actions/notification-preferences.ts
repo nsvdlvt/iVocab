@@ -104,7 +104,7 @@ export async function updateUserNotificationPreferencesAction(
       return { ok: false, error: error.message };
     }
 
-    revalidatePath("/settings");
+    revalidatePath("/u/settings");
     return { ok: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

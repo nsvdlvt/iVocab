@@ -8,6 +8,10 @@ import { Database } from "@/types/database";
 import { AnswerState } from "@/lib/learning/question-types";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import {
+  HighlightedExample,
+  HighlightedSentence,
+} from "@/components/common/HighlightedExample";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -99,80 +103,117 @@ export function StudyExplanation({
       return clearTimers;
     }
 
-    return clearTimers;
+    return () => {
+      clearTimeout(resetCountdownHandle);
+    };
   }, [autoContinue, isCorrect, isNearly]);
 
   const speakTextWeb = (text: string) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
-  const hasSynonyms = word.synonyms && word.synonyms.length > 0;
-  const hasAntonyms = word.antonyms && word.antonyms.length > 0;
+  useEffect(() => {
+    if (autoPlayExplanationAudio && (isCorrect || isNearly)) {
+      const timer = setTimeout(() => {
+        if (onSpeakWord) onSpeakWord();
+        else speakTextWeb(word.word);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlayExplanationAudio, isCorrect, isNearly, word.word, onSpeakWord]);
 
-  const statusConfig = isCorrect
-    ? {
-        icon: CheckCircle2,
-        label: "Chính xác!",
-        className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-      }
-    : isNearly
-      ? {
-          icon: AlertCircle,
-          label: "Gần chính xác!",
-          className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-        }
-      : isUnknown
-        ? {
-            icon: HelpCircle,
-            label: "Đã bỏ qua — Hãy ghi nhớ từ này",
-            className: "border-border bg-muted/60 text-muted-foreground",
-          }
-        : {
-            icon: XCircle,
-            label: "Chưa chính xác — Đáp án đúng bên dưới",
-            className: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
-          };
-
-  const StatusIcon = statusConfig.icon;
+  const hasSynonyms = Boolean(word.synonyms && word.synonyms.length > 0);
+  const hasAntonyms = Boolean(word.antonyms && word.antonyms.length > 0);
+  const hasExamples = Boolean(word.example || word.example_translation);
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200 select-none">
-      <div className="border border-border/80 rounded-2xl bg-card shadow-xs overflow-hidden">
-        {/* Status Banner */}
-        <div className={cn("flex items-center justify-between px-5 py-2.5 border-b text-xs font-semibold", statusConfig.className)}>
+    <div className="w-full max-w-2xl mx-auto space-y-4 animate-in fade-in zoom-in-95 duration-200">
+      <div
+        className={cn(
+          "rounded-2xl border p-4 sm:p-5 shadow-sm space-y-4 text-center transition-all",
+          isCorrect && "border-emerald-500/30 bg-emerald-500/5",
+          isNearly && "border-amber-500/30 bg-amber-500/5",
+          isUnknown && "border-slate-500/30 bg-slate-500/5",
+          !isCorrect && !isNearly && !isUnknown && "border-rose-500/30 bg-rose-500/5"
+        )}
+      >
+        {/* Status header banner */}
+        <div className="flex items-center justify-between pb-3 border-b border-border/60">
           <div className="flex items-center gap-2">
-            <StatusIcon className="h-4 w-4 shrink-0" />
-            <span>{statusConfig.label}</span>
+            {isCorrect && (
+              <>
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-bold text-sm text-emerald-800 dark:text-emerald-200">
+                  Chính xác!
+                </span>
+              </>
+            )}
+            {isNearly && (
+              <>
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-bold text-sm text-amber-800 dark:text-amber-200">
+                  Gần đúng! Chú ý chính tả nhé.
+                </span>
+              </>
+            )}
+            {isUnknown && (
+              <>
+                <HelpCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                <span className="font-bold text-sm text-foreground">
+                  Ghi nhớ từ này nhé!
+                </span>
+              </>
+            )}
+            {!isCorrect && !isNearly && !isUnknown && (
+              <>
+                <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />
+                <span className="font-bold text-sm text-rose-800 dark:text-rose-200">
+                  Chưa chính xác
+                </span>
+              </>
+            )}
           </div>
-          {onToggleAutoPlayExplanation && (
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground" title="Tự động phát âm giải thích">
-              <span>Auto-audio</span>
-              <Switch
-                checked={!!autoPlayExplanationAudio}
-                onChange={onToggleAutoPlayExplanation}
-                ariaLabel="Tự động phát âm thanh"
-              />
-            </div>
-          )}
+
+          <div className="flex items-center gap-2">
+            {onToggleAutoPlayExplanation && (
+              <div className="flex items-center gap-1.5" title="Tự động phát âm thanh giải thích">
+                <Switch
+                  checked={!!autoPlayExplanationAudio}
+                  onChange={onToggleAutoPlayExplanation}
+                  ariaLabel="Tự động phát âm thanh giải thích"
+                />
+                <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+            )}
+            {word.difficulty && (
+              <Badge variant="outline" className="text-[10px] uppercase font-semibold">
+                {word.difficulty}
+              </Badge>
+            )}
+          </div>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Core word header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-xl font-bold text-foreground tracking-tight select-text">{word.word}</h3>
+        {/* Word Information Card */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4 p-3.5 bg-background/80 rounded-xl border border-border/80 text-left">
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xl sm:text-2xl font-black text-foreground tracking-tight select-text">
+                  {word.word}
+                </span>
                 {word.part_of_speech && (
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none capitalize font-semibold text-xs px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[11px] capitalize">
                     {word.part_of_speech}
                   </Badge>
                 )}
                 {word.ipa && (
-                  <span className="font-mono text-xs text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
                     {word.ipa}
                   </span>
                 )}
@@ -195,27 +236,35 @@ export function StudyExplanation({
 
           {/* Dynamic sentence dictation display */}
           {sentenceContext && (
-            <div className="p-3.5 bg-muted/40 rounded-xl border border-border/60 text-left space-y-1">
+            <div className="p-3.5 bg-muted/40 rounded-xl border border-border/60 text-left space-y-1.5">
               <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Ngữ cảnh câu</p>
               <p className="text-sm text-foreground leading-relaxed select-text">
                 {renderFormattedSentence(sentenceContext)}
               </p>
+              {word.example_translation && (
+                <p className="text-xs text-muted-foreground leading-relaxed select-text pt-1 border-t border-border/40">
+                  <HighlightedSentence
+                    sentence={word.example_translation}
+                    type="vi"
+                    meaning={word.meaning}
+                  />
+                </p>
+              )}
             </div>
           )}
 
           {/* Structured Example & Notes */}
-          {(word.example || word.note || hasSynonyms || hasAntonyms) && (
+          {(hasExamples || word.note || hasSynonyms || hasAntonyms) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/50 text-left">
-              {word.example && (
-                <div className="space-y-1 rounded-xl bg-muted/25 p-3 border border-border/40">
-                  <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Ví dụ</p>
-                  <p className="text-xs font-medium italic text-foreground leading-relaxed select-text">
-                    &ldquo;{word.example}&rdquo;
-                  </p>
-                  {word.example_translation && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">{word.example_translation}</p>
-                  )}
-                </div>
+              {hasExamples && (
+                <HighlightedExample
+                  word={word.word}
+                  meaning={word.meaning}
+                  example={word.example}
+                  exampleTranslation={word.example_translation}
+                  showLabels
+                  compact
+                />
               )}
 
               {(word.note || hasSynonyms || hasAntonyms) && (

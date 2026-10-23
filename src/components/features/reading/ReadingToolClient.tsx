@@ -294,7 +294,7 @@ export function ReadingToolClient({ article, userId }: { article: Article; userI
     <main className="min-h-screen bg-background text-foreground">
       <div className={cn("mx-auto w-full px-4 py-5 md:px-6 md:py-7", shouldShowTranslation ? "max-w-[1320px]" : "max-w-[940px]")}>
         <header className="mb-5 border-b border-border pb-4">
-          <Link href="/dashboard" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link href="/u" className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Quay lại
           </Link>

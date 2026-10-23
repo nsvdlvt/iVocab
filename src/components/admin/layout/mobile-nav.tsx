@@ -96,7 +96,7 @@ export function AdminMobileNav() {
 
             <div className="border-t border-slate-800 p-4 shrink-0">
               <Link
-                href="/dashboard"
+                href="/u"
                 onClick={() => setIsOpen(false)}
                 className={cn(
                   buttonVariants({ variant: "outline" }),

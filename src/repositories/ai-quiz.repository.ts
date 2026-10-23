@@ -8,6 +8,7 @@ type AiQuizItem = {
   partOfSpeech: string | null;
   srsLevel: number;
   example?: string | null;
+  example_translation?: string | null;
 };
 
 export const MIN_AI_QUIZ_WORDS = 8;
@@ -36,6 +37,7 @@ export const AiQuizRepository = {
       partOfSpeech: row.part_of_speech,
       srsLevel: levelFromStatus(row.review?.status),
       example: row.example,
+      example_translation: row.example_translation,
     }));
 
     return items.sort((a, b) => rankItem(a) - rankItem(b)).slice(0, limit);

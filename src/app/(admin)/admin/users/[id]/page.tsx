@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { ArrowLeft, User, Shield, BrainCircuit, Library, HelpCircle, Flame, Calendar, Clock } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/admin";
+import { normalizeRole, ROLE_DISPLAY_NAMES } from "@/lib/auth/roles";
 import { AdminUserRepository } from "@/repositories/admin/user.repository";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,8 +56,11 @@ export default async function AdminUserDetailPage({ params }: UserDetailPageProp
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 {profile.display_name || profile.email.split("@")[0]}
               </h1>
-              <Badge variant={profile.role === "admin" ? "default" : "secondary"}>
-                {profile.role === "admin" ? "Admin" : "Học viên"}
+              <Badge
+                variant={normalizeRole(profile.role) === "admin" ? "default" : "secondary"}
+                className={normalizeRole(profile.role) === "e_team" ? "border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10" : ""}
+              >
+                {ROLE_DISPLAY_NAMES[normalizeRole(profile.role)]}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground font-mono">{profile.email} • ID: {profile.id}</p>
@@ -161,7 +165,7 @@ export default async function AdminUserDetailPage({ params }: UserDetailPageProp
             </div>
             <div className="flex justify-between py-1.5 border-b">
               <span className="text-muted-foreground">Phân quyền:</span>
-              <span className="font-semibold text-foreground uppercase text-xs">{profile.role}</span>
+              <span className="font-semibold text-foreground uppercase text-xs">{ROLE_DISPLAY_NAMES[normalizeRole(profile.role)]}</span>
             </div>
             <div className="flex justify-between py-1.5">
               <span className="text-muted-foreground">Hoạt động gần nhất:</span>

@@ -86,7 +86,7 @@ export async function duplicateVocabularySet(id: string) {
       await VocabularyRepository.bulkInsert(duplicatedItems);
     }
 
-    revalidatePath("/vocabulary");
+    revalidatePath("/u/vocabulary");
     return { success: true };
   } catch (error) {
     const err = error as Error;

@@ -2,36 +2,33 @@
 
 import { assertAdmin } from "@/lib/auth/admin";
 import { AdminAuditRepository } from "@/repositories/admin/audit.repository";
+import { dictionaryService } from "@/lib/dictionary/dictionary.service";
 
 export async function lookupDictionaryWordAction(word: string) {
   await assertAdmin();
 
-  const term = word.trim().toLowerCase();
+  const term = word.trim();
   if (!term) {
     return { ok: false, error: "Từ tra cứu không được để trống" };
   }
 
   const start = performance.now();
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term)}`, {
-      signal: AbortSignal.timeout(5000),
-    });
-
+    const data = await dictionaryService.lookup(term);
     const durationMs = Math.round(performance.now() - start);
 
-    if (!res.ok) {
+    if (!data) {
       return {
         ok: false,
         durationMs,
-        error: res.status === 404 ? `Không tìm thấy từ "${term}" trong từ điển.` : `Lỗi HTTP ${res.status}`,
+        error: `Không tìm thấy từ "${term}" trong từ điển.`,
       };
     }
 
-    const data = await res.json();
     return {
       ok: true,
       durationMs,
-      data,
+      data: [data],
     };
   } catch (err: unknown) {
     const durationMs = Math.round(performance.now() - start);
@@ -46,6 +43,8 @@ export async function lookupDictionaryWordAction(word: string) {
 export async function clearDictionaryCacheAction() {
   const { user } = await assertAdmin();
 
+  dictionaryService.clearCache();
+
   await AdminAuditRepository.logAction(
     "clear_dictionary_cache",
     "dictionary",
@@ -53,5 +52,5 @@ export async function clearDictionaryCacheAction() {
     { clearedBy: user.email }
   );
 
-  return { ok: true, message: "Bộ nhớ đệm từ điển đã được làm sạch" };
+  return { ok: true, message: "Bộ nhớ đệm từ điển đã được làm sạch thành công" };
 }

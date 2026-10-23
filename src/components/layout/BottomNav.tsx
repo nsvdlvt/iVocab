@@ -35,29 +35,30 @@ export function BottomNav() {
       label: "Trang chủ",
       href: ROUTES.DASHBOARD,
       icon: Home,
-      isActive: pathname === "/dashboard",
+      isActive: pathname === "/u" || pathname === "/dashboard",
     },
     {
       label: "Bộ từ",
       href: ROUTES.VOCABULARY,
       icon: Folder,
       isActive:
+        pathname === "/u/vocabulary" ||
         pathname === "/vocabulary" ||
-        (pathname.startsWith("/vocabulary/") &&
-          !pathname.startsWith("/vocabulary/new") &&
+        ((pathname.startsWith("/u/vocabulary/") || pathname.startsWith("/vocabulary/")) &&
+          !pathname.startsWith("/u/vocabulary/new") &&
           !pathname.includes("/edit")),
     },
     {
       label: "Ôn tập",
       href: ROUTES.REVIEW,
       icon: GraduationCap,
-      isActive: pathname.startsWith("/review"),
+      isActive: pathname.startsWith("/u/review") || pathname.startsWith("/review"),
     },
     {
       label: "Bài đọc",
       href: ROUTES.READING,
       icon: BookOpen,
-      isActive: pathname.startsWith("/reading"),
+      isActive: pathname.startsWith("/u/reading") || pathname.startsWith("/reading"),
     },
   ];
 

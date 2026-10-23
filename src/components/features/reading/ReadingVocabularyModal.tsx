@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { Volume2, BookA, Search, X } from "lucide-react";
+import { Volume2, BookA, Search, X, ExternalLink } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { HighlightedWord } from "./reading-types";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 
 interface ReadingVocabularyModalProps {
   open: boolean;
@@ -117,23 +118,53 @@ export function ReadingVocabularyModal({
                       </p>
                     ) : null}
 
-                    {item.example ? (
-                      <p className="text-xs italic text-muted-foreground mt-1">
-                        &ldquo;{item.example}&rdquo;
-                      </p>
+                    {(item.example || item.exampleTranslation || item.example_translation) ? (
+                      <div className="mt-1 space-y-0.5">
+                        {item.example && (
+                          <p className="text-xs italic text-muted-foreground">
+                            &ldquo;
+                            <HighlightedSentence
+                              sentence={item.example}
+                              type="en"
+                              targetWord={item.text}
+                            />
+                            &rdquo;
+                          </p>
+                        )}
+                        {(item.exampleTranslation || item.example_translation) && (
+                          <p className="text-[11px] text-muted-foreground/80">
+                            <HighlightedSentence
+                              sentence={(item.exampleTranslation || item.example_translation)!}
+                              type="vi"
+                              meaning={item.meaning}
+                            />
+                          </p>
+                        )}
+                      </div>
                     ) : null}
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => playAudio(item.text)}
-                    title="Phát âm tiếng Anh"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 shrink-0"
-                  >
-                    <Volume2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => playAudio(item.text)}
+                      title="Phát âm tiếng Anh"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    >
+                      <Volume2 className="h-4 w-4" />
+                    </Button>
+                    <a
+                      href={`/dictionary?q=${encodeURIComponent(item.text)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Tra từ điển chi tiết"
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
                 </div>
               </div>
             ))

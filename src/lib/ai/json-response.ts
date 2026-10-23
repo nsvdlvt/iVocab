@@ -7,7 +7,11 @@ export async function requestTextResponse(prompt: string, signal?: AbortSignal):
 }
 
 export function extractJsonPayload(rawText: string): unknown {
-  const cleaned = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+  // Strip reasoning blocks from reasoning models (e.g. DeepSeek R1, Qwen, etc.)
+  let cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+
+  // Strip markdown code blocks
+  cleaned = cleaned.replace(/```(?:json)?\s*([\s\S]*?)\s*```/gi, "$1").trim();
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
@@ -35,15 +39,26 @@ export function extractJsonPayload(rawText: string): unknown {
     }
   }
 
-  // Handle wrapped arrays like { format: "json_array", value: [...] }
-  if (
-    parsed &&
-    typeof parsed === "object" &&
-    !Array.isArray(parsed) &&
-    "value" in (parsed as Record<string, unknown>) &&
-    Array.isArray((parsed as Record<string, unknown>).value)
-  ) {
-    return (parsed as Record<string, unknown>).value;
+  // Handle wrapped arrays like { format: "json_array", value: [...] } or { words: [...] } or { data: [...] }
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const record = parsed as Record<string, unknown>;
+    const candidateKeys = [
+      "value",
+      "words",
+      "vocabulary",
+      "vocabularies",
+      "items",
+      "data",
+      "result",
+      "cards",
+      "list",
+    ];
+
+    for (const key of candidateKeys) {
+      if (Array.isArray(record[key])) {
+        return record[key];
+      }
+    }
   }
 
   return parsed;

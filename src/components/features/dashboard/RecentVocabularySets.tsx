@@ -26,7 +26,7 @@ export function RecentVocabularySets({ sets }: RecentVocabularySetsProps) {
           action={
             <div className="flex items-center gap-1.5">
               <Link
-                href="/vocabulary/new"
+                href="/u/vocabulary/new"
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export function RecentVocabularySets({ sets }: RecentVocabularySetsProps) {
               </p>
             </div>
             <Link
-              href="/vocabulary/new"
+              href="/u/vocabulary/new"
               className={cn(buttonVariants({ size: "sm" }), "mt-1")}
             >
               <Plus className="h-3.5 w-3.5" />

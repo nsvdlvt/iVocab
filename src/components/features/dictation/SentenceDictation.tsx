@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LearnQuestion, AnswerState } from "@/lib/learning/question-types";
 import { cn } from "@/lib/utils";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 
 interface SentenceDictationProps {
   question: LearnQuestion;
@@ -108,6 +109,15 @@ export function SentenceDictation({
               <span>{exampleSentence || "Bấm nút loa bên dưới để nghe phát âm cả câu"}</span>
             )}
           </div>
+          {isSubmitted && question.word.example_translation && (
+            <p className="text-xs sm:text-sm text-muted-foreground font-normal">
+              <HighlightedSentence
+                sentence={question.word.example_translation}
+                type="vi"
+                meaning={question.word.meaning}
+              />
+            </p>
+          )}
           {onSpeakPrompt && (
             <button
               type="button"

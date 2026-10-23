@@ -43,6 +43,6 @@ export async function updateVocabularySet(id: string, values: VocabSetFormValues
     };
   }
 
-  revalidatePath("/vocabulary");
+  revalidatePath("/u/vocabulary");
   return { success: true };
 }

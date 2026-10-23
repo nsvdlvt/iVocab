@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateVocabulary } from "@/actions/vocabulary/update";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 
 export type EditableVocabulary = {
   id: string;
@@ -23,6 +24,7 @@ export type EditableVocabulary = {
   ipa: string | null;
   part_of_speech: string | null;
   example: string | null;
+  example_translation: string | null;
   synonyms: string[] | null;
   note: string | null;
 };
@@ -47,12 +49,26 @@ export function EditVocabularyDialog({
     ipa: item?.ipa ?? "",
     partOfSpeech: item?.part_of_speech ?? "",
     example: item?.example ?? "",
+    example_translation: item?.example_translation ?? "",
     synonyms: item?.synonyms?.join(", ") ?? "",
     notes: item?.note ?? "",
   });
 
-  // Keep form in sync with the item using item.id as a reset key.
-  // Callers should pass key={item?.id} to this component when switching items.
+  // Keep form in sync when item changes
+  React.useEffect(() => {
+    if (item) {
+      setForm({
+        word: item.word ?? "",
+        meaning: item.meaning ?? "",
+        ipa: item.ipa ?? "",
+        partOfSpeech: item.part_of_speech ?? "",
+        example: item.example ?? "",
+        example_translation: item.example_translation ?? "",
+        synonyms: item.synonyms?.join(", ") ?? "",
+        notes: item.note ?? "",
+      });
+    }
+  }, [item]);
 
   const handleSave = async () => {
     if (!item) return;
@@ -68,6 +84,7 @@ export function EditVocabularyDialog({
         ipa: form.ipa.trim(),
         partOfSpeech: form.partOfSpeech.trim(),
         example: form.example.trim(),
+        example_translation: form.example_translation.trim(),
         synonyms: form.synonyms
           .split(",")
           .map((s) => s.trim())
@@ -88,6 +105,7 @@ export function EditVocabularyDialog({
         ipa: form.ipa.trim() || null,
         part_of_speech: form.partOfSpeech.trim() || null,
         example: form.example.trim() || null,
+        example_translation: form.example_translation.trim() || null,
         synonyms: form.synonyms
           .split(",")
           .map((s) => s.trim())
@@ -103,15 +121,17 @@ export function EditVocabularyDialog({
     }
   };
 
+  const hasExamplePreview = Boolean(form.example.trim() || form.example_translation.trim());
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl w-[95%] rounded-xl border-border/80 p-6">
+      <DialogContent className="sm:max-w-xl w-[95%] max-h-[90vh] overflow-y-auto rounded-2xl border-border/80 p-6">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-base font-semibold text-foreground">
             Chỉnh sửa từ vựng
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Cập nhật thông tin từ vựng, phiên âm, ví dụ và ghi chú học tập.
+            Cập nhật thông tin từ vựng, phiên âm, ví dụ và nghĩa của ví dụ.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,12 +162,37 @@ export function EditVocabularyDialog({
           />
           <div className="sm:col-span-2">
             <Field
-              label="Câu ví dụ"
+              label="Câu ví dụ (Tiếng Anh)"
               placeholder="Ví dụ: She is a resilient leader who adapts quickly."
               value={form.example}
               onChange={(v) => setForm((p) => ({ ...p, example: v }))}
             />
           </div>
+          <div className="sm:col-span-2">
+            <Field
+              label="Nghĩa của ví dụ"
+              placeholder="Ví dụ: Cô ấy là một nhà lãnh đạo kiên cường, thích nghi nhanh chóng."
+              value={form.example_translation}
+              onChange={(v) => setForm((p) => ({ ...p, example_translation: v }))}
+            />
+          </div>
+
+          {hasExamplePreview && (
+            <div className="sm:col-span-2 space-y-1">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Xem trước ví dụ & nghĩa câu với từ nổi bật:
+              </Label>
+              <HighlightedExample
+                word={form.word}
+                meaning={form.meaning}
+                example={form.example}
+                exampleTranslation={form.example_translation}
+                compact
+                showLabels
+              />
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <Field
               label="Từ đồng nghĩa (ngăn cách bởi dấu phẩy)"

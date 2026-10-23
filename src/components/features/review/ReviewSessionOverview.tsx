@@ -97,7 +97,7 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
       <PageContainer className="space-y-6">
         <div>
           <Link
-            href="/review"
+            href="/u/review"
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2")}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
             {error ?? "Không tìm thấy phiên ôn tập."}
           </p>
           <Link
-            href="/review"
+            href="/u/review"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             Về trang ôn tập
@@ -123,7 +123,7 @@ export function ReviewSessionOverview({ sessionId }: ReviewSessionOverviewProps)
     <PageContainer className="space-y-6">
       <div>
         <Link
-          href="/review"
+          href="/u/review"
           className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2")}
         >
           <ChevronLeft className="h-4 w-4" />

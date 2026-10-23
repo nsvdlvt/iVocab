@@ -9,16 +9,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileInput, ExternalLink } from "lucide-react";
+import { FileInput, Sparkles } from "lucide-react";
 import { QuickImportTextarea } from "./QuickImportTextarea";
 import { QuickImportPreview } from "./QuickImportPreview";
 import { QuickImportOptions } from "./QuickImportOptions";
 import { QuickImportHelp } from "./QuickImportHelp";
+import { QuickImportPromptDialog } from "./QuickImportPromptDialog";
 import { parseQuickImportText, ParseOptions } from "./QuickImportParser";
 import { toast } from "sonner";
-
-const VOCABULARY_TABLE_GENERATOR_URL =
-  "https://chatgpt.com/g/g-69da4bb466048191b6955d29d8cb1518-vocabulary-table-generator";
 
 interface ImportedCard {
   word: string;
@@ -39,6 +37,7 @@ export function QuickImportDialog({
   isPending,
 }: QuickImportDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [text, setText] = useState("");
   const deferredText = useDeferredValue(text);
 
@@ -90,7 +89,8 @@ export function QuickImportDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
         render={
           <Button
@@ -122,18 +122,11 @@ export function QuickImportDialog({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                window.open(
-                  VOCABULARY_TABLE_GENERATOR_URL,
-                  "_blank",
-                  "noopener,noreferrer"
-                )
-              }
-              className="h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs font-medium"
+              onClick={() => setIsPromptOpen(true)}
+              className="h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs font-medium hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-colors"
             >
-              <ExternalLink className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Tạo bảng bằng ChatGPT</span>
-              <span className="sm:hidden">ChatGPT</span>
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span>Tạo tự động bằng AI</span>
             </Button>
           </div>
         </DialogHeader>
@@ -199,5 +192,11 @@ export function QuickImportDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
+
+    <QuickImportPromptDialog
+      open={isPromptOpen}
+      onOpenChange={setIsPromptOpen}
+    />
+  </>
+);
 }

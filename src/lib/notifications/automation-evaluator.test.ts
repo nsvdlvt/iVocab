@@ -36,10 +36,10 @@ describe("AutomationEvaluator", () => {
     app_name: "Vocabee",
     current_date: "18/10/2026",
     current_time: "12:00",
-    notification_link: "/notifications",
-    review_link: "/review",
-    learn_link: "/vocabulary",
-    quiz_link: "/quiz",
+    notification_link: "/u/notifications",
+    review_link: "/u/review",
+    learn_link: "/u/vocabulary",
+    quiz_link: "/u/quiz",
   };
 
   describe("6. evaluateCondition & evaluateConditions (Logical operators & type safety)", () => {

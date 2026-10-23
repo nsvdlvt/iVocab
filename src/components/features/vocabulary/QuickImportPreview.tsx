@@ -5,6 +5,7 @@ import { ParsedItem } from "./QuickImportParser";
 import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 
 interface QuickImportPreviewProps {
   items: ParsedItem[];
@@ -59,15 +60,15 @@ export const QuickImportPreview = memo(function QuickImportPreview({
             </p>
           </div>
         ) : (
-          <div className="min-w-[720px] divide-y divide-border/60">
+          <div className="min-w-[760px] divide-y divide-border/60">
             {/* Table Header */}
-            <div className="sticky top-0 z-10 grid grid-cols-[36px_1fr_1.2fr_0.9fr_0.8fr_1.4fr_1fr_44px] bg-muted/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-xs select-none">
+            <div className="sticky top-0 z-10 grid grid-cols-[36px_1fr_1.1fr_0.8fr_0.7fr_1.8fr_0.9fr_44px] bg-muted/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-xs select-none">
               <span>#</span>
               <span>Từ vựng *</span>
               <span>Ý nghĩa *</span>
               <span>IPA</span>
               <span>Từ loại</span>
-              <span>Ví dụ</span>
+              <span>Ví dụ & Nghĩa ví dụ</span>
               <span>Đồng nghĩa</span>
               <span className="text-center">TT</span>
             </div>
@@ -77,7 +78,7 @@ export const QuickImportPreview = memo(function QuickImportPreview({
               <div
                 key={item.id}
                 className={cn(
-                  "grid grid-cols-[36px_1fr_1.2fr_0.9fr_0.8fr_1.4fr_1fr_44px] items-center px-3 py-2.5 text-xs transition-colors",
+                  "grid grid-cols-[36px_1fr_1.1fr_0.8fr_0.7fr_1.8fr_0.9fr_44px] items-center px-3 py-2.5 text-xs transition-colors",
                   item.isValid
                     ? "hover:bg-muted/30"
                     : "bg-destructive/5 hover:bg-destructive/10"
@@ -117,9 +118,30 @@ export const QuickImportPreview = memo(function QuickImportPreview({
                   {getPosLabel(item.partOfSpeech)}
                 </span>
 
-                <span className="truncate pr-2 italic text-muted-foreground">
-                  {item.example ? `"${item.example}"` : "—"}
-                </span>
+                <div className="pr-2 space-y-0.5">
+                  {item.example ? (
+                    <p className="italic text-muted-foreground leading-snug">
+                      &ldquo;
+                      <HighlightedSentence
+                        sentence={item.example}
+                        type="en"
+                        targetWord={item.word}
+                      />
+                      &rdquo;
+                    </p>
+                  ) : (
+                    <span className="text-muted-foreground/60">—</span>
+                  )}
+                  {item.example_translation ? (
+                    <p className="text-[11px] text-muted-foreground/80 leading-snug">
+                      <HighlightedSentence
+                        sentence={item.example_translation}
+                        type="vi"
+                        meaning={item.meaning}
+                      />
+                    </p>
+                  ) : null}
+                </div>
 
                 <span className="truncate pr-2 text-muted-foreground">
                   {item.synonyms || "—"}
@@ -143,12 +165,13 @@ export const QuickImportPreview = memo(function QuickImportPreview({
         <div className="flex shrink-0 items-center justify-between border-t border-border/80 bg-muted/30 px-4 py-2.5 text-xs font-medium select-none">
           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>{validCount} thẻ hợp lệ sẵn sàng nhập</span>
+            <span>Hợp lệ: {validCount} từ</span>
           </div>
+
           {invalidCount > 0 && (
-            <div className="flex items-center gap-1.5 text-destructive">
+            <div className="flex items-center gap-1.5 text-destructive font-semibold">
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>{invalidCount} dòng thiếu dữ liệu (bỏ qua)</span>
+              <span>Chưa đủ thông tin: {invalidCount} dòng</span>
             </div>
           )}
         </div>

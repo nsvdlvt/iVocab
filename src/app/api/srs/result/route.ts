@@ -63,9 +63,9 @@ export async function POST(request: Request) {
       await LearningProgressService.recordActivity(user.id, 1, 0, source);
     }
 
-    revalidatePath("/review");
-    revalidatePath("/dashboard");
-    revalidatePath("/vocabulary");
+    revalidatePath("/u/review");
+    revalidatePath("/u");
+    revalidatePath("/u/vocabulary");
 
     await VocabSetRepository.touchLastStudiedAtByVocabularyId(vocabularyId, user.id).catch((err) => {
       console.warn("[api/srs/result] touchLastStudiedAt error:", err);

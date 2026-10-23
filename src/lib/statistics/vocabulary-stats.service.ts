@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { summarizeSrsForecast, type UpcomingReviewForecastDay } from "@/lib/srs/upcoming-reviews";
@@ -65,7 +66,7 @@ function getVocabularyState(review: ReviewRow | null): VocabularyState {
 }
 
 export const VocabularyStatsService = {
-  async getUserVocabularyStats(userId: string): Promise<VocabularyStats> {
+  getUserVocabularyStats: cache(async (userId: string): Promise<VocabularyStats> => {
     const supabase = await createClient();
     const now = new Date();
     const rawRows: VocabularyWithReviewRow[] = [];
@@ -169,5 +170,5 @@ export const VocabularyStatsService = {
       },
       rows,
     };
-  },
+  }),
 };

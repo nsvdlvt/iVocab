@@ -36,7 +36,7 @@ export default function Error({
           <p className="text-sm leading-relaxed text-muted-foreground">
             Hệ thống gặp sự cố ngoài ý muốn trong quá trình xử lý yêu cầu. Dữ liệu học tập của bạn vẫn được bảo toàn.
           </p>
-          {error.digest && (
+          {error?.digest && (
             <p className="pt-1 font-mono text-[11px] text-muted-foreground/80">
               Mã tham chiếu: {error.digest}
             </p>

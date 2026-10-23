@@ -8,6 +8,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     iconName: "Home",
   },
   {
+    title: "Từ điển",
+    href: ROUTES.DICTIONARY,
+    iconName: "BookMarked",
+  },
+  {
     title: "Bộ từ vựng",
     href: ROUTES.VOCABULARY,
     iconName: "Folder",

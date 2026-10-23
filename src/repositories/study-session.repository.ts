@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 
@@ -24,7 +25,7 @@ export const StudySessionRepository = {
   /**
    * Retrieves all study sessions for a user within a given date range.
    */
-  async getSessionsInRange(userId: string, startIso: string, endIso: string): Promise<StudySessionRow[]> {
+  getSessionsInRange: cache(async (userId: string, startIso: string, endIso: string): Promise<StudySessionRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("study_sessions")
@@ -36,12 +37,12 @@ export const StudySessionRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
   /**
    * Retrieves all study sessions for a user.
    */
-  async getAllSessions(userId: string): Promise<StudySessionRow[]> {
+  getAllSessions: cache(async (userId: string): Promise<StudySessionRow[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("study_sessions")
@@ -51,7 +52,7 @@ export const StudySessionRepository = {
 
     if (error) throw error;
     return data ?? [];
-  },
+  }),
 
   /**
    * Creates a new study session.

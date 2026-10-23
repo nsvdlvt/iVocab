@@ -213,8 +213,23 @@ export default async function AdminVocabularySetDetailPage({ params }: VocabSetD
                       <td className="px-4 py-3 text-foreground font-medium max-w-[220px] truncate">
                         {w.meaning}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground max-w-[280px] truncate">
-                        {w.example || "-"}
+                      <td className="px-4 py-3 text-xs text-muted-foreground max-w-[280px]">
+                        {w.example ? (
+                          <div className="space-y-0.5">
+                            <span className="italic block truncate">"{w.example}"</span>
+                            {w.example_translation && (
+                              <span className="text-[11px] text-muted-foreground/80 block truncate">
+                                {w.example_translation}
+                              </span>
+                            )}
+                          </div>
+                        ) : w.example_translation ? (
+                          <span className="text-[11px] text-muted-foreground/80 block truncate">
+                            {w.example_translation}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
                       </td>
                     </tr>
                   ))}

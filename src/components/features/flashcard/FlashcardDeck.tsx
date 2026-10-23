@@ -9,6 +9,7 @@ import { RotateCw, Settings2, Star, Volume2 } from "lucide-react";
 import { FlashcardFrontMode } from "./FlashcardSettingsDialog";
 import { FlashcardRow, getPartOfSpeechLabel } from "./flashcard-utils";
 import { cn } from "@/lib/utils";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 
 interface FlashcardDeckProps {
   word: FlashcardRow | null;
@@ -139,18 +140,21 @@ export function FlashcardDeck({
     const title = frontMode === "definition" ? word.meaning : word.word;
 
     return (
-      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 text-center px-2">
-        <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl break-words max-w-full">
+      <div
+        className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 text-center px-2 select-text cursor-text"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl break-words max-w-full select-text cursor-text">
           {title}
         </h2>
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 select-text">
           {pos && (
-            <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+            <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5 select-text">
               {pos}
             </Badge>
           )}
           {word.ipa && (
-            <span className="font-mono text-sm sm:text-base text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60">
+            <span className="font-mono text-sm sm:text-base text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60 select-text">
               {word.ipa}
             </span>
           )}
@@ -163,46 +167,48 @@ export function FlashcardDeck({
     const answer = frontMode === "definition" ? word.word : word.meaning;
 
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center overflow-y-auto px-2 py-2">
-        <div className="flex w-full flex-col items-center gap-4 text-center">
-          <section className="space-y-2.5">
-            <h2 className="text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl md:text-4xl break-words">
+      <div
+        className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center overflow-y-auto px-2 py-2 select-text cursor-text"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex w-full flex-col items-center gap-4 text-center select-text">
+          <section className="space-y-2.5 select-text">
+            <h2 className="text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl md:text-4xl break-words select-text cursor-text">
               {answer}
             </h2>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 select-text">
               {pos && (
-                <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5">
+                <Badge variant="outline" className="capitalize text-xs px-2.5 py-0.5 select-text">
                   {pos}
                 </Badge>
               )}
               {word.ipa && (
-                <span className="font-mono text-sm text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60">
+                <span className="font-mono text-sm text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-md border border-border/60 select-text">
                   {word.ipa}
                 </span>
               )}
             </div>
           </section>
 
-          {word.example ? (
-            <div className="w-full max-w-xl rounded-xl border border-border/70 bg-muted/25 px-4 py-3 text-center space-y-1">
-              <p className="text-sm sm:text-base italic leading-relaxed text-foreground/90">
-                &ldquo;{word.example}&rdquo;
-              </p>
-              {word.example_translation && (
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  {word.example_translation}
-                </p>
-              )}
+          {word.example || word.example_translation ? (
+            <div className="w-full max-w-xl text-center select-text">
+              <HighlightedExample
+                word={word.word}
+                meaning={word.meaning}
+                example={word.example}
+                exampleTranslation={word.example_translation}
+                compact
+              />
             </div>
           ) : null}
 
           {synonyms.length > 0 ? (
-            <div className="flex max-w-xl flex-wrap items-center justify-center gap-1.5 pt-1">
+            <div className="flex max-w-xl flex-wrap items-center justify-center gap-1.5 pt-1 select-text">
               <span className="text-[11px] font-medium text-muted-foreground mr-1">
                 Đồng nghĩa:
               </span>
               {synonyms.slice(0, 6).map((synonym) => (
-                <Badge key={synonym} variant="secondary" className="text-xs font-normal">
+                <Badge key={synonym} variant="secondary" className="text-xs font-normal select-text">
                   {synonym}
                 </Badge>
               ))}
@@ -233,7 +239,14 @@ export function FlashcardDeck({
             style={{ transformStyle: "preserve-3d", perspective: "1200px" }}
             animate={{ rotateY: flipped ? 180 : 0 }}
             transition={{ type: "spring", stiffness: 150, damping: 22, mass: 0.9 }}
-            onClick={onFlip}
+            onClick={() => {
+              const selection = window.getSelection();
+              if (selection && selection.toString().trim().length > 0) {
+                // If user highlighted/selected text, do not flip the card
+                return;
+              }
+              onFlip();
+            }}
           >
             {/* Front Face */}
             <section

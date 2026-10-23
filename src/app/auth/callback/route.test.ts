@@ -78,7 +78,7 @@ describe("Auth Callback Route Handler (GET /auth/callback)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/dashboard");
+    expect(location).toBe("http://localhost:3000/select-workspace");
   });
 
   it("should redirect to /reset-password?error=expired-link if recovery code exchange fails", async () => {

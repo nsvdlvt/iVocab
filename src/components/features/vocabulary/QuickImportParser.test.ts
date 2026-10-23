@@ -15,20 +15,21 @@ describe("QuickImportParser markdown table", () => {
     ).toBe(true);
   });
 
-  it("parses a full 6-column markdown table", () => {
-    const items = parseMarkdownTable(`| Từ vựng | Nghĩa | IPA | Từ loại | Ví dụ | Synonyms |
-|---------|-------|-----|----------|--------|----------|
-| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | fruit |
-| allocate money | phân bổ tiền | /.../ | phrase | We need to allocate money carefully. | fund |`);
+  it("parses a full markdown table including Nghĩa của ví dụ", () => {
+    const items = parseMarkdownTable(`| Từ vựng | Nghĩa | IPA | Từ loại | Ví dụ | Nghĩa của ví dụ | Synonyms |
+|---------|-------|-----|----------|--------|-----------------|----------|
+| reluctant | miễn cưỡng | /rɪˈlʌk.tənt/ | adjective | She was reluctant to share her opinion. | Cô ấy miễn cưỡng chia sẻ ý kiến của mình. | hesitant |
+| allocate money | phân bổ tiền | /.../ | phrase | We need to allocate money carefully. | Chúng ta cần phân bổ tiền cẩn thận. | fund |`);
 
     expect(items).toHaveLength(2);
     expect(items[0]).toMatchObject({
-      word: "apple",
-      meaning: "quả táo",
-      ipa: "/ˈæpl/",
-      partOfSpeech: "noun",
-      example: "I eat an apple every day.",
-      synonyms: "fruit",
+      word: "reluctant",
+      meaning: "miễn cưỡng",
+      ipa: "/rɪˈlʌk.tənt/",
+      partOfSpeech: "adjective",
+      example: "She was reluctant to share her opinion.",
+      example_translation: "Cô ấy miễn cưỡng chia sẻ ý kiến của mình.",
+      synonyms: "hesitant",
       isValid: true,
     });
     expect(items[1]).toMatchObject({
@@ -37,6 +38,7 @@ describe("QuickImportParser markdown table", () => {
       ipa: "/.../",
       partOfSpeech: "phrase",
       example: "We need to allocate money carefully.",
+      example_translation: "Chúng ta cần phân bổ tiền cẩn thận.",
       synonyms: "fund",
       isValid: true,
     });
@@ -52,13 +54,14 @@ describe("QuickImportParser markdown table", () => {
       ipa: "",
       partOfSpeech: "",
       example: "I eat an apple every day.",
+      example_translation: "",
       synonyms: "",
       isValid: true,
     });
   });
 
   it("supports missing synonyms", () => {
-    const items = parseMarkdownTable(`| Word | Meaning | IPA | Part of speech | Example |\n|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. |`);
+    const items = parseMarkdownTable(`| Word | Meaning | IPA | Part of speech | Example | Nghĩa của ví dụ |\n|---|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | Tôi ăn một quả táo mỗi ngày. |`);
 
     expect(items[0]).toMatchObject({
       word: "apple",
@@ -66,12 +69,13 @@ describe("QuickImportParser markdown table", () => {
       ipa: "/ˈæpl/",
       partOfSpeech: "noun",
       example: "I eat an apple every day.",
+      example_translation: "Tôi ăn một quả táo mỗi ngày.",
       synonyms: "",
     });
   });
 
   it("maps Vietnamese headers", () => {
-    const items = parseMarkdownTable(`| Từ vựng | Nghĩa | IPA | Từ loại | Ví dụ | Synonyms |\n|---|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | fruit |`);
+    const items = parseMarkdownTable(`| Từ vựng | Nghĩa | IPA | Từ loại | Ví dụ | Dịch câu ví dụ | Synonyms |\n|---|---|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | Tôi ăn táo mỗi ngày. | fruit |`);
 
     expect(items[0]).toMatchObject({
       word: "apple",
@@ -79,12 +83,13 @@ describe("QuickImportParser markdown table", () => {
       ipa: "/ˈæpl/",
       partOfSpeech: "noun",
       example: "I eat an apple every day.",
+      example_translation: "Tôi ăn táo mỗi ngày.",
       synonyms: "fruit",
     });
   });
 
   it("maps English headers", () => {
-    const items = parseMarkdownTable(`| Vocabulary | Meaning | Pronunciation | POS | Sentence | Synonym |\n|---|---|---|---|---|---|\n| word | nghĩa | /wɜːd/ | noun | This is a sentence. | term |`);
+    const items = parseMarkdownTable(`| Vocabulary | Meaning | Pronunciation | POS | Sentence | Example Translation | Synonym |\n|---|---|---|---|---|---|---|\n| word | nghĩa | /wɜːd/ | noun | This is a sentence. | Đây là một câu. | term |`);
 
     expect(items[0]).toMatchObject({
       word: "word",
@@ -92,6 +97,7 @@ describe("QuickImportParser markdown table", () => {
       ipa: "/wɜːd/",
       partOfSpeech: "noun",
       example: "This is a sentence.",
+      example_translation: "Đây là một câu.",
       synonyms: "term",
     });
   });
@@ -128,12 +134,41 @@ describe("QuickImportParser markdown table", () => {
   });
 
   it("handles copy-paste style tables from ChatGPT Claude and Gemini", () => {
-    const chatgpt = `| Word | Meaning | IPA | Part of speech | Example | Synonyms |\n|---|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | fruit |`;
-    const claude = `| Vocabulary | Vietnamese | Pronunciation | POS | Example | Synonym |\n| --- | --- | --- | --- | --- | --- |\n| allocate money | phân bổ tiền | /.../ | phrase | We need to allocate money carefully. | fund |`;
-    const gemini = `  | Từ vựng | Nghĩa | Ví dụ |\n  |---|---|---|\n  | book | sách | I read a book every day. |`;
+    const chatgpt = `| Word | Meaning | IPA | Part of speech | Example | Example Translation | Synonyms |\n|---|---|---|---|---|---|---|\n| apple | quả táo | /ˈæpl/ | noun | I eat an apple every day. | Tôi ăn một quả táo mỗi ngày. | fruit |`;
+    const claude = `| Vocabulary | Vietnamese | Pronunciation | POS | Example | Dịch ví dụ | Synonym |\n| --- | --- | --- | --- | --- | --- | --- |\n| allocate money | phân bổ tiền | /.../ | phrase | We need to allocate money carefully. | Chúng ta cần phân bổ tiền cẩn thận. | fund |`;
+    const gemini = `  | Từ vựng | Nghĩa | Ví dụ | Nghĩa của ví dụ |\n  |---|---|---|---|\n  | book | sách | I read a book every day. | Tôi đọc sách mỗi ngày. |`;
 
-    expect(parseQuickImportText(chatgpt, baseOptions)[0]).toMatchObject({ word: "apple", meaning: "quả táo" });
-    expect(parseQuickImportText(claude, baseOptions)[0]).toMatchObject({ word: "allocate money", meaning: "phân bổ tiền" });
-    expect(parseQuickImportText(gemini, baseOptions)[0]).toMatchObject({ word: "book", meaning: "sách", example: "I read a book every day." });
+    expect(parseQuickImportText(chatgpt, baseOptions)[0]).toMatchObject({
+      word: "apple",
+      meaning: "quả táo",
+      example_translation: "Tôi ăn một quả táo mỗi ngày.",
+    });
+    expect(parseQuickImportText(claude, baseOptions)[0]).toMatchObject({
+      word: "allocate money",
+      meaning: "phân bổ tiền",
+      example_translation: "Chúng ta cần phân bổ tiền cẩn thận.",
+    });
+    expect(parseQuickImportText(gemini, baseOptions)[0]).toMatchObject({
+      word: "book",
+      meaning: "sách",
+      example: "I read a book every day.",
+      example_translation: "Tôi đọc sách mỗi ngày.",
+    });
+  });
+
+  it("parses tab-delimited text with example translation", () => {
+    const text = "reluctant\tmiễn cưỡng\t/rɪˈlʌk.tənt/\tadjective\tShe was reluctant to share.\tCô ấy miễn cưỡng chia sẻ.\thesitant";
+    const items = parseQuickImportText(text, baseOptions);
+
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      word: "reluctant",
+      meaning: "miễn cưỡng",
+      ipa: "/rɪˈlʌk.tənt/",
+      partOfSpeech: "adjective",
+      example: "She was reluctant to share.",
+      example_translation: "Cô ấy miễn cưỡng chia sẻ.",
+      synonyms: "hesitant",
+    });
   });
 });

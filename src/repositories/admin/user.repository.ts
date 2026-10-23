@@ -39,7 +39,7 @@ export class AdminUserRepository {
     page: number = 1,
     pageSize: number = 10,
     search?: string,
-    roleFilter?: "all" | "user" | "admin"
+    roleFilter?: "all" | "user" | "member" | "e_team" | "admin"
   ) {
     const supabase = await this.getSupabase();
     
@@ -145,7 +145,7 @@ export class AdminUserRepository {
     };
   }
 
-  static async updateUserRole(userId: string, newRole: "user" | "admin"): Promise<{ success: boolean; error?: string }> {
+  static async updateUserRole(userId: string, newRole: "user" | "member" | "e_team" | "admin"): Promise<{ success: boolean; error?: string }> {
     const supabase = await this.getSupabase();
     
     const { error } = await supabase

@@ -81,7 +81,7 @@ export async function POST(request: Request) {
 
     let configuredModel = process.env.AI_MODEL?.trim() || process.env.OPENAI_MODEL?.trim() || AI_MODEL;
     if (configuredModel.startsWith("gemini-")) {
-      configuredModel = "gpt-6-luna";
+      configuredModel = AI_MODEL;
     }
 
     const modelsToTry = [

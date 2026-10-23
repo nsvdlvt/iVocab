@@ -7,6 +7,7 @@ import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -87,14 +88,16 @@ export const columns: ColumnDef<VocabSetRow>[] = [
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Link href={`/admin/vocabulary-sets/${set.id}`} className="w-full">View Details</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              {set.visibility === "public" ? "Make Private" : "Make Public"}
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Delete Set</DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>
+                <Link href={`/admin/vocabulary-sets/${set.id}`} className="w-full">View Details</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                {set.visibility === "public" ? "Make Private" : "Make Public"}
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">Delete Set</DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       );

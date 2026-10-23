@@ -147,6 +147,6 @@ export async function createVocabularySet(
     }
   }
 
-  revalidatePath("/vocabulary");
+  revalidatePath("/u/vocabulary");
   return { success: true, setId: generatedId };
 }

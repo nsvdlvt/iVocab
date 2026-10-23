@@ -164,6 +164,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
       ipa: currentWord.ipa,
       part_of_speech: currentWord.part_of_speech,
       example: currentWord.example,
+      example_translation: currentWord.example_translation,
       synonyms: currentWord.synonyms,
       note: currentWord.note,
     };
@@ -451,6 +452,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
               ipa: updated.ipa,
               part_of_speech: updated.part_of_speech,
               example: updated.example,
+              example_translation: updated.example_translation,
               synonyms: updated.synonyms,
               note: updated.note,
             }
@@ -469,6 +471,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
               ipa: updated.ipa,
               part_of_speech: updated.part_of_speech,
               example: updated.example,
+              example_translation: updated.example_translation,
               synonyms: updated.synonyms,
               note: updated.note,
             },

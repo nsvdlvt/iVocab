@@ -3,7 +3,13 @@ import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/api/reading")) {
+  const pathname = request.nextUrl.pathname;
+  if (
+    pathname.startsWith("/api/reading") ||
+    pathname.startsWith("/api/dictionary/lookup") ||
+    pathname.startsWith("/api/dictionary/suggest") ||
+    pathname.startsWith("/api/dictionary/context")
+  ) {
     return NextResponse.next();
   }
 

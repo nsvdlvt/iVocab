@@ -42,6 +42,6 @@ export async function loginAction(values: LoginFormValues): Promise<LoginActionR
     };
   }
 
-  const destination = getSafeRedirectUrl(redirectTo, ROUTES.DASHBOARD);
+  const destination = getSafeRedirectUrl(redirectTo, ROUTES.SELECT_WORKSPACE);
   redirect(destination);
 }

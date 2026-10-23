@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookA,
+  BookMarked,
   BookOpen,
   Bot,
   ChevronLeft,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { NAVIGATION_ITEMS, SECONDARY_NAVIGATION_ITEMS } from "@/constants/navigation";
+import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -32,6 +34,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Home,
   Folder,
   BookA,
+  BookMarked,
   BookOpen,
   GraduationCap,
   Gamepad2,
@@ -67,8 +70,8 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
   }, []);
 
   const isActive = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
+    if (href === "/u" || href === "/") {
+      return pathname === href;
     }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
@@ -131,7 +134,7 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
     <nav className="flex-1 space-y-4 px-3 py-4">
       <div>
         <Link
-          href="/vocabulary/new"
+          href="/u/vocabulary/new"
           onClick={() => {
             if (closeMobile) setMobileOpen(false);
           }}
@@ -162,7 +165,7 @@ function SidebarContent({ profile }: { profile?: UserProfile | null }) {
             <SheetTitle className="sr-only">Menu điều hướng Vocabee</SheetTitle>
             <div className="flex h-14 items-center border-b border-sidebar-border px-4">
               <Link
-                href="/dashboard"
+                href={ROUTES.DASHBOARD}
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center"
               >

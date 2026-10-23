@@ -32,6 +32,7 @@ import { BrandLogo } from "@/components/common/BrandLogo";
 import { StudyModes } from "./StudyModes";
 import { useSpeak } from "@/hooks/use-speak";
 import { Database } from "@/types/database";
+import { HighlightedExample } from "@/components/common/HighlightedExample";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -275,17 +276,15 @@ export function SharedVocabularyBrowser({
                       {word.meaning}
                     </p>
 
-                    {word.example && (
-                      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1">
-                        <p className="text-xs italic leading-relaxed text-foreground/90">
-                          &ldquo;{word.example}&rdquo;
-                        </p>
-                        {word.example_translation && (
-                          <p className="text-[11px] leading-relaxed text-muted-foreground">
-                            {word.example_translation}
-                          </p>
-                        )}
-                      </div>
+                    {(word.example || word.example_translation) && (
+                      <HighlightedExample
+                        word={word.word}
+                        meaning={word.meaning}
+                        example={word.example}
+                        exampleTranslation={word.example_translation}
+                        compact
+                        className="p-2.5 rounded-lg border border-border/60 bg-muted/30"
+                      />
                     )}
                   </div>
                 </article>

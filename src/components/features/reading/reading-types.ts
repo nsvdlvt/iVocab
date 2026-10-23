@@ -8,6 +8,8 @@ export type HighlightedWord = {
   meaning?: string;
   partOfSpeech?: string;
   example?: string;
+  exampleTranslation?: string;
+  example_translation?: string;
   translatableText?: string;
 };
 

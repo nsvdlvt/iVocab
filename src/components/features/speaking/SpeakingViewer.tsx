@@ -26,6 +26,7 @@ import { AudioRecorder } from "@/lib/speech/audio-recorder";
 import type { PronunciationAssessmentResult, WordScore } from "@/lib/speech/azure-speech";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 
 export interface SpeakingWord {
   id: string;
@@ -338,9 +339,28 @@ export function SpeakingViewer({ words, setInfo }: SpeakingViewerProps) {
               </span>
             </div>
 
-            {currentWord.example && (
-              <div className="mt-4 pt-3 border-t border-border/40 text-xs text-muted-foreground italic">
-                &ldquo;{currentWord.example}&rdquo;
+            {(currentWord.example || currentWord.exampleTranslation) && (
+              <div className="mt-4 pt-3 border-t border-border/40 text-xs text-muted-foreground">
+                {currentWord.example && (
+                  <p className="italic">
+                    &ldquo;
+                    <HighlightedSentence
+                      sentence={currentWord.example}
+                      type="en"
+                      targetWord={currentWord.word}
+                    />
+                    &rdquo;
+                  </p>
+                )}
+                {currentWord.exampleTranslation && (
+                  <p className="mt-1 text-[11px] not-italic text-muted-foreground/80">
+                    <HighlightedSentence
+                      sentence={currentWord.exampleTranslation}
+                      type="vi"
+                      meaning={currentWord.meaning}
+                    />
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -348,7 +368,11 @@ export function SpeakingViewer({ words, setInfo }: SpeakingViewerProps) {
           <div className="space-y-3">
             <div className="flex items-start justify-center gap-2">
               <p className="text-lg sm:text-xl font-semibold text-foreground leading-relaxed">
-                {currentWord.example}
+                <HighlightedSentence
+                  sentence={currentWord.example || ""}
+                  type="en"
+                  targetWord={currentWord.word}
+                />
               </p>
               <button
                 onClick={() => handlePlayAudio(currentWord.example || "")}
@@ -360,7 +384,11 @@ export function SpeakingViewer({ words, setInfo }: SpeakingViewerProps) {
             </div>
             {currentWord.exampleTranslation && (
               <p className="text-xs text-muted-foreground">
-                {currentWord.exampleTranslation}
+                <HighlightedSentence
+                  sentence={currentWord.exampleTranslation}
+                  type="vi"
+                  meaning={currentWord.meaning}
+                />
               </p>
             )}
             <div className="text-xs text-muted-foreground pt-1">

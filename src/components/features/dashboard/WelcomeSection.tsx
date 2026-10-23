@@ -117,7 +117,7 @@ export function WelcomeSection({
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/vocabulary/new"
+                href="/u/vocabulary/new"
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
               >
                 <Plus className="h-4 w-4" />
@@ -127,7 +127,7 @@ export function WelcomeSection({
           ) : (
             <>
               <Link
-                href="/vocabulary/new"
+                href="/u/vocabulary/new"
                 className={cn(buttonVariants({ variant: "default", size: "lg" }))}
               >
                 <Plus className="h-4 w-4" />

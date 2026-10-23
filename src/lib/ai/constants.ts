@@ -1,12 +1,12 @@
 // src/lib/ai/constants.ts
 export const DEFAULT_AI_MODELS = [
+  "gpt-5.6-luna",
   "gpt-6-luna",
-  "gpt-6.1-sol",
   "gpt-5.6-terra",
   "gpt-6-sol",
-  "gpt-5.6-luna",
-  "gpt-6-astra",
   "gpt-5.6-sol",
+  "gpt-6.1-sol",
+  "gpt-6-astra",
 ];
 
 // Alias for backwards compatibility
@@ -38,4 +38,4 @@ export const AI_MODEL =
   process.env.AI_MODEL ||
   process.env.OPENAI_MODEL ||
   process.env.GEMINI_MODEL ||
-  "gpt-6-luna";
+  "gpt-5.6-luna";

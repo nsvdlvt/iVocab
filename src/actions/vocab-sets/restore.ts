@@ -18,6 +18,6 @@ export async function restoreVocabularySet(id: string) {
     };
   }
 
-  revalidatePath("/vocabulary");
+  revalidatePath("/u/vocabulary");
   return { success: true };
 }

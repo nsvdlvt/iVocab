@@ -19,10 +19,10 @@ export async function deleteVocabularySet(id: string, isPermanent = false) {
     };
   }
 
-  revalidatePath("/vocabulary");
-  revalidatePath("/vocabulary-management");
-  revalidatePath("/dashboard");
-  revalidatePath("/statistics");
-  revalidatePath("/review");
+  revalidatePath("/u/vocabulary");
+  revalidatePath("/u/vocabulary-management");
+  revalidatePath("/u");
+  revalidatePath("/u/statistics");
+  revalidatePath("/u/review");
   return { success: true };
 }

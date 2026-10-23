@@ -18,7 +18,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const params = await searchParams;
   const page = parseInt(params?.page as string) || 1;
   const search = (params?.search as string) || "";
-  const role = (params?.role as "all" | "user" | "admin") || "all";
+  const role = (params?.role as "all" | "user" | "member" | "e_team" | "admin") || "all";
 
   const { data: users, count, totalPages } = await AdminUserRepository.getUsers(
     page,

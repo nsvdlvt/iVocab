@@ -277,10 +277,10 @@ export class UserContextProvider {
             app_name: "Vocabee",
             current_date: dateStr,
             current_time: timeStr,
-            notification_link: "/notifications",
-            review_link: "/review",
-            learn_link: "/vocabulary",
-            quiz_link: "/quiz",
+            notification_link: "/u/notifications",
+            review_link: "/u/review",
+            learn_link: "/u/vocabulary",
+            quiz_link: "/u/quiz",
           };
 
           results.set(uId, userContext);
@@ -348,10 +348,10 @@ export class UserContextProvider {
               minute: "2-digit",
               hour12: false,
             }),
-            notification_link: "/notifications",
-            review_link: "/review",
-            learn_link: "/vocabulary",
-            quiz_link: "/quiz",
+            notification_link: "/u/notifications",
+            review_link: "/u/review",
+            learn_link: "/u/vocabulary",
+            quiz_link: "/u/quiz",
           };
           results.set(p.id, userContext);
         }

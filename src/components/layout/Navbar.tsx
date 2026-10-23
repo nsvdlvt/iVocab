@@ -19,18 +19,19 @@ interface NavbarProps {
 }
 
 const ROUTE_TITLES: Array<{ match: (path: string) => boolean; label: string }> = [
-  { match: (p) => p === "/dashboard", label: "Bảng điều khiển" },
-  { match: (p) => p === "/vocabulary/new", label: "Tạo bộ từ vựng" },
-  { match: (p) => p.startsWith("/vocabulary/"), label: "Học bộ từ vựng" },
-  { match: (p) => p === "/vocabulary", label: "Bộ từ vựng" },
-  { match: (p) => p.startsWith("/vocabulary-management"), label: "Kho từ vựng" },
-  { match: (p) => p.startsWith("/review"), label: "Ôn tập SRS" },
-  { match: (p) => p.startsWith("/reading"), label: "Đọc hiểu song ngữ" },
-  { match: (p) => p.startsWith("/quiz"), label: "Trắc nghiệm nhanh" },
-  { match: (p) => p.startsWith("/ai"), label: "Trợ lý AI" },
-  { match: (p) => p.startsWith("/statistics"), label: "Thống kê học tập" },
-  { match: (p) => p.startsWith("/settings"), label: "Cài đặt" },
-  { match: (p) => p.startsWith("/notifications"), label: "Trung tâm thông báo" },
+  { match: (p) => p === "/u" || p === "/dashboard", label: "Bảng điều khiển" },
+  { match: (p) => p.startsWith("/u/dictionary") || p.startsWith("/dictionary"), label: "Từ điển Anh - Việt" },
+  { match: (p) => p === "/u/vocabulary/new" || p === "/vocabulary/new", label: "Tạo bộ từ vựng" },
+  { match: (p) => p.startsWith("/u/vocabulary/") || p.startsWith("/vocabulary/"), label: "Học bộ từ vựng" },
+  { match: (p) => p === "/u/vocabulary" || p === "/vocabulary", label: "Bộ từ vựng" },
+  { match: (p) => p.startsWith("/u/vocabulary-management") || p.startsWith("/vocabulary-management"), label: "Kho từ vựng" },
+  { match: (p) => p.startsWith("/u/review") || p.startsWith("/review"), label: "Ôn tập SRS" },
+  { match: (p) => p.startsWith("/u/reading") || p.startsWith("/reading"), label: "Đọc hiểu song ngữ" },
+  { match: (p) => p.startsWith("/u/quiz") || p.startsWith("/quiz"), label: "Trắc nghiệm nhanh" },
+  { match: (p) => p.startsWith("/u/ai") || p.startsWith("/ai"), label: "Trợ lý AI" },
+  { match: (p) => p.startsWith("/u/statistics") || p.startsWith("/statistics"), label: "Thống kê học tập" },
+  { match: (p) => p.startsWith("/u/settings") || p.startsWith("/settings"), label: "Cài đặt" },
+  { match: (p) => p.startsWith("/u/notifications") || p.startsWith("/notifications"), label: "Trung tâm thông báo" },
 ];
 
 export function Navbar({ profile }: NavbarProps) {
