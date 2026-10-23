@@ -68,6 +68,9 @@ export class NotificationTemplateRepository {
         "SELECT * FROM public.notification_templates ORDER BY created_at DESC"
       );
       return res.rows;
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getTemplates] Error:", err);
+      return [];
     } finally {
       await client.end().catch(() => undefined);
     }
@@ -83,6 +86,9 @@ export class NotificationTemplateRepository {
         [id]
       );
       return res.rows[0] || null;
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getTemplateById] Error:", err);
+      return null;
     } finally {
       await client.end().catch(() => undefined);
     }
@@ -233,6 +239,9 @@ export class NotificationTemplateRepository {
       `;
       const res = await client.query(sql);
       return res.rows;
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getRules] Error:", err);
+      return [];
     } finally {
       await client.end().catch(() => undefined);
     }
@@ -384,6 +393,9 @@ export class NotificationTemplateRepository {
       `;
       const res = await client.query(sql, [limit]);
       return res.rows;
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getAutomationRuns] Error:", err);
+      return [];
     } finally {
       await client.end().catch(() => undefined);
     }
@@ -406,6 +418,9 @@ export class NotificationTemplateRepository {
       `;
       const res = await client.query(sql, [limit]);
       return res.rows;
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getDeliveryLogs] Error:", err);
+      return [];
     } finally {
       await client.end().catch(() => undefined);
     }
@@ -416,18 +431,20 @@ export class NotificationTemplateRepository {
   // ==========================================
 
   static async getDashboardStats(): Promise<AutomationDashboardStats> {
+    const defaults: AutomationDashboardStats = {
+      totalTemplates: 0,
+      activeTemplates: 0,
+      totalRules: 0,
+      activeRules: 0,
+      totalSent: 0,
+      totalFailed: 0,
+      lastRunAt: null,
+      totalSubscribers: 0,
+    };
+
     const client = this.getClient();
     if (!client) {
-      return {
-        totalTemplates: 0,
-        activeTemplates: 0,
-        totalRules: 0,
-        activeRules: 0,
-        totalSent: 0,
-        totalFailed: 0,
-        lastRunAt: null,
-        totalSubscribers: 0,
-      };
+      return defaults;
     }
 
     try {
@@ -470,6 +487,9 @@ export class NotificationTemplateRepository {
         lastRunAt: r?.last_run_at || null,
         totalSubscribers: Number(p?.active_subs || 0),
       };
+    } catch (err) {
+      console.error("[NotificationTemplateRepository.getDashboardStats] Error:", err);
+      return defaults;
     } finally {
       await client.end().catch(() => undefined);
     }

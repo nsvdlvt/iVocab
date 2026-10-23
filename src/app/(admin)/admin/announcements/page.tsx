@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { AdminAnnouncementRepository } from "@/repositories/admin/announcement.repository";
-import { NotificationTemplateRepository } from "@/repositories/admin/notification-template.repository";
+import {
+  NotificationTemplateRepository,
+  type NotificationTemplateRow,
+  type NotificationAutomationRuleRow,
+  type NotificationAutomationRunRow,
+  type NotificationDeliveryLogRow,
+  type AutomationDashboardStats,
+} from "@/repositories/admin/notification-template.repository";
 import { AdminAnnouncementsHub } from "@/components/admin/announcements/admin-announcements-hub";
 import { requireAdmin } from "@/lib/auth/admin";
+import type { FallbackAnnouncement } from "@/lib/admin/fallback-store";
 
 export const dynamic = "force-dynamic";
 
@@ -14,21 +22,43 @@ export const metadata: Metadata = {
 export default async function AdminAnnouncementsPage() {
   await requireAdmin();
 
-  const [
-    { announcements, isDatabaseLive },
-    templates,
-    rules,
-    stats,
-    runs,
-    logs,
-  ] = await Promise.all([
-    AdminAnnouncementRepository.getAnnouncements(),
-    NotificationTemplateRepository.getTemplates(),
-    NotificationTemplateRepository.getRules(),
-    NotificationTemplateRepository.getDashboardStats(),
-    NotificationTemplateRepository.getAutomationRuns(15),
-    NotificationTemplateRepository.getDeliveryLogs(30),
-  ]);
+  let announcements: FallbackAnnouncement[] = [];
+  let isDatabaseLive = false;
+  let templates: NotificationTemplateRow[] = [];
+  let rules: Array<NotificationAutomationRuleRow & { template_name?: string; template_title?: string }> = [];
+  let stats: AutomationDashboardStats = {
+    totalTemplates: 0,
+    activeTemplates: 0,
+    totalRules: 0,
+    activeRules: 0,
+    totalSent: 0,
+    totalFailed: 0,
+    lastRunAt: null,
+    totalSubscribers: 0,
+  };
+  let runs: Array<NotificationAutomationRunRow & { rule_name?: string }> = [];
+  let logs: Array<NotificationDeliveryLogRow & { user_name?: string; user_email?: string; rule_name?: string }> = [];
+
+  try {
+    const [announcementsResult, t, r, s, ru, l] = await Promise.all([
+      AdminAnnouncementRepository.getAnnouncements(),
+      NotificationTemplateRepository.getTemplates(),
+      NotificationTemplateRepository.getRules(),
+      NotificationTemplateRepository.getDashboardStats(),
+      NotificationTemplateRepository.getAutomationRuns(15),
+      NotificationTemplateRepository.getDeliveryLogs(30),
+    ]);
+
+    announcements = announcementsResult.announcements;
+    isDatabaseLive = announcementsResult.isDatabaseLive;
+    templates = t;
+    rules = r;
+    stats = s;
+    runs = ru;
+    logs = l;
+  } catch (err) {
+    console.error("[AdminAnnouncementsPage] Failed to load data:", err);
+  }
 
   return (
     <div className="space-y-6">

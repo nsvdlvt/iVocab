@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { requireETeamUser } from "@/lib/auth/require-user";
 import { ETeamSidebar } from "@/components/e-team/layout/ETeamSidebar";
 import { ETeamNavbar } from "@/components/e-team/layout/ETeamNavbar";
+import { ETeamBottomNav } from "@/components/e-team/layout/ETeamBottomNav";
 import { perfEnd, perfStart } from "@/lib/perf";
 
 export const metadata: Metadata = {
@@ -29,10 +30,11 @@ export default async function ETeamLayout({ children }: ETeamLayoutProps) {
         <ETeamNavbar profile={profile} />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <ETeamSidebar profile={profile} />
-          <main className="flex-1 overflow-y-auto min-w-0">
+          <main className="flex-1 overflow-y-auto min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {children}
           </main>
         </div>
+        <ETeamBottomNav />
       </div>
     );
   } finally {

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { useSidebar } from "@/hooks/use-sidebar";
 import type { UserProfile } from "@/lib/auth/get-current-user";
 import { ROUTES } from "@/constants/routes";
 
@@ -23,17 +24,26 @@ interface ETeamSidebarProps {
 
 export function ETeamSidebar({ profile }: ETeamSidebarProps) {
   const pathname = usePathname();
+  const { isMobileOpen, setMobileOpen } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setMobileOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobileViewport(media.matches);
+    const update = () => {
+      setIsMobileViewport(media.matches);
+      if (!media.matches) {
+        setMobileOpen(false);
+      }
+    };
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
+  }, [setMobileOpen]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
 
   const navItems = [
     {
@@ -107,7 +117,7 @@ export function ETeamSidebar({ profile }: ETeamSidebarProps) {
             className="p-0 w-72 border-r border-border bg-card flex flex-col h-full"
           >
             <SheetTitle className="sr-only">Menu điều hướng E-Team</SheetTitle>
-            <div className="flex h-14 items-center justify-between border-b border-border px-4">
+            <div className="flex h-14 items-center justify-between border-b border-border pl-4 pr-12">
               <Link
                 href={ROUTES.ETEAM_DASHBOARD}
                 onClick={() => setMobileOpen(false)}
