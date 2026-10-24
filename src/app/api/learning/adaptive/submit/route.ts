@@ -37,35 +37,39 @@ export async function POST(request: Request) {
       selectedOptionIndex
     );
 
-    // Retrieve session to get vocabulary ID and set ID
-    const session = await AdaptiveSessionStore.getSession(sessionId, user.id);
-    const question = session?.questionBank.get(questionId);
+    // If this is an idempotent duplicate submission (e.g. rapid click or network retry),
+    // skip repeating database SRS and activity logging
+    if (!result.isDuplicateSubmission) {
+      // Retrieve session to get vocabulary ID and set ID
+      const session = await AdaptiveSessionStore.getSession(sessionId, user.id);
+      const question = session?.questionBank.get(questionId);
 
-    if (question) {
-      // Record SRS review progress atomically
-      try {
-        const processed = await ReviewRepository.processResult({
-          userId: user.id,
-          vocabularyId: question.vocabularyId,
-          mode: "learn",
-          answerResult: result.isCorrect ? "correct" : "wrong",
-        });
+      if (question) {
+        // Record SRS review progress atomically
+        try {
+          const processed = await ReviewRepository.processResult({
+            userId: user.id,
+            vocabularyId: question.vocabularyId,
+            mode: "learn",
+            answerResult: result.isCorrect ? "correct" : "wrong",
+          });
 
-        // Record learning activity count
-        if (processed) {
-          result.updatedSrsLevel = processed.nextLevel;
-          await LearningProgressService.recordActivity(user.id, 1, 0, "learn").catch((err) =>
-            console.warn("[adaptive/submit] LearningProgressService error:", err)
-          );
+          // Record learning activity count
+          if (processed) {
+            result.updatedSrsLevel = processed.nextLevel;
+            await LearningProgressService.recordActivity(user.id, 1, 0, "learn").catch((err) =>
+              console.warn("[adaptive/submit] LearningProgressService error:", err)
+            );
+          }
+
+          // Touch last studied at
+          await VocabSetRepository.touchLastStudiedAtByVocabularyId(
+            question.vocabularyId,
+            user.id
+          ).catch((err) => console.warn("[adaptive/submit] touchLastStudiedAt error:", err));
+        } catch (dbError) {
+          console.error("[adaptive/submit] Database progress update error:", dbError);
         }
-
-        // Touch last studied at
-        await VocabSetRepository.touchLastStudiedAtByVocabularyId(
-          question.vocabularyId,
-          user.id
-        ).catch((err) => console.warn("[adaptive/submit] touchLastStudiedAt error:", err));
-      } catch (dbError) {
-        console.error("[adaptive/submit] Database progress update error:", dbError);
       }
     }
 

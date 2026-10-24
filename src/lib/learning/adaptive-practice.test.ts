@@ -199,10 +199,19 @@ describe("Adaptive Learning Flow Engine & Session Store", () => {
     expect(submitResult.explanation).toContain("Reach an agreement");
     expect(submitResult.whyDistractorWrong).toContain("Achieve không đi tự nhiên");
 
-    // Prevent duplicate submission of the same question
-    await expect(
-      AdaptiveSessionStore.submitAnswer(sessionId, userId, "q1", 0)
-    ).rejects.toThrow("This question has already been submitted");
+    // Handle duplicate submission of the same question safely and idempotently
+    const duplicateResult = await AdaptiveSessionStore.submitAnswer(
+      sessionId,
+      userId,
+      "q1",
+      0
+    );
+    expect(duplicateResult.isDuplicateSubmission).toBe(true);
+    expect(duplicateResult.isCorrect).toBe(true);
+    // Score and history should not be doubled
+    const sessionAfterDuplicate = await AdaptiveSessionStore.getSession(sessionId, userId);
+    expect(sessionAfterDuplicate?.score).toBe(10);
+    expect(sessionAfterDuplicate?.answersHistory).toHaveLength(1);
 
     // Finish session and check summary
     const summary = await AdaptiveSessionStore.finishSession(sessionId, userId);

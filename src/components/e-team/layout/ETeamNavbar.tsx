@@ -3,7 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { Briefcase, ArrowLeftRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { BrandLogo } from "@/components/common/BrandLogo";
 import { ROUTES } from "@/constants/routes";
@@ -23,7 +24,7 @@ export function ETeamNavbar({ profile }: ETeamNavbarProps) {
     <header className="sticky top-0 z-30 w-full border-b border-border bg-background/85 backdrop-blur-md">
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Link href={ROUTES.ETEAM_DASHBOARD} className="flex items-center md:hidden">
+          <Link href={ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard"} className="flex items-center md:hidden">
             <BrandLogo
               className="gap-2"
               imageClassName="h-7 w-7"
@@ -51,16 +52,14 @@ export function ETeamNavbar({ profile }: ETeamNavbarProps) {
             </div>
           )}
 
-          <Link href={ROUTES.SELECT_WORKSPACE}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-8 gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
-              title="Chuyển đổi không gian làm việc"
-            >
-              <ArrowLeftRight className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Đổi không gian</span>
-            </Button>
+          <Link
+            href={ROUTES?.SELECT_WORKSPACE || "/select-workspace"}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs h-8 gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground")}
+            title="Chuyển đổi không gian làm việc"
+            aria-label="Chuyển đổi không gian làm việc"
+          >
+            <ArrowLeftRight className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Đổi không gian</span>
           </Link>
 
           <ThemeToggle />

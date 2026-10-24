@@ -1,10 +1,10 @@
 import type {
   DictionaryResult,
-  DictionaryPhonetic,
   DictionaryMeaningGroup,
   DictionarySenseDefinition,
 } from "@/types/dictionary";
 import type { IDictionaryProvider, DictionaryLookupOptions } from "./interface";
+import { extractPhoneticsInfo } from "../phonetics";
 
 interface RawPhonetic {
   text?: string;
@@ -69,43 +69,9 @@ export class FreeDictionaryProvider implements IDictionaryProvider {
       }
 
       // Process phonetics & audio
-      const phoneticsList: DictionaryPhonetic[] = [];
-      let audioUk: string | undefined;
-      let audioUs: string | undefined;
-      let generalIpa = entry.phonetic;
-
-      if (Array.isArray(entry.phonetics)) {
-        for (const p of entry.phonetics) {
-          const audioUrl = p.audio?.trim();
-          const ipaText = p.text?.trim();
-
-          if (!generalIpa && ipaText) {
-            generalIpa = ipaText;
-          }
-
-          let region: "uk" | "us" | "general" = "general";
-          if (audioUrl) {
-            const lowerAudio = audioUrl.toLowerCase();
-            if (lowerAudio.includes("-uk") || lowerAudio.includes("/uk/")) {
-              region = "uk";
-              if (!audioUk) audioUk = audioUrl;
-            } else if (lowerAudio.includes("-us") || lowerAudio.includes("/us/")) {
-              region = "us";
-              if (!audioUs) audioUs = audioUrl;
-            } else if (!audioUs && !audioUk) {
-              audioUs = audioUrl;
-            }
-          }
-
-          if (ipaText || audioUrl) {
-            phoneticsList.push({
-              text: ipaText,
-              audio: audioUrl,
-              region,
-            });
-          }
-        }
-      }
+      const extracted = extractPhoneticsInfo(entry.phonetics, entry.phonetic);
+      let audioUk = extracted.audioUk;
+      let audioUs = extracted.audioUs;
 
       // Fallback reliable audio pronunciations if missing
       if (!audioUk) {
@@ -158,8 +124,10 @@ export class FreeDictionaryProvider implements IDictionaryProvider {
       const result: DictionaryResult = {
         word: entry.word,
         normalizedWord: clean,
-        ipa: generalIpa,
-        phonetics: phoneticsList,
+        ipa: extracted.ipa,
+        ipaUk: extracted.ipaUk,
+        ipaUs: extracted.ipaUs,
+        phonetics: extracted.phonetics,
         audioUk,
         audioUs,
         meanings: meaningGroups,

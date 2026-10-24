@@ -35,7 +35,7 @@ vi.mock("@/actions/auth/logout", () => ({
 const mockMemberProfile: UserProfile = {
   id: "member-1",
   email: "learner@vocabee.site",
-  role: "user", // legacy 'user' or 'member'
+  role: "member",
   display_name: "Nguyễn Học Viên",
   avatar_url: null,
   level: "Basic (A1)",
@@ -82,54 +82,68 @@ describe("WorkspaceSelector Component", () => {
     vi.clearAllMocks();
   });
 
-  it("renders correct title and description", () => {
+  it("renders correct title and header elements", () => {
     const html = renderToString(<WorkspaceSelector profile={mockAdminProfile} />);
-    expect(html).toContain("Chọn không gian của bạn");
-    expect(html).toContain("Bạn muốn tiếp tục ở không gian nào?");
+    expect(html).toContain("Chọn không gian làm việc");
+    expect(html).toContain("Chọn không gian làm việc bạn muốn truy cập.");
+    expect(html).toContain("Lê Admin");
+    expect(html).toContain("Admin");
   });
 
-  describe("Member Role Access", () => {
-    it("renders ONLY Vocabeer card with exact label, description and button text", () => {
+  describe("Scenario 1: Member signs in -> only Vocabeer is available", () => {
+    it("renders ONLY Vocabeer workspace card", () => {
       const html = renderToString(<WorkspaceSelector profile={mockMemberProfile} />);
 
       // Vocabeer card check
       expect(html).toContain("Vocabeer");
-      expect(html).toContain("Không gian học tập và chinh phục từ vựng tiếng Anh.");
+      expect(html).toContain("Không gian học tập và chinh phục từ vựng tiếng Anh cá nhân.");
       expect(html).toContain("Vào không gian học tập");
 
       // E-Team card should NOT be rendered
-      expect(html).not.toContain("Không gian làm việc dành riêng cho thành viên E-Team.");
+      expect(html).not.toContain("Không gian làm việc và quản lý từ vựng dành cho thành viên E-Team.");
       expect(html).not.toContain("Vào E-Team");
+
+      // Admin card should NOT be rendered
+      expect(html).not.toContain("Admin Console");
+      expect(html).not.toContain("Vào trang Quản trị");
     });
   });
 
-  describe("E-Team Role Access", () => {
-    it("renders ONLY E-Team card for E-Team role", () => {
+  describe("Scenario 2: E-Team member signs in -> sees Vocabeer and E-Team", () => {
+    it("renders BOTH Vocabeer and E-Team workspace cards, without Admin card", () => {
       const html = renderToString(<WorkspaceSelector profile={mockETeamProfile} />);
+
+      // Vocabeer card check
+      expect(html).toContain("Vocabeer");
+      expect(html).toContain("Vào không gian học tập");
 
       // E-Team card check
       expect(html).toContain("E-Team");
-      expect(html).toContain("Không gian làm việc dành riêng cho thành viên E-Team.");
+      expect(html).toContain("Không gian làm việc và quản lý từ vựng dành cho thành viên E-Team.");
       expect(html).toContain("Vào E-Team");
 
-      // Vocabeer card should NOT be rendered for e_team only
-      expect(html).not.toContain("Không gian học tập và chinh phục từ vựng tiếng Anh.");
-      expect(html).not.toContain("Vào không gian học tập");
+      // Admin card should NOT be rendered
+      expect(html).not.toContain("Admin Console");
+      expect(html).not.toContain("Vào trang Quản trị");
     });
   });
 
-  describe("Admin Role Access", () => {
-    it("renders BOTH Vocabeer and E-Team cards for Admin role", () => {
+  describe("Scenario 3: Admin signs in -> sees Vocabeer, E-Team, and Admin", () => {
+    it("renders ALL 3 workspace cards: Vocabeer, E-Team, and Admin", () => {
       const html = renderToString(<WorkspaceSelector profile={mockAdminProfile} />);
 
-      // Both cards rendered
+      // Vocabeer card check
       expect(html).toContain("Vocabeer");
       expect(html).toContain("Vào không gian học tập");
+
+      // E-Team card check
       expect(html).toContain("E-Team");
       expect(html).toContain("Vào E-Team");
 
-      // Admin console jump link
-      expect(html).toContain("Trang Quản trị (Admin Console)");
+      // Admin card check
+      expect(html).toContain("Admin Console");
+      expect(html).toContain("Không gian quản trị hệ thống, dữ liệu từ vựng và tài khoản người dùng.");
+      expect(html).toContain("Vào trang Quản trị");
     });
   });
 });

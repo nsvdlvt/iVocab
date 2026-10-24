@@ -8,6 +8,7 @@ import { FreeDictionaryProvider } from "./providers/free-dictionary.provider";
 import { DatamuseProvider } from "./providers/datamuse.provider";
 import { AiDictionaryProvider } from "./providers/ai-dictionary.provider";
 import { translateToVietnamese } from "./translation.service";
+import { normalizeIpa, isArpabet, isReliableIpa } from "./phonetics";
 
 export interface LookupOptions {
   signal?: AbortSignal;
@@ -36,7 +37,20 @@ export class DictionaryService {
 
     if (!options?.skipCache && dictionaryCache.has(cacheKey)) {
       const cached = dictionaryCache.get(cacheKey);
-      if (cached) return cached;
+      if (cached) {
+        // Sanitize or invalidate cached entry if it contains malformed ARPAbet or invalid IPA
+        if (cached.ipa && (isArpabet(cached.ipa) || !isReliableIpa(cached.ipa))) {
+          const fixed = normalizeIpa(cached.ipa);
+          if (fixed) {
+            cached.ipa = fixed;
+            if (!cached.ipaUs) cached.ipaUs = fixed;
+          } else {
+            dictionaryCache.delete(cacheKey);
+            return this.lookup(word, { ...options, skipCache: true });
+          }
+        }
+        return cached;
+      }
     }
 
     let result: DictionaryResult | null = null;
@@ -83,7 +97,27 @@ export class DictionaryService {
       return null;
     }
 
-    // Step 6: Enrich with Vietnamese translations and collocations (fast and cached)
+    // Step 4: If Free Dictionary had definitions but lacked reliable IPA (e.g. "resilient"),
+    // fetch reliable pronunciation from Datamuse (uses &ipa=1 or ARPAbet-to-IPA conversion)
+    if (!isMultiWord && (!result.ipa || !isReliableIpa(result.ipa))) {
+      try {
+        const pron = await this.datamuseProvider.getPronunciation(
+          rawClean,
+          AbortSignal.timeout(1500)
+        );
+        if (pron?.ipa) {
+          result.ipa = pron.ipa;
+          if (!result.ipaUs && pron.ipaUs) result.ipaUs = pron.ipaUs;
+          if (!result.phonetics.some((p) => p.text)) {
+            result.phonetics.push({ text: pron.ipa, region: "us" });
+          }
+        }
+      } catch {
+        // Non-blocking: proceed without failing lookup
+      }
+    }
+
+    // Step 5: Enrich with Vietnamese translations and collocations (fast and cached)
     await this.enrichDictionaryResult(result);
 
     // Cache the completed result
@@ -122,6 +156,11 @@ export class DictionaryService {
   }
 
   private async enrichDictionaryResult(result: DictionaryResult): Promise<void> {
+    // Standardize IPA fields
+    if (result.ipa) result.ipa = normalizeIpa(result.ipa);
+    if (result.ipaUk) result.ipaUk = normalizeIpa(result.ipaUk);
+    if (result.ipaUs) result.ipaUs = normalizeIpa(result.ipaUs);
+
     const promises: Promise<void>[] = [];
 
     // 1. Fetch primary Vietnamese translation if missing

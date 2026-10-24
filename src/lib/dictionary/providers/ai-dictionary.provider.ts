@@ -8,6 +8,7 @@ import type {
 } from "@/types/dictionary";
 import { translateToVietnamese } from "../translation.service";
 import type { IDictionaryProvider, DictionaryLookupOptions } from "./interface";
+import { normalizeIpa } from "../phonetics";
 
 export class AiDictionaryProvider implements IDictionaryProvider {
   readonly name = "ai-enriched";
@@ -112,14 +113,17 @@ Nếu là từ, cụm từ, thành ngữ hoặc tiếng lóng có thật, hãy x
         };
       });
 
+      const cleanIpa = normalizeIpa(parsed.ipa);
+
       return {
         word: parsed.word || clean,
         normalizedWord: clean.toLowerCase(),
-        ipa: parsed.ipa,
-        phonetics: parsed.ipa
+        ipa: cleanIpa,
+        ipaUs: cleanIpa,
+        phonetics: cleanIpa
           ? [
               {
-                text: parsed.ipa,
+                text: cleanIpa,
                 region: "general",
               },
             ]

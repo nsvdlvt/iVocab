@@ -190,9 +190,182 @@ describe("DictionaryService & Providers", () => {
       expect(result).not.toBeNull();
       expect(result?.word).toBe("eloquent");
       expect(result?.source).toBe("datamuse");
+      expect(result?.ipa).toBe("/ˈɛləkwənt/");
+      expect(result?.ipaUs).toBe("/ˈɛləkwənt/");
       expect(result?.meanings[0].definitions[0].definitionEn).toBe("Fluently persuasive and articulate.");
       expect(result?.primaryVietnamese).toBe("hùng biện");
       expect(result?.audioUs).toBeDefined();
+    });
+
+    it("should enrich IPA for 'resilient' when FreeDict has audio only and no phonetic text", async () => {
+      const mockFreeDictResilient = [
+        {
+          word: "resilient",
+          phonetics: [
+            {
+              audio: "https://api.dictionaryapi.dev/media/pronunciations/en/resilient-us.mp3",
+            },
+          ],
+          meanings: [
+            {
+              partOfSpeech: "adjective",
+              definitions: [
+                {
+                  definition: "Able to withstand or recover quickly from difficult conditions.",
+                },
+              ],
+            },
+          ],
+        },
+      ];
+
+      const mockDatamuseResilient = [
+        {
+          word: "resilient",
+          tags: ["adj", "ipa_pron:rɪzˈɪɫjʌnt", "pron:R IH0 Z IH1 L Y AH0 N T "],
+        },
+      ];
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (url: string | URL | Request) => {
+        const urlStr = String(url);
+        if (urlStr.includes("dictionaryapi.dev")) {
+          return new Response(JSON.stringify(mockFreeDictResilient), { status: 200 });
+        }
+        if (urlStr.includes("datamuse.com")) {
+          return new Response(JSON.stringify(mockDatamuseResilient), { status: 200 });
+        }
+        if (urlStr.includes("translate.googleapis.com")) {
+          return new Response(JSON.stringify([[["kiên cường, đàn hồi"]]]), { status: 200 });
+        }
+        return new Response("Not found", { status: 404 });
+      });
+
+      const result = await service.lookup("resilient");
+      expect(result).not.toBeNull();
+      expect(result?.word).toBe("resilient");
+      expect(result?.ipa).toBe("/rɪzˈɪɫjʌnt/");
+      expect(result?.ipaUs).toBe("/rɪzˈɪɫjʌnt/");
+      expect(result?.audioUs).toContain("resilient-us.mp3");
+      // Must NOT display raw ARPAbet tokens like /R IH0 Z IH1 L Y AH0 N T/
+      expect(result?.ipa).not.toContain("IH0");
+      expect(result?.ipa).not.toContain("IH1");
+    });
+
+    it("should convert raw ARPAbet to standard IPA if Datamuse only returns pron tag", async () => {
+      const mockDatamuseArpabetOnly = [
+        {
+          word: "resilient",
+          defs: ["adj\tAble to recover quickly."],
+          tags: ["adj", "pron:R IH0 Z IH1 L Y AH0 N T "],
+        },
+      ];
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (url: string | URL | Request) => {
+        const urlStr = String(url);
+        if (urlStr.includes("dictionaryapi.dev")) {
+          return new Response("Not found", { status: 404 });
+        }
+        if (urlStr.includes("datamuse.com")) {
+          return new Response(JSON.stringify(mockDatamuseArpabetOnly), { status: 200 });
+        }
+        return new Response(JSON.stringify([]), { status: 200 });
+      });
+
+      const result = await service.lookup("resilient");
+      expect(result).not.toBeNull();
+      expect(result?.ipa).toBe("/rɪˈzɪljənt/");
+      expect(result?.ipa).not.toContain("IH0");
+      expect(result?.ipa).not.toContain(" ");
+    });
+
+    it("should separate distinct UK and US pronunciations when provided by source", async () => {
+      const mockTomato = [
+        {
+          word: "tomato",
+          phonetics: [
+            {
+              text: "[tʰə̥ˈmɑːtʰəʊ]",
+              audio: "https://api.dictionaryapi.dev/media/pronunciations/en/tomato-uk.mp3",
+            },
+            {
+              text: "[tʰə̥ˈmeɪɾoʊ]",
+              audio: "https://api.dictionaryapi.dev/media/pronunciations/en/tomato-us.mp3",
+            },
+          ],
+          meanings: [
+            {
+              partOfSpeech: "noun",
+              definitions: [{ definition: "A glossy red, or occasionally yellow, pulpy edible fruit." }],
+            },
+          ],
+        },
+      ];
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (url: string | URL | Request) => {
+        const urlStr = String(url);
+        if (urlStr.includes("dictionaryapi.dev")) {
+          return new Response(JSON.stringify(mockTomato), { status: 200 });
+        }
+        return new Response(JSON.stringify([]), { status: 200 });
+      });
+
+      const result = await service.lookup("tomato");
+      expect(result).not.toBeNull();
+      expect(result?.ipaUk).toBe("/tʰə̥ˈmɑːtʰəʊ/");
+      expect(result?.ipaUs).toBe("/tʰə̥ˈmeɪɾoʊ/");
+      expect(result?.ipa).toBe("/tʰə̥ˈmeɪɾoʊ/"); // US preferred as primary
+      expect(result?.audioUk).toContain("tomato-uk.mp3");
+      expect(result?.audioUs).toContain("tomato-us.mp3");
+    });
+
+    it("should sanitize malformed cached IPA and avoid repeatedly returning ARPAbet", async () => {
+      // Simulate an old malformed entry in the LRU cache
+      dictionaryCache.set("resilient", {
+        word: "resilient",
+        normalizedWord: "resilient",
+        ipa: "/R IHO Z IH1 L Y AHO N T/",
+        phonetics: [],
+        meanings: [
+          {
+            partOfSpeech: "adjective",
+            definitions: [
+              {
+                id: "1",
+                definitionEn: "Tough.",
+                synonyms: [],
+                antonyms: [],
+              },
+            ],
+            synonyms: [],
+            antonyms: [],
+          },
+        ],
+        collocations: [],
+        wordForms: [],
+        source: "datamuse",
+        timestamp: Date.now(),
+      });
+
+      const result = await service.lookup("resilient");
+      expect(result).not.toBeNull();
+      // Must be sanitized to standard IPA
+      expect(result?.ipa).toBe("/rɪˈzɪljənt/");
+      expect(result?.ipa).not.toContain("IH0");
+      expect(result?.ipa).not.toContain("IHO");
+    });
+
+    it("should look up resilient against live providers and yield valid standard IPA", async () => {
+      vi.restoreAllMocks();
+      const liveService = new DictionaryService();
+      const result = await liveService.lookup("resilient", { skipCache: true });
+      if (result) {
+        expect(result.word).toBe("resilient");
+        expect(result.ipa).toBeDefined();
+        // Check that IPA is valid standard IPA
+        expect(result.ipa).toMatch(/^\/[^ ]+\/$/);
+        expect(result.ipa).not.toContain("IH0");
+        expect(result.ipa).not.toContain("IH1");
+      }
     });
 
     it("should return null for empty or non-existent words when all providers fail", async () => {

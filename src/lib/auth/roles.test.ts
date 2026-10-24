@@ -6,7 +6,6 @@ import {
   canAccessAdmin,
   canSwitchWorkspace,
   ROLE_DISPLAY_NAMES,
-  type AppRole,
 } from "./roles";
 
 describe("Roles and Access Control (roles.ts)", () => {
@@ -46,8 +45,9 @@ describe("Roles and Access Control (roles.ts)", () => {
       expect(canAccessVocabeer("admin")).toBe(true);
     });
 
-    it("denies e_team member from Vocabeer unless explicitly dual-granted", () => {
-      expect(canAccessVocabeer("e_team")).toBe(false);
+    it("permits e_team member (all roles are allowed in Vocabeer)", () => {
+      expect(canAccessVocabeer("e_team")).toBe(true);
+      expect(canAccessVocabeer("eteam")).toBe(true);
     });
   });
 

@@ -1,5 +1,9 @@
+import { canAccessAdmin, canAccessETeam, canAccessVocabeer } from "./roles";
+import { ROUTES } from "@/constants/routes";
+
 /**
- * Utility functions for safe URL redirection to prevent open redirect vulnerabilities.
+ * Utility functions for safe URL redirection to prevent open redirect vulnerabilities
+ * and validate role-based workspace authorization.
  */
 
 /**
@@ -40,7 +44,6 @@ export function isSafeRedirectPath(path: unknown): path is string {
 
   // Check for protocol schemes inside (e.g. /http://evil.com or javascript:)
   try {
-    // Check if path is parsed as absolute URL
     if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(trimmed)) {
       return false;
     }
@@ -52,11 +55,77 @@ export function isSafeRedirectPath(path: unknown): path is string {
 }
 
 /**
+ * Validates whether the user's role is authorized to access the destination route.
+ */
+export function isDestinationAuthorized(
+  path: unknown,
+  role: string | null | undefined
+): boolean {
+  if (!isSafeRedirectPath(path)) {
+    return false;
+  }
+
+  const clean = path.trim();
+
+  // Admin routes: require admin role
+  if (clean === "/admin" || clean.startsWith("/admin/")) {
+    return canAccessAdmin(role);
+  }
+
+  // E-Team routes: require e_team or admin role
+  if (clean === "/e-team" || clean.startsWith("/e-team/")) {
+    return canAccessETeam(role);
+  }
+
+  // Vocabeer routes: require vocabeer access
+  if (clean === "/u" || clean.startsWith("/u/")) {
+    return canAccessVocabeer(role);
+  }
+
+  // General routes (like /select-workspace, /settings, etc.)
+  return true;
+}
+
+/**
  * Returns a validated safe internal redirect URL or the fallback default.
  */
-export function getSafeRedirectUrl(target: string | null | undefined, fallback = "/dashboard"): string {
+export function getSafeRedirectUrl(
+  target: string | null | undefined,
+  fallback: string = ROUTES.SELECT_WORKSPACE
+): string {
   if (target && isSafeRedirectPath(target)) {
     return target.trim();
   }
+  return fallback;
+}
+
+/**
+ * Validates both safety and authorization for a redirect target.
+ * Prevents redirecting directly to a workspace dashboard by default.
+ * Preserves specific intended destinations when the user's role is authorized.
+ */
+export function getAuthorizedRedirectUrl(
+  target: string | null | undefined,
+  role: string | null | undefined,
+  fallback: string = ROUTES.SELECT_WORKSPACE
+): string {
+  if (target && isSafeRedirectPath(target)) {
+    const clean = target.trim();
+
+    // Do not redirect directly to workspace dashboard by default
+    if (
+      clean === "/" ||
+      clean === ROUTES.LANDING ||
+      clean === "/dashboard" ||
+      clean === ROUTES.DASHBOARD
+    ) {
+      return fallback;
+    }
+
+    if (isDestinationAuthorized(clean, role)) {
+      return clean;
+    }
+  }
+
   return fallback;
 }

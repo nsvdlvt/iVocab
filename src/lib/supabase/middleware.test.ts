@@ -3,12 +3,14 @@ import { updateSession } from "./middleware";
 import { NextRequest } from "next/server";
 
 const mockGetUser = vi.fn();
+const mockFrom = vi.fn();
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: vi.fn(() => ({
     auth: {
       getUser: mockGetUser,
     },
+    from: mockFrom,
   })),
 }));
 
@@ -64,7 +66,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(location).toContain("next=%2Fvocabulary%2Fset-123");
   });
 
-  it("should redirect authenticated users away from guest-only pages to /dashboard", async () => {
+  it("should redirect authenticated users away from guest-only pages to /select-workspace", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 
     const request = new NextRequest("http://localhost:3000/login");
@@ -75,8 +77,13 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(location).toBe("http://localhost:3000/select-workspace");
   });
 
-  it("should redirect authenticated users on /login to preserved next parameter if safe", async () => {
+  it("should redirect authenticated users on /login to preserved next parameter if safe and authorized", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "member" }, error: null }),
+    });
 
     const request = new NextRequest("http://localhost:3000/login?next=/vocabulary");
     const response = await updateSession(request);
@@ -95,7 +102,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(response.status).toBe(200);
   });
 
-  it("should redirect authenticated users on /verify-otp to /dashboard", async () => {
+  it("should redirect authenticated users on /verify-otp to /select-workspace", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 
     const request = new NextRequest("http://localhost:3000/verify-otp");
@@ -144,5 +151,112 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
     expect(location).toBe("http://localhost:3000/select-workspace");
+  });
+
+  describe("Role-based route authorization guards", () => {
+    it("redirects member attempting to access /e-team to /403", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "member" }, error: null }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/e-team/dashboard");
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3000/403");
+    });
+
+    it("redirects member attempting to access /admin to /403", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "member" }, error: null }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/admin/users");
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3000/403");
+    });
+
+    it("permits E-Team member accessing /e-team", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/e-team/dashboard");
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("permits E-Team member accessing /u (Vocabeer)", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/u/vocabulary");
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("redirects E-Team member attempting to access /admin to /403", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/admin");
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toBe("http://localhost:3000/403");
+    });
+
+    it("permits Admin accessing /admin, /e-team, and /u", async () => {
+      // 1. /admin
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "admin" }, error: null }),
+      });
+      const reqAdmin = new NextRequest("http://localhost:3000/admin");
+      expect((await updateSession(reqAdmin)).status).toBe(200);
+
+      // 2. /e-team
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "admin" }, error: null }),
+      });
+      const reqETeam = new NextRequest("http://localhost:3000/e-team");
+      expect((await updateSession(reqETeam)).status).toBe(200);
+
+      // 3. /u
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
+      mockFrom.mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "admin" }, error: null }),
+      });
+      const reqVocabeer = new NextRequest("http://localhost:3000/u");
+      expect((await updateSession(reqVocabeer)).status).toBe(200);
+    });
   });
 });

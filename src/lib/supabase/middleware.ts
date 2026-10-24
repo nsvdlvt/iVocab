@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { perfEnd, perfStart } from "@/lib/perf";
 import { ROUTES } from "@/constants/routes";
-import { getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
+import { getAuthorizedRedirectUrl, isSafeRedirectPath } from "@/lib/auth/redirect-utils";
 import { canAccessAdmin, canAccessETeam, canAccessVocabeer } from "@/lib/auth/roles";
 
 export async function updateSession(request: NextRequest) {
@@ -108,7 +108,19 @@ export async function updateSession(request: NextRequest) {
   // 6. Redirect authenticated users away from guest-only pages to their destination or workspace selection
   if (user && isGuestOnlyPage) {
     const nextParam = request.nextUrl.searchParams.get("next");
-    const targetUrl = getSafeRedirectUrl(nextParam, ROUTES.SELECT_WORKSPACE);
+    let userRole: string | null = null;
+    if (nextParam && isSafeRedirectPath(nextParam) && typeof supabase.from === "function") {
+      try {
+        const query = supabase
+          .from("profiles")
+          ?.select("role")
+          ?.eq("id", user.id);
+        const { data: profile } = query?.maybeSingle ? await query.maybeSingle() : { data: null };
+        userRole = profile?.role ?? null;
+      } catch {}
+    }
+
+    const targetUrl = getAuthorizedRedirectUrl(nextParam, userRole, ROUTES.SELECT_WORKSPACE);
     const redirectUrl = new URL(targetUrl, request.nextUrl.origin);
 
     const redirectResponse = NextResponse.redirect(redirectUrl);
@@ -128,13 +140,15 @@ export async function updateSession(request: NextRequest) {
     const isAccessingVocabeer = path.startsWith("/u") && !path.startsWith("/u/dictionary");
 
     if (isAccessingAdmin || isAccessingETeam || isAccessingVocabeer) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const userRole = profile?.role;
+      let userRole: string | null = null;
+      try {
+        const query = supabase
+          .from("profiles")
+          ?.select("role")
+          ?.eq("id", user.id);
+        const { data: profile } = query?.maybeSingle ? await query.maybeSingle() : { data: null };
+        userRole = profile?.role ?? null;
+      } catch {}
 
       // Rule: Admin-only routes
       if (isAccessingAdmin && !canAccessAdmin(userRole)) {
@@ -148,12 +162,9 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(new URL("/403", request.nextUrl.origin));
       }
 
-      // Rule: Vocabeer routes (/u/...) accessible to Member and Admin
+      // Rule: Vocabeer routes (/u/...) accessible to Member, E-Team, and Admin
       if (isAccessingVocabeer && !canAccessVocabeer(userRole)) {
         perfEnd(totalTimer);
-        if (canAccessETeam(userRole)) {
-          return NextResponse.redirect(new URL(ROUTES.ETEAM_DASHBOARD, request.nextUrl.origin));
-        }
         return NextResponse.redirect(new URL("/403", request.nextUrl.origin));
       }
     }

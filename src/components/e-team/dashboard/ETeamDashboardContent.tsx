@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Lock,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/auth/get-current-user";
 import {
   canAccessVocabeer,
@@ -61,25 +62,20 @@ export function ETeamDashboardContent({ profile }: ETeamDashboardContentProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Link href={ROUTES.SELECT_WORKSPACE}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs cursor-pointer"
-              >
-                <ArrowLeftRight className="h-3.5 w-3.5" />
-                <span>Đổi không gian</span>
-              </Button>
+            <Link
+              href={ROUTES?.SELECT_WORKSPACE || "/select-workspace"}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5 text-xs cursor-pointer")}
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              <span>Đổi không gian</span>
             </Link>
             {hasVocabeer && (
-              <Link href={ROUTES.VOCABEER_DASHBOARD}>
-                <Button
-                  size="sm"
-                  className="gap-1.5 text-xs bg-[#f9971d] hover:bg-[#e68817] text-white cursor-pointer"
-                >
-                  <GraduationCap className="h-3.5 w-3.5" />
-                  <span>Vào Vocabeer</span>
-                </Button>
+              <Link
+                href={ROUTES?.VOCABEER_DASHBOARD || "/u"}
+                className={cn(buttonVariants({ size: "sm" }), "gap-1.5 text-xs bg-[#f9971d] hover:bg-[#e68817] text-white cursor-pointer")}
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
+                <span>Vào Vocabeer</span>
               </Link>
             )}
           </div>
@@ -176,26 +172,29 @@ export function ETeamDashboardContent({ profile }: ETeamDashboardContentProps) {
               Liên kết chuyển hướng
             </h3>
             <div className="space-y-2">
-              <Link href={ROUTES.SELECT_WORKSPACE} className="block">
-                <Button variant="outline" size="sm" className="w-full justify-start text-xs gap-2 cursor-pointer">
-                  <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>Màn hình chọn không gian</span>
-                </Button>
+              <Link
+                href={ROUTES?.SELECT_WORKSPACE || "/select-workspace"}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full justify-start text-xs gap-2 cursor-pointer")}
+              >
+                <ArrowLeftRight className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Màn hình chọn không gian</span>
               </Link>
               {hasVocabeer && (
-                <Link href={ROUTES.VOCABEER_DASHBOARD} className="block">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs gap-2 cursor-pointer">
-                    <GraduationCap className="h-3.5 w-3.5 text-[#f9971d]" />
-                    <span>Không gian học tập (Vocabeer)</span>
-                  </Button>
+                <Link
+                  href={ROUTES?.VOCABEER_DASHBOARD || "/u"}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full justify-start text-xs gap-2 cursor-pointer")}
+                >
+                  <GraduationCap className="h-3.5 w-3.5 text-[#f9971d]" />
+                  <span>Không gian học tập (Vocabeer)</span>
                 </Link>
               )}
               {isAdmin && (
-                <Link href={ROUTES.ADMIN} className="block">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs gap-2 cursor-pointer border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    <span>Trang quản trị (Admin Console)</span>
-                  </Button>
+                <Link
+                  href={ROUTES?.ADMIN || "/admin"}
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full justify-start text-xs gap-2 cursor-pointer border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10")}
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Trang quản trị (Admin Console)</span>
                 </Link>
               )}
             </div>

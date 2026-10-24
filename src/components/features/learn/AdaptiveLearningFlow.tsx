@@ -109,6 +109,8 @@ export function AdaptiveLearningFlow({
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<AdaptiveAnswerSubmissionResult | null>(null);
+  const isSubmittingRef = useRef(false);
+  const isProceedingRef = useRef(false);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [highestStreak, setHighestStreak] = useState(0);
   const [activeHint, setActiveHint] = useState<string | null>(null);
@@ -413,8 +415,10 @@ export function AdaptiveLearningFlow({
 
   // Submit Answer to Adaptive Engine
   const handleSubmitAnswer = async () => {
-    if (!sessionId || !currentQuestion || selectedOptionIndex === null || submitting) return;
+    if (isSubmittingRef.current || submitting) return;
+    if (!sessionId || !currentQuestion || selectedOptionIndex === null) return;
 
+    isSubmittingRef.current = true;
     setSubmitting(true);
     try {
       const res = await fetch("/api/learning/adaptive/submit", {
@@ -448,41 +452,58 @@ export function AdaptiveLearningFlow({
       console.error("Submit answer error:", err);
       toast.error(err instanceof Error ? err.message : "Lỗi khi gửi kết quả.");
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
 
   // Advance to next adaptive question or complete session
   const handleProceedNextQuestion = async () => {
+    if (isProceedingRef.current) return;
     if (!sessionId || !submissionResult) return;
 
-    if (submissionResult.sessionCompleted || !submissionResult.nextQuestion) {
-      // Complete session
-      try {
-        const finishRes = await fetch("/api/learning/adaptive/finish", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
-        });
-        const finishData = await finishRes.json();
-        if (finishRes.ok && finishData.success) {
-          setSessionSummary(finishData.data);
-          setStage("results");
-          toast.success("Chúc mừng bạn đã hoàn thành bài học!");
-          return;
+    isProceedingRef.current = true;
+    try {
+      if (submissionResult.sessionCompleted || !submissionResult.nextQuestion) {
+        // Complete session
+        try {
+          const finishRes = await fetch("/api/learning/adaptive/finish", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId }),
+          });
+          const finishData = await finishRes.json();
+          if (finishRes.ok && finishData.success) {
+            setSessionSummary(finishData.data);
+            setStage("results");
+            toast.success("Chúc mừng bạn đã hoàn thành bài học!");
+            return;
+          }
+        } catch (finishErr) {
+          console.error("Finish error:", finishErr);
         }
-      } catch (finishErr) {
-        console.error("Finish error:", finishErr);
+        setStage("results");
+        return;
       }
-      setStage("results");
-      return;
-    }
 
-    // Set next question
-    setCurrentQuestion(submissionResult.nextQuestion);
-    setSelectedOptionIndex(null);
-    setSubmissionResult(null);
-    setActiveHint(null);
+      // Check if next question is accidentally identical to current question
+      if (currentQuestion && submissionResult.nextQuestion.id === currentQuestion.id) {
+        console.warn("[AdaptiveLearningFlow] Next question ID matches current question ID. Fetching fresh question.");
+        const res = await fetch(`/api/learning/adaptive/active?setId=${encodeURIComponent(setInfo.id)}`);
+        const data = await res.json();
+        if (res.ok && data.success && data.data?.currentQuestion) {
+          setCurrentQuestion(data.data.currentQuestion);
+        }
+      } else {
+        setCurrentQuestion(submissionResult.nextQuestion);
+      }
+
+      setSelectedOptionIndex(null);
+      setSubmissionResult(null);
+      setActiveHint(null);
+    } finally {
+      isProceedingRef.current = false;
+    }
   };
 
   // Request supportive hint
@@ -599,6 +620,7 @@ export function AdaptiveLearningFlow({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeMode !== "learn") return;
+      if (e.repeat) return; // Prevent repeated triggers from held-down Enter/Space keys
       const target = e.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
 

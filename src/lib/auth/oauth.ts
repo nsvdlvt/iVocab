@@ -6,9 +6,9 @@ import { ROUTES } from "@/constants/routes";
 
 export type OAuthProvider = "google";
 
-export async function signInWithOAuth(provider: OAuthProvider, next: string = ROUTES.DASHBOARD) {
+export async function signInWithOAuth(provider: OAuthProvider, next: string = ROUTES.SELECT_WORKSPACE) {
   const supabase = createClient();
-  const safeNext = getSafeRedirectUrl(next, ROUTES.DASHBOARD);
+  const safeNext = getSafeRedirectUrl(next, ROUTES.SELECT_WORKSPACE);
   const callbackUrl = new URL("/auth/callback", window.location.origin);
   callbackUrl.searchParams.set("next", safeNext);
 

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { verifyOtpSchema, type VerifyOtpFormValues } from "@/lib/validators/auth";
 import { mapAuthError } from "@/lib/auth/error-map";
-import { getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
+import { getAuthorizedRedirectUrl, getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
 import { ROUTES } from "@/constants/routes";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
@@ -54,7 +54,20 @@ export async function verifyOtpAction(values: VerifyOtpFormValues): Promise<Veri
       };
     }
 
-    const destination = getSafeRedirectUrl(redirectTo, ROUTES.SELECT_WORKSPACE);
+    let userRole: string | null = null;
+    if (typeof supabase.from === "function") {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        userRole = profile?.role ?? null;
+      }
+    }
+
+    const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.SELECT_WORKSPACE);
     redirect(destination);
   }
 

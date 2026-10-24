@@ -23,13 +23,14 @@ import {
   LibraryBig,
   ChevronLeft,
   ChevronRight,
-  LogOut,
   HelpCircle,
   BookOpen,
   Trophy,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 
 export interface NavGroup {
   groupName: string;
@@ -167,15 +168,15 @@ export function AdminSidebar() {
       {/* Footer Return Link */}
       <div className="border-t border-slate-800 p-3 shrink-0 bg-[#030f31]">
         <Link
-          href="/u"
+          href={ROUTES.SELECT_WORKSPACE}
           className={cn(
             buttonVariants({ variant: "outline" }),
             "w-full justify-start border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-900/60",
             isCollapsed && "justify-center px-0"
           )}
         >
-          <LogOut className={cn("h-4 w-4 shrink-0", !isCollapsed && "mr-2")} />
-          {!isCollapsed && <span className="truncate">Quay lại Ứng dụng</span>}
+          <ArrowLeftRight className={cn("h-4 w-4 shrink-0", !isCollapsed && "mr-2")} />
+          {!isCollapsed && <span className="truncate">Đổi không gian</span>}
         </Link>
       </div>
     </aside>

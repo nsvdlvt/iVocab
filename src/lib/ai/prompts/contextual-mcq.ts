@@ -79,7 +79,7 @@ Output format: Return strict JSON only, matching this exact JSON schema:
 {
   "questions": [
     {
-      "id": "q1",
+      "id": "q_matching_vocabulary_id_1",
       "vocabularyId": "matching_vocabulary_id_from_input",
       "targetWord": "target_word",
       "questionType": "contextual_mcq",

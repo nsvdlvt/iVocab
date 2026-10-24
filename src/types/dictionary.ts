@@ -33,6 +33,8 @@ export const DictionaryResultSchema = z.object({
   word: z.string(),
   normalizedWord: z.string(),
   ipa: z.string().optional(),
+  ipaUk: z.string().optional(),
+  ipaUs: z.string().optional(),
   phonetics: z.array(DictionaryPhoneticSchema).default([]),
   audioUk: z.string().optional(),
   audioUs: z.string().optional(),
@@ -73,13 +75,13 @@ export const DictionarySuggestionSchema = z.object({
 export type DictionarySuggestion = z.infer<typeof DictionarySuggestionSchema>;
 
 export const SaveWordRequestSchema = z.object({
-  setId: z.string().uuid("ID bộ từ không hợp lệ"),
-  word: z.string().min(1, "Từ không được để trống").max(100),
-  meaning: z.string().min(1, "Nghĩa không được để trống").max(500),
-  partOfSpeech: z.string().max(50).default("noun"),
-  ipa: z.string().max(100).optional(),
-  example: z.string().max(1000).optional(),
-  exampleTranslation: z.string().max(1000).optional(),
+  setId: z.string().trim().min(1, "ID bộ từ không được để trống").max(50, "ID bộ từ không hợp lệ"),
+  word: z.string().trim().min(1, "Từ không được để trống").max(100),
+  meaning: z.string().trim().min(1, "Nghĩa không được để trống").max(2000),
+  partOfSpeech: z.string().max(50).nullish().transform((val) => val?.trim() || "noun"),
+  ipa: z.string().max(200).nullish().transform((val) => val?.trim() || undefined),
+  example: z.string().max(2000).nullish().transform((val) => val?.trim() || undefined),
+  exampleTranslation: z.string().max(2000).nullish().transform((val) => val?.trim() || undefined),
   synonyms: z.array(z.string()).default([]),
   forceUpdate: z.boolean().default(false),
 });

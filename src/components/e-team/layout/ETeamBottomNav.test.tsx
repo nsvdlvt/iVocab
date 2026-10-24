@@ -70,7 +70,9 @@ describe("ETeamBottomNav Component", () => {
     const vocabsAnchor = getAnchor(html, ROUTES.ETEAM_VOCABS);
 
     expect(homeAnchor).toContain("text-purple-600");
+    expect(homeAnchor).toContain('aria-current="page"');
     expect(vocabsAnchor).toContain("text-muted-foreground");
+    expect(vocabsAnchor).not.toContain('aria-current="page"');
   });
 
   it("highlights 'Trang chủ' as active on /e-team root", () => {
@@ -89,7 +91,9 @@ describe("ETeamBottomNav Component", () => {
     const vocabsAnchor = getAnchor(html, ROUTES.ETEAM_VOCABS);
 
     expect(vocabsAnchor).toContain("text-purple-600");
+    expect(vocabsAnchor).toContain('aria-current="page"');
     expect(homeAnchor).toContain("text-muted-foreground");
+    expect(homeAnchor).not.toContain('aria-current="page"');
   });
 
   it("highlights 'Học từ vựng' on nested vocab routes (detail, learn, flashcard)", () => {

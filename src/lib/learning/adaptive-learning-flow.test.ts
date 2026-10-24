@@ -320,4 +320,287 @@ describe("Adaptive Learning Sessions & Mastery Flow", () => {
       expect(summary2?.totalQuestions).toBe(summary1?.totalQuestions);
     });
   });
+
+  describe("4. Question Submission Flow, Idempotency & Duplicate Prevention", () => {
+    it("submits first question and advances to second question independently with unique IDs", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440010";
+      const setId = "vs_consec01";
+
+      const words: WordStudyItem[] = [
+        createMockWord("v_c1", "diligent", { status: "lv0" }),
+        createMockWord("v_c2", "pragmatic", { status: "lv0" }),
+      ];
+
+      const questions: ContextualMcqQuestion[] = [
+        {
+          id: "q_c1",
+          vocabularyId: "v_c1",
+          targetWord: "diligent",
+          questionType: "contextual_mcq",
+          difficulty: "medium",
+          prompt: "Chọn từ:",
+          sentence: "She is a ______ student.",
+          options: ["diligent", "lazy", "careless", "slow"],
+          correctAnswerIndex: 0,
+          explanation: "Diligent nghĩa là chăm chỉ.",
+          strongestDistractor: "lazy",
+          whyDistractorWrong: "Lazy trái nghĩa.",
+          hint: "Chăm chỉ.",
+        },
+        {
+          id: "q_c2",
+          vocabularyId: "v_c2",
+          targetWord: "pragmatic",
+          questionType: "contextual_mcq",
+          difficulty: "medium",
+          prompt: "Chọn từ:",
+          sentence: "We need a ______ solution.",
+          options: ["pragmatic", "idealistic", "theoretical", "fictional"],
+          correctAnswerIndex: 0,
+          explanation: "Pragmatic nghĩa là thực tế.",
+          strongestDistractor: "theoretical",
+          whyDistractorWrong: "Theoretical chỉ lý thuyết.",
+          hint: "Thực tế.",
+        },
+      ];
+
+      const session = await AdaptiveSessionStore.createSession(
+        userId,
+        setId,
+        words,
+        questions
+      );
+
+      // Question 1 submission
+      const q1Id = session.firstQuestion!.id;
+      const result1 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        q1Id,
+        0
+      );
+
+      expect(result1.isCorrect).toBe(true);
+      expect(result1.nextQuestion).toBeDefined();
+      expect(result1.nextQuestion?.id).not.toBe(q1Id);
+
+      // Question 2 submission using nextQuestion.id
+      const q2Id = result1.nextQuestion!.id;
+      const result2 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        q2Id,
+        0
+      );
+
+      expect(result2.isCorrect).toBe(true);
+      // Both questions are registered in history independently
+      const stored = await AdaptiveSessionStore.getSession(session.sessionId, userId);
+      expect(stored?.answersHistory).toHaveLength(2);
+      expect(stored?.askedQuestionIds).toEqual([q1Id, q2Id]);
+      expect(stored?.score).toBe(20);
+      expect(stored?.streak).toBe(2);
+    });
+
+    it("handles rapid double-submission and network retry idempotently without duplicating scores", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440011";
+      const setId = "vs_retry01";
+
+      const words: WordStudyItem[] = [
+        createMockWord("v_r1", "resilient", { status: "lv0" }),
+      ];
+      const questions: ContextualMcqQuestion[] = [
+        {
+          id: "q_r1",
+          vocabularyId: "v_r1",
+          targetWord: "resilient",
+          questionType: "contextual_mcq",
+          difficulty: "easy",
+          prompt: "Chọn từ:",
+          sentence: "He was very ______.",
+          options: ["resilient", "fragile", "weak", "soft"],
+          correctAnswerIndex: 0,
+          explanation: "Resilient là kiên cường.",
+          strongestDistractor: "fragile",
+          whyDistractorWrong: "Fragile là dễ vỡ.",
+          hint: "Kiên cường.",
+        },
+      ];
+
+      const session = await AdaptiveSessionStore.createSession(
+        userId,
+        setId,
+        words,
+        questions
+      );
+
+      // First submit
+      const result1 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        "q_r1",
+        0
+      );
+      expect(result1.isCorrect).toBe(true);
+
+      // Rapid duplicate submit (same questionId, simulating double-click or retry)
+      const result2 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        "q_r1",
+        0
+      );
+
+      // Must succeed safely without throwing "already submitted" error
+      expect(result2.isDuplicateSubmission).toBe(true);
+      expect(result2.isCorrect).toBe(true);
+
+      // Check that answers history and score are not duplicated
+      const stored = await AdaptiveSessionStore.getSession(session.sessionId, userId);
+      expect(stored?.answersHistory).toHaveLength(1);
+      expect(stored?.score).toBe(10);
+    });
+
+    it("sanitizes AI template IDs like 'q1' to prevent collision with previously asked questions", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440012";
+      const setId = "vs_col01";
+
+      const words: WordStudyItem[] = [
+        createMockWord("v_col1", "word1", { status: "lv0" }),
+        createMockWord("v_col2", "word2", { status: "lv0" }),
+      ];
+
+      // Both questions provided with conflicting template ID "q1"
+      const questions: ContextualMcqQuestion[] = [
+        {
+          id: "q1",
+          vocabularyId: "v_col1",
+          targetWord: "word1",
+          questionType: "contextual_mcq",
+          difficulty: "medium",
+          prompt: "Chọn từ:",
+          sentence: "Sentence 1 ______.",
+          options: ["word1", "opt2", "opt3", "opt4"],
+          correctAnswerIndex: 0,
+          explanation: "Exp 1",
+          strongestDistractor: "opt2",
+          whyDistractorWrong: "Wrong 1",
+          hint: "Hint 1",
+        },
+        {
+          id: "q1", // Duplicate ID intentionally testing collision resolution
+          vocabularyId: "v_col2",
+          targetWord: "word2",
+          questionType: "contextual_mcq",
+          difficulty: "medium",
+          prompt: "Chọn từ:",
+          sentence: "Sentence 2 ______.",
+          options: ["word2", "opt2", "opt3", "opt4"],
+          correctAnswerIndex: 0,
+          explanation: "Exp 2",
+          strongestDistractor: "opt2",
+          whyDistractorWrong: "Wrong 2",
+          hint: "Hint 2",
+        },
+      ];
+
+      const session = await AdaptiveSessionStore.createSession(
+        userId,
+        setId,
+        words,
+        questions
+      );
+
+      // Answer question 1
+      const result1 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        session.firstQuestion!.id,
+        0
+      );
+
+      expect(result1.isCorrect).toBe(true);
+      expect(result1.nextQuestion).toBeDefined();
+
+      // Next question must NOT have the same ID as question 1
+      expect(result1.nextQuestion!.id).not.toBe(session.firstQuestion!.id);
+
+      // Submitting question 2 must succeed and not be rejected as a duplicate
+      const result2 = await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        result1.nextQuestion!.id,
+        0
+      );
+
+      expect(result2.isCorrect).toBe(true);
+      expect(result2.isDuplicateSubmission).toBeFalsy();
+    });
+
+    it("restores unfinished session with an unasked question on resume/refresh", async () => {
+      const userId = "550e8400-e29b-41d4-a716-446655440013";
+      const setId = "vs_resum01";
+
+      const words: WordStudyItem[] = [
+        createMockWord("v_res1", "wordA", { status: "lv0" }),
+        createMockWord("v_res2", "wordB", { status: "lv0" }),
+      ];
+
+      const questions: ContextualMcqQuestion[] = [
+        {
+          id: "q_res_1",
+          vocabularyId: "v_res1",
+          targetWord: "wordA",
+          questionType: "contextual_mcq",
+          difficulty: "easy",
+          prompt: "Chọn:",
+          sentence: "A ______",
+          options: ["wordA", "b", "c", "d"],
+          correctAnswerIndex: 0,
+          explanation: "Exp A",
+          strongestDistractor: "b",
+          whyDistractorWrong: "Wrong b",
+          hint: "Hint A",
+        },
+        {
+          id: "q_res_2",
+          vocabularyId: "v_res2",
+          targetWord: "wordB",
+          questionType: "contextual_mcq",
+          difficulty: "easy",
+          prompt: "Chọn:",
+          sentence: "B ______",
+          options: ["wordB", "b", "c", "d"],
+          correctAnswerIndex: 0,
+          explanation: "Exp B",
+          strongestDistractor: "b",
+          whyDistractorWrong: "Wrong b",
+          hint: "Hint B",
+        },
+      ];
+
+      const session = await AdaptiveSessionStore.createSession(
+        userId,
+        setId,
+        words,
+        { pregeneratedQuestions: questions, initialStage: "practice" }
+      );
+
+      // Answer question 1
+      await AdaptiveSessionStore.submitAnswer(
+        session.sessionId,
+        userId,
+        "q_res_1",
+        0
+      );
+
+      // Simulate page refresh / resume
+      const active = await AdaptiveSessionStore.getActiveSession(userId, setId);
+      expect(active).toBeDefined();
+      expect(active?.currentQuestion).toBeDefined();
+      // Current question on resume must be unasked (not q_res_1)
+      expect(active?.currentQuestion?.id).not.toBe("q_res_1");
+      expect(active?.session.askedQuestionIds).toContain("q_res_1");
+    });
+  });
 });

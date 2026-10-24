@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { SaveWordRequestSchema } from "@/types/dictionary";
 import { normalizeVocabularyWord } from "@/lib/validation/vocabulary-duplicates";
+import { normalizeIpa } from "@/lib/dictionary/phonetics";
 
 export const dynamic = "force-dynamic";
 
@@ -90,10 +91,14 @@ export async function POST(request: NextRequest) {
     const parsed = SaveWordRequestSchema.safeParse(body);
 
     if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0];
+      const errorMsg = firstIssue
+        ? `${firstIssue.message}${firstIssue.path.length ? ` (${firstIssue.path.join(".")})` : ""}`
+        : "Dữ liệu lưu từ không hợp lệ.";
       return NextResponse.json(
         {
           success: false,
-          error: "Dữ liệu lưu từ không hợp lệ.",
+          error: `Dữ liệu lưu từ không hợp lệ: ${errorMsg}`,
           details: parsed.error.format(),
         },
         { status: 400 }
@@ -157,6 +162,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanIpa = ipa ? normalizeIpa(ipa) || ipa.trim() : null;
+
     if (duplicate && forceUpdate) {
       // Update existing word
       const { data: updated, error: updateError } = await supabase
@@ -164,7 +171,7 @@ export async function POST(request: NextRequest) {
         .update({
           meaning,
           part_of_speech: partOfSpeech,
-          ipa: ipa || null,
+          ipa: cleanIpa,
           example: example || null,
           example_translation: exampleTranslation || null,
           synonyms: synonyms.length > 0 ? synonyms : null,
@@ -196,11 +203,11 @@ export async function POST(request: NextRequest) {
         word: word.trim(),
         meaning: meaning.trim(),
         part_of_speech: partOfSpeech,
-        ipa: ipa || null,
+        ipa: cleanIpa,
         example: example || null,
         example_translation: exampleTranslation || null,
         synonyms: synonyms.length > 0 ? synonyms : null,
-        source: "dictionary",
+        source: "manual",
       })
       .select()
       .single();

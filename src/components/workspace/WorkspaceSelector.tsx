@@ -44,6 +44,8 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
   const hasETeam = canAccessETeam(profile.role);
   const isAdmin = canAccessAdmin(profile.role);
 
+  const authorizedCount = [hasVocabeer, hasETeam, isAdmin].filter(Boolean).length;
+
   const handleSelectWorkspace = (destination: string) => {
     setSelectedDestination(destination);
     // Remember last chosen workspace in a secure 30-day cookie
@@ -110,7 +112,15 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-4xl space-y-8 my-auto">
+        <div
+          className={`w-full space-y-8 my-auto transition-all duration-200 ${
+            authorizedCount === 1
+              ? "max-w-md mx-auto"
+              : authorizedCount === 2
+              ? "max-w-3xl mx-auto"
+              : "max-w-5xl mx-auto"
+          }`}
+        >
           {/* Title and Description */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#f9971d]/30 bg-[#f9971d]/10 text-xs font-semibold text-[#f9971d]">
@@ -118,19 +128,23 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
               <span>Vocabee Platform</span>
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-              Chọn không gian của bạn
+              Chọn không gian làm việc
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
-              Bạn muốn tiếp tục ở không gian nào?
+              {authorizedCount === 1
+                ? "Không gian học tập sẵn sàng cho bạn tiếp tục."
+                : "Chọn không gian làm việc bạn muốn truy cập."}
             </p>
           </div>
 
           {/* Cards Grid */}
           <div
             className={`grid gap-6 ${
-              hasVocabeer && hasETeam
+              authorizedCount === 1
+                ? "grid-cols-1"
+                : authorizedCount === 2
                 ? "grid-cols-1 md:grid-cols-2"
-                : "grid-cols-1 max-w-md mx-auto"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
             }`}
           >
             {/* Card Vocabeer */}
@@ -157,7 +171,7 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
                       Vocabeer
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      Không gian học tập và chinh phục từ vựng tiếng Anh.
+                      Không gian học tập và chinh phục từ vựng tiếng Anh cá nhân.
                     </p>
                   </div>
                 </div>
@@ -200,7 +214,7 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
                       E-Team
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      Không gian làm việc dành riêng cho thành viên E-Team.
+                      Không gian làm việc và quản lý từ vựng dành cho thành viên E-Team.
                     </p>
                   </div>
                 </div>
@@ -218,22 +232,50 @@ export function WorkspaceSelector({ profile }: WorkspaceSelectorProps) {
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Quick link to Admin if user is Admin */}
-          {isAdmin && (
-            <div className="pt-4 flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(ROUTES.ADMIN)}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 rounded-full px-4"
+            {/* Card Admin Console */}
+            {isAdmin && (
+              <div
+                className={`relative flex flex-col justify-between rounded-2xl border bg-card p-6 sm:p-8 shadow-sm hover:shadow-md transition-all duration-200 group ${
+                  selectedDestination === ROUTES.ADMIN
+                    ? "ring-2 ring-amber-500 border-transparent"
+                    : "border-border hover:border-amber-500/50"
+                }`}
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
-                <span>Hoặc chuyển đến Trang Quản trị (Admin Console)</span>
-              </Button>
-            </div>
-          )}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="h-12 w-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <span className="text-[11px] font-semibold tracking-wider uppercase text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                      Quản trị
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h2 className="text-xl font-bold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      Admin Console
+                    </h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      Không gian quản trị hệ thống, dữ liệu từ vựng và tài khoản người dùng.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-6 mt-6 border-t border-border/60">
+                  <Button
+                    type="button"
+                    onClick={() => handleSelectWorkspace(ROUTES.ADMIN)}
+                    disabled={isPending}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span>Vào trang Quản trị</span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

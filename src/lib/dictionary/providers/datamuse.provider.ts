@@ -5,6 +5,7 @@ import type {
   DictionarySenseDefinition,
 } from "@/types/dictionary";
 import type { IDictionaryProvider, ISuggestionProvider, DictionaryLookupOptions } from "./interface";
+import { normalizeIpa, arpabetToIpa } from "../phonetics";
 
 interface DatamuseSugItem {
   word: string;
@@ -27,7 +28,7 @@ export class DatamuseProvider implements ISuggestionProvider, IDictionaryProvide
 
     try {
       const signal = options?.signal ?? AbortSignal.timeout(2500);
-      const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(clean)}&md=dpfr&max=1`;
+      const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(clean)}&md=dpfr&ipa=1&max=1`;
       const res = await fetch(url, { signal });
       if (!res.ok) return null;
 
@@ -78,9 +79,14 @@ export class DatamuseProvider implements ISuggestionProvider, IDictionaryProvide
 
       let ipa: string | undefined;
       if (Array.isArray(item.tags)) {
-        const pronTag = item.tags.find((t) => t.startsWith("pron:"));
-        if (pronTag) {
-          ipa = "/" + pronTag.replace("pron:", "").trim() + "/";
+        const ipaTag = item.tags.find((t) => t.startsWith("ipa_pron:"));
+        if (ipaTag) {
+          ipa = normalizeIpa(ipaTag);
+        } else {
+          const pronTag = item.tags.find((t) => t.startsWith("pron:"));
+          if (pronTag) {
+            ipa = arpabetToIpa(pronTag) || normalizeIpa(pronTag);
+          }
         }
       }
 
@@ -88,7 +94,8 @@ export class DatamuseProvider implements ISuggestionProvider, IDictionaryProvide
         word: clean,
         normalizedWord: clean,
         ipa,
-        phonetics: ipa ? [{ text: ipa, region: "general" }] : [],
+        ipaUs: ipa,
+        phonetics: ipa ? [{ text: ipa, region: "us" }] : [],
         audioUk: `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(clean)}&type=1`,
         audioUs: `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(clean)}&type=2`,
         meanings: meaningGroups,
@@ -173,6 +180,43 @@ export class DatamuseProvider implements ISuggestionProvider, IDictionaryProvide
       return { collocations, synonyms, antonyms };
     } catch {
       return { collocations: [], synonyms: [], antonyms: [] };
+    }
+  }
+
+  async getPronunciation(
+    word: string,
+    signal?: AbortSignal
+  ): Promise<{ ipa?: string; ipaUs?: string } | null> {
+    const clean = word.trim().toLowerCase();
+    if (!clean) return null;
+
+    try {
+      const abortSignal = signal ?? AbortSignal.timeout(2000);
+      const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(clean)}&md=r&ipa=1&max=1`;
+      const res = await fetch(url, { signal: abortSignal });
+      if (!res.ok) return null;
+
+      const data = (await res.json()) as DatamuseWordItem[];
+      if (!Array.isArray(data) || data.length === 0) return null;
+
+      const item = data[0];
+      if (item.word.toLowerCase() !== clean || !Array.isArray(item.tags)) return null;
+
+      const ipaTag = item.tags.find((t) => t.startsWith("ipa_pron:"));
+      let ipa: string | undefined;
+      if (ipaTag) {
+        ipa = normalizeIpa(ipaTag);
+      } else {
+        const pronTag = item.tags.find((t) => t.startsWith("pron:"));
+        if (pronTag) {
+          ipa = arpabetToIpa(pronTag) || normalizeIpa(pronTag);
+        }
+      }
+
+      if (!ipa) return null;
+      return { ipa, ipaUs: ipa };
+    } catch {
+      return null;
     }
   }
 }

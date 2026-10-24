@@ -18,7 +18,6 @@ import {
 } from "@/lib/notifications/template-variables";
 import { AutomationEngine } from "@/lib/notifications/automation-engine";
 import { UserContextProvider } from "@/lib/notifications/user-context-provider";
-import { Client } from "pg";
 
 // 1. Template Variables
 export async function getRegisteredVariablesAction() {
@@ -33,29 +32,26 @@ export async function getSampleContextAction() {
 
 // 2. Real Users for Preview
 export async function getRealUsersForPreviewAction() {
-  await assertAdmin();
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) return [];
-
-  const client = new Client({
-    connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false },
-  });
-
   try {
-    await client.connect();
-    const res = await client.query(
-      "SELECT id, display_name, email, streak, last_activity_at FROM public.profiles ORDER BY last_activity_at DESC NULLS LAST LIMIT 20"
-    );
-    return res.rows.map((r: { id: string; display_name?: string; email?: string; streak?: number }) => ({
-      id: r.id,
-      name: r.display_name?.trim() || "Học viên",
-      email: r.email || "",
-      streak: r.streak || 0,
-    }));
-  } finally {
-    await client.end().catch(() => undefined);
+    const { supabase } = await assertAdmin();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, display_name, email, streak, last_activity_at")
+      .order("last_activity_at", { ascending: false, nullsFirst: false })
+      .limit(20);
+
+    if (!error && data) {
+      return data.map((r) => ({
+        id: r.id,
+        name: r.display_name?.trim() || "Học viên",
+        email: r.email || "",
+        streak: r.streak || 0,
+      }));
+    }
+  } catch (err) {
+    console.error("[getRealUsersForPreviewAction] Error:", err);
   }
+  return [];
 }
 
 // 3. Render Real User Preview

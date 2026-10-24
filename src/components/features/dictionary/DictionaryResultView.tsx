@@ -19,6 +19,7 @@ interface DictionaryResultViewProps {
 
 export function DictionaryResultView({ data, onSelectWord, className }: DictionaryResultViewProps) {
   const [playingAudio, setPlayingAudio] = useState<"uk" | "us" | null>(null);
+  const [selectedDialect, setSelectedDialect] = useState<"uk" | "us">("us");
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [selectedSenseForSave, setSelectedSenseForSave] = useState<{
     meaning?: string;
@@ -32,6 +33,7 @@ export function DictionaryResultView({ data, onSelectWord, className }: Dictiona
   const playPronunciation = (region: "uk" | "us") => {
     const audioUrl = region === "uk" ? data.audioUk : data.audioUs;
 
+    setSelectedDialect(region);
     setPlayingAudio(region);
 
     if (audioUrl) {
@@ -101,27 +103,6 @@ export function DictionaryResultView({ data, onSelectWord, className }: Dictiona
   // Distinct POS tabs
   const posList = Array.from(new Set(data.meanings.map((m) => m.partOfSpeech.toLowerCase())));
 
-  // Highlight word in sentence
-  const renderHighlightedExample = (exampleText: string, targetWord: string) => {
-    const parts = exampleText.split(new RegExp(`(${targetWord})`, "gi"));
-    return (
-      <span>
-        {parts.map((part, i) =>
-          part.toLowerCase() === targetWord.toLowerCase() ? (
-            <mark
-              key={i}
-              className="bg-amber-500/20 text-amber-900 dark:text-amber-200 font-bold px-1 py-0.5 rounded"
-            >
-              {part}
-            </mark>
-          ) : (
-            <span key={i}>{part}</span>
-          )
-        )}
-      </span>
-    );
-  };
-
   return (
     <div className={cn("space-y-6", className)}>
       {/* Word Header Card */}
@@ -145,11 +126,56 @@ export function DictionaryResultView({ data, onSelectWord, className }: Dictiona
 
             {/* Pronunciation & Phonetics */}
             <div className="flex items-center gap-2.5 flex-wrap pt-1">
-              {data.ipa && (
+              {data.ipaUk && data.ipaUs && data.ipaUk.trim() !== data.ipaUs.trim() ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    onClick={() => playPronunciation("uk")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        playPronunciation("uk");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={cn(
+                      "font-mono text-xs sm:text-sm px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-all border",
+                      selectedDialect === "uk"
+                        ? "text-amber-800 dark:text-amber-200 bg-amber-500/20 border-amber-500/40 shadow-xs"
+                        : "text-amber-700/80 dark:text-amber-400/80 bg-amber-500/10 border-transparent hover:bg-amber-500/15"
+                    )}
+                    title="Phiên âm Anh - Anh (UK). Nhấn để nghe phát âm"
+                  >
+                    <span className="font-sans font-bold text-[10px] text-muted-foreground mr-1.5 uppercase">UK</span>
+                    {data.ipaUk}
+                  </span>
+                  <span
+                    onClick={() => playPronunciation("us")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        playPronunciation("us");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={cn(
+                      "font-mono text-xs sm:text-sm px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-all border",
+                      selectedDialect === "us"
+                        ? "text-amber-800 dark:text-amber-200 bg-amber-500/20 border-amber-500/40 shadow-xs"
+                        : "text-amber-700/80 dark:text-amber-400/80 bg-amber-500/10 border-transparent hover:bg-amber-500/15"
+                    )}
+                    title="Phiên âm Anh - Mỹ (US). Nhấn để nghe phát âm"
+                  >
+                    <span className="font-sans font-bold text-[10px] text-muted-foreground mr-1.5 uppercase">US</span>
+                    {data.ipaUs}
+                  </span>
+                </div>
+              ) : data.ipa || data.ipaUs || data.ipaUk ? (
                 <span className="font-mono text-sm sm:text-base text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-lg font-medium">
-                  {data.ipa}
+                  {data.ipa || data.ipaUs || data.ipaUk}
                 </span>
-              )}
+              ) : null}
 
               {/* Audio UK */}
               <Button
@@ -390,7 +416,10 @@ export function DictionaryResultView({ data, onSelectWord, className }: Dictiona
           onOpenChange={setSaveModalOpen}
           initialData={{
             word: data.word,
-            ipa: data.ipa,
+            ipa:
+              selectedDialect === "uk" && data.ipaUk
+                ? data.ipaUk
+                : data.ipaUs || data.ipa || data.ipaUk || "",
             meaning: selectedSenseForSave.meaning,
             partOfSpeech: selectedSenseForSave.partOfSpeech,
             example: selectedSenseForSave.example,

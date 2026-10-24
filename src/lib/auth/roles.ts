@@ -35,11 +35,12 @@ export const ROLE_BADGE_STYLES: Record<AppRole, { bg: string; text: string; bord
 };
 
 /**
- * Vocabeer workspace is accessible to Members and Admins.
+ * Vocabeer workspace is accessible to Members, E-Team, and Admins.
+ * (All authenticated platform users are allowed into Vocabeer).
  */
 export function canAccessVocabeer(role: string | null | undefined): boolean {
   const norm = normalizeRole(role);
-  return norm === "member" || norm === "admin";
+  return norm === "member" || norm === "e_team" || norm === "admin";
 }
 
 /**

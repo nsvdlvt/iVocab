@@ -44,7 +44,7 @@ export function OtpVerificationForm({
 
   const emailParam = searchParams.get("email") || "";
   const typeParam = (searchParams.get("type") as "signup" | "recovery" | "email" | "email_change") || "signup";
-  const nextParam = searchParams.get("next") || redirectTo || ROUTES.DASHBOARD;
+  const nextParam = searchParams.get("next") || redirectTo || ROUTES.SELECT_WORKSPACE;
 
   const [email, setEmail] = useState<string>(initialEmail || emailParam);
   const [type, setType] = useState<"signup" | "recovery" | "email" | "email_change">(initialType || typeParam);

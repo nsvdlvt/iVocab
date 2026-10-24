@@ -55,7 +55,8 @@ export function DictionaryCenterClient() {
   };
 
   const wordData = searchResult?.data?.[0];
-  const phonetics = wordData?.phonetics?.find((p: any) => p.text || p.audio);
+  const wordIpa = wordData?.ipa || wordData?.phonetics?.find((p: { text?: string }) => p.text)?.text;
+  const audioUrl = wordData?.audioUs || wordData?.audioUk || wordData?.phonetics?.find((p: { audio?: string }) => p.audio)?.audio;
   const meanings = wordData?.meanings || [];
 
   return (
@@ -156,17 +157,17 @@ export function DictionaryCenterClient() {
                     <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
                       {wordData.word}
                     </h2>
-                    {phonetics?.text && (
+                    {wordIpa && (
                       <span className="font-mono text-base text-muted-foreground">
-                        {phonetics.text}
+                        {wordIpa}
                       </span>
                     )}
-                    {phonetics?.audio && (
+                    {audioUrl && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          const audio = new Audio(phonetics.audio);
+                          const audio = new Audio(audioUrl);
                           audio.play();
                         }}
                         className="h-8 gap-1.5"

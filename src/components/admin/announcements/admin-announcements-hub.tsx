@@ -41,15 +41,40 @@ interface AdminAnnouncementsHubProps {
 }
 
 export function AdminAnnouncementsHub({
-  announcements,
-  isDatabaseLive,
-  templates,
-  rules,
-  stats,
-  runs,
-  logs,
+  announcements = [],
+  isDatabaseLive = false,
+  templates = [],
+  rules = [],
+  stats = {
+    totalTemplates: 0,
+    activeTemplates: 0,
+    totalRules: 0,
+    activeRules: 0,
+    totalSent: 0,
+    totalFailed: 0,
+    lastRunAt: null,
+    totalSubscribers: 0,
+  },
+  runs = [],
+  logs = [],
 }: AdminAnnouncementsHubProps) {
   const [activeTab, setActiveTab] = useState<string>("templates");
+
+  const safeTemplates = Array.isArray(templates) ? templates : [];
+  const safeRules = Array.isArray(rules) ? rules : [];
+  const safeAnnouncements = Array.isArray(announcements) ? announcements : [];
+  const safeRuns = Array.isArray(runs) ? runs : [];
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  const safeStats = stats || {
+    totalTemplates: 0,
+    activeTemplates: 0,
+    totalRules: 0,
+    activeRules: 0,
+    totalSent: 0,
+    totalFailed: 0,
+    lastRunAt: null,
+    totalSubscribers: 0,
+  };
 
   return (
     <div className="space-y-6">
@@ -64,7 +89,7 @@ export function AdminAnnouncementsHub({
               <Sparkles className="h-4 w-4 text-primary" />
               <span>Mẫu thông báo động</span>
               <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-bold">
-                {templates.length}
+                {safeTemplates.length}
               </Badge>
             </TabsTrigger>
 
@@ -78,7 +103,7 @@ export function AdminAnnouncementsHub({
                 variant="secondary"
                 className="text-[10px] py-0 px-1.5 font-bold bg-[#f9971d]/20 text-[#f9971d]"
               >
-                {stats.activeRules} active
+                {safeStats.activeRules} active
               </Badge>
             </TabsTrigger>
 
@@ -89,7 +114,7 @@ export function AdminAnnouncementsHub({
               <Megaphone className="h-4 w-4 text-blue-500" />
               <span>Bản tin hệ thống (In-App)</span>
               <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-bold">
-                {announcements.length}
+                {safeAnnouncements.length}
               </Badge>
             </TabsTrigger>
 
@@ -105,25 +130,25 @@ export function AdminAnnouncementsHub({
 
         {/* Tab 1: Templates Manager */}
         <TabsContent value="templates" className="focus-visible:outline-none">
-          <TemplatesManager initialTemplates={templates} />
+          <TemplatesManager initialTemplates={safeTemplates} />
         </TabsContent>
 
         {/* Tab 2: Automation Rules */}
         <TabsContent value="rules" className="focus-visible:outline-none">
-          <AutomationRulesManager initialRules={rules} templates={templates} />
+          <AutomationRulesManager initialRules={safeRules} templates={safeTemplates} />
         </TabsContent>
 
         {/* Tab 3: Broadcast Announcements */}
         <TabsContent value="announcements" className="focus-visible:outline-none">
           <AnnouncementsClient
-            initialAnnouncements={announcements}
+            initialAnnouncements={safeAnnouncements}
             isDatabaseLive={isDatabaseLive}
           />
         </TabsContent>
 
         {/* Tab 4: Automation Dashboard */}
         <TabsContent value="dashboard" className="focus-visible:outline-none">
-          <AutomationDashboard stats={stats} runs={runs} logs={logs} />
+          <AutomationDashboard stats={safeStats} runs={safeRuns} logs={safeLogs} />
         </TabsContent>
       </Tabs>
     </div>

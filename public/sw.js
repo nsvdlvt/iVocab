@@ -77,7 +77,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/api/") || url.host.includes("supabase")) return;
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin") || url.host.includes("supabase")) return;
   if (hasAppRouterHeaders(event.request)) return;
 
   if (isDocumentNavigation(event.request)) {
@@ -139,7 +139,7 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch((error) => {
-          console.error("Asset fetch failed", error);
+          console.error("Asset fetch failed", error); return new Response("", { status: 408, statusText: "Request Timeout" });
         });
     })
   );

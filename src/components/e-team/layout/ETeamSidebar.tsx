@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -27,36 +27,40 @@ export function ETeamSidebar({ profile }: ETeamSidebarProps) {
   const { isMobileOpen, setMobileOpen } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const prevPathname = useRef(pathname);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
-    const update = () => {
-      setIsMobileViewport(media.matches);
-      if (!media.matches) {
-        setMobileOpen(false);
-      }
-    };
+    const update = () => setIsMobileViewport(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, [setMobileOpen]);
+  }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      setMobileOpen(false);
+    }
   }, [pathname, setMobileOpen]);
 
   const navItems = [
     {
       title: "Dashboard",
-      href: ROUTES.ETEAM_DASHBOARD,
+      href: ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard",
       icon: LayoutDashboard,
-      isActive: pathname === ROUTES.ETEAM_DASHBOARD || pathname === ROUTES.ETEAM,
+      isActive:
+        pathname === (ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard") ||
+        pathname === (ROUTES?.ETEAM || "/e-team") ||
+        pathname === "/e-team",
     },
     {
       title: "Học từ vựng",
-      href: ROUTES.ETEAM_VOCABS,
+      href: ROUTES?.ETEAM_VOCABS || "/e-team/vocabs",
       icon: BookOpen,
-      isActive: pathname.startsWith(ROUTES.ETEAM_VOCABS),
+      isActive:
+        pathname === (ROUTES?.ETEAM_VOCABS || "/e-team/vocabs") ||
+        Boolean(pathname && pathname.startsWith(`${ROUTES?.ETEAM_VOCABS || "/e-team/vocabs"}/`)),
     },
   ];
 
@@ -72,6 +76,7 @@ export function ETeamSidebar({ profile }: ETeamSidebarProps) {
           <Link
             key={item.href}
             href={item.href}
+            aria-current={item.isActive ? "page" : undefined}
             title={collapsedView ? item.title : undefined}
             onClick={() => {
               if (closeMobile) setMobileOpen(false);
@@ -119,7 +124,7 @@ export function ETeamSidebar({ profile }: ETeamSidebarProps) {
             <SheetTitle className="sr-only">Menu điều hướng E-Team</SheetTitle>
             <div className="flex h-14 items-center justify-between border-b border-border pl-4 pr-12">
               <Link
-                href={ROUTES.ETEAM_DASHBOARD}
+                href={ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard"}
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2"
               >
@@ -156,7 +161,7 @@ export function ETeamSidebar({ profile }: ETeamSidebarProps) {
         {/* Workspace Brand Header */}
         <div className="flex h-14 items-center justify-between border-b border-border px-3.5">
           <Link
-            href={ROUTES.ETEAM_DASHBOARD}
+            href={ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard"}
             className={cn("flex items-center gap-2", isCollapsed && "justify-center w-full")}
           >
             <BrandLogo

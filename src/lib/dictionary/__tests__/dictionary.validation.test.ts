@@ -13,8 +13,28 @@ describe("Dictionary Schemas & Duplicate Validation", () => {
     expect(normalizeVocabularyWord("well-known")).toBe("well-known");
   });
 
-  it("should validate a complete SaveWordRequest", () => {
-    const validPayload = {
+  it("should validate a complete SaveWordRequest with nanoid setId and UUID setId", () => {
+    const validNanoidPayload = {
+      setId: "vs_K3X9A2M1",
+      word: "transport",
+      meaning: "vận chuyển; phương tiện giao thông",
+      partOfSpeech: "VERB",
+      ipa: "/trænspˈɔrt/",
+      example: "The transport of goods is not included in the price given on the website.",
+      exampleTranslation: "Việc vận chuyển hàng hóa không được bao gồm.",
+      synonyms: ["carry", "convey"],
+      forceUpdate: false,
+    };
+
+    const parsedNanoid = SaveWordRequestSchema.safeParse(validNanoidPayload);
+    expect(parsedNanoid.success).toBe(true);
+    if (parsedNanoid.success) {
+      expect(parsedNanoid.data.setId).toBe("vs_K3X9A2M1");
+      expect(parsedNanoid.data.word).toBe("transport");
+      expect(parsedNanoid.data.partOfSpeech).toBe("VERB");
+    }
+
+    const validUuidPayload = {
       setId: "123e4567-e89b-12d3-a456-426614174000",
       word: "eloquent",
       meaning: "hùng biện, lưu loát",
@@ -26,19 +46,15 @@ describe("Dictionary Schemas & Duplicate Validation", () => {
       forceUpdate: false,
     };
 
-    const parsed = SaveWordRequestSchema.safeParse(validPayload);
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.word).toBe("eloquent");
-      expect(parsed.data.partOfSpeech).toBe("adjective");
-    }
+    const parsedUuid = SaveWordRequestSchema.safeParse(validUuidPayload);
+    expect(parsedUuid.success).toBe(true);
   });
 
-  it("should reject SaveWordRequest with empty word or invalid setId", () => {
+  it("should reject SaveWordRequest with empty word, empty meaning or empty setId", () => {
     const invalidPayload = {
-      setId: "invalid-uuid",
+      setId: "",
       word: "",
-      meaning: "nghĩa",
+      meaning: "",
     };
 
     const parsed = SaveWordRequestSchema.safeParse(invalidPayload);

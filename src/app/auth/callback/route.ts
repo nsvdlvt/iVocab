@@ -3,7 +3,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { Database } from "@/types/database";
-import { getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
+import { getAuthorizedRedirectUrl, getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
 import { mapAuthError } from "@/lib/auth/error-map";
 import { ROUTES } from "@/constants/routes";
 
@@ -16,9 +16,12 @@ export async function GET(request: Request) {
   const providerError = searchParams.get("error");
   const providerErrorDescription = searchParams.get("error_description");
 
-  // Validate and sanitize the target redirect destination to prevent open-redirect attacks
-  const next = getSafeRedirectUrl(nextRaw, ROUTES.SELECT_WORKSPACE);
-  const isResetPasswordFlow = next === ROUTES.RESET_PASSWORD || next.startsWith("/reset-password") || type === "recovery";
+  // Validate initial target to check reset password flow
+  const safeTarget = getSafeRedirectUrl(nextRaw, ROUTES.SELECT_WORKSPACE);
+  const isResetPasswordFlow =
+    safeTarget === ROUTES.RESET_PASSWORD ||
+    safeTarget.startsWith("/reset-password") ||
+    type === "recovery";
 
   // Handle provider cancellation or errors (e.g. Google OAuth access denied)
   if (providerError) {
@@ -37,8 +40,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=auth-code-missing`);
   }
 
-  const redirectUrl = new URL(next, origin);
-  const response = NextResponse.redirect(redirectUrl);
+  const response = NextResponse.next();
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -72,7 +74,6 @@ export async function GET(request: Request) {
       const message = encodeURIComponent(mapAuthError(error));
       return NextResponse.redirect(`${origin}/login?error=invalid-link&message=${message}`);
     }
-    return response;
   }
 
   // 2. Token hash OTP flow: Verify email confirmation / password recovery OTP
@@ -85,8 +86,31 @@ export async function GET(request: Request) {
       const message = encodeURIComponent(mapAuthError(error));
       return NextResponse.redirect(`${origin}/login?error=invalid-link&message=${message}`);
     }
-    return response;
   }
 
-  return response;
+  let userRole: string | null = null;
+  if (typeof supabase.from === "function") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      userRole = profile?.role ?? null;
+    }
+  }
+
+  const destination = isResetPasswordFlow
+    ? ROUTES.RESET_PASSWORD
+    : getAuthorizedRedirectUrl(nextRaw, userRole, ROUTES.SELECT_WORKSPACE);
+
+  const redirectResponse = NextResponse.redirect(new URL(destination, origin));
+  response.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+
+  return redirectResponse;
 }

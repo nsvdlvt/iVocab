@@ -16,7 +16,7 @@ export function SocialAuthSection() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const next = searchParams.get("next") || ROUTES.DASHBOARD;
+      const next = searchParams.get("next") || ROUTES.SELECT_WORKSPACE;
       const result = await signInWithOAuth("google", next);
 
       if (!result.success) {

@@ -63,6 +63,7 @@ export interface AdaptiveAnswerSubmissionResult {
   meaning?: string;
   nextQuestion?: ClientAdaptiveQuestion | null;
   sessionCompleted?: boolean;
+  isDuplicateSubmission?: boolean;
 }
 
 export interface AdaptiveSessionSummary {

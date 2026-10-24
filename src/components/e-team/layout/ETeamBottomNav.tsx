@@ -13,13 +13,14 @@ export function ETeamBottomNav() {
   const { isMobileOpen, toggleMobileOpen } = useSidebar();
 
   const isHomeActive =
-    pathname === ROUTES.ETEAM_DASHBOARD ||
-    pathname === ROUTES.ETEAM ||
-    pathname === "/e-team";
+    pathname === (ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard") ||
+    pathname === (ROUTES?.ETEAM || "/e-team") ||
+    pathname === "/e-team" ||
+    pathname === "/e-team/dashboard";
 
   const isVocabsActive =
-    pathname === ROUTES.ETEAM_VOCABS ||
-    pathname.startsWith(`${ROUTES.ETEAM_VOCABS}/`);
+    pathname === (ROUTES?.ETEAM_VOCABS || "/e-team/vocabs") ||
+    Boolean(pathname && pathname.startsWith(`${ROUTES?.ETEAM_VOCABS || "/e-team/vocabs"}/`));
 
   return (
     <nav
@@ -29,8 +30,9 @@ export function ETeamBottomNav() {
       <div className="grid grid-cols-3 h-14 items-center px-2 max-w-lg mx-auto">
         {/* 1. Trang chủ */}
         <Link
-          href={ROUTES.ETEAM_DASHBOARD}
+          href={ROUTES?.ETEAM_DASHBOARD || "/e-team/dashboard"}
           aria-label="Trang chủ E-Team"
+          aria-current={isHomeActive ? "page" : undefined}
           className={cn(
             "flex flex-col items-center justify-center gap-1 h-full min-h-[44px] rounded-xl transition-all duration-150 cursor-pointer select-none active:scale-95",
             isHomeActive
@@ -52,8 +54,9 @@ export function ETeamBottomNav() {
 
         {/* 2. Học từ vựng */}
         <Link
-          href={ROUTES.ETEAM_VOCABS}
+          href={ROUTES?.ETEAM_VOCABS || "/e-team/vocabs"}
           aria-label="Học từ vựng E-Team"
+          aria-current={isVocabsActive ? "page" : undefined}
           className={cn(
             "flex flex-col items-center justify-center gap-1 h-full min-h-[44px] rounded-xl transition-all duration-150 cursor-pointer select-none active:scale-95",
             isVocabsActive
@@ -79,6 +82,7 @@ export function ETeamBottomNav() {
           onClick={toggleMobileOpen}
           aria-label="Mở menu điều hướng E-Team"
           aria-expanded={isMobileOpen}
+          aria-haspopup="dialog"
           className={cn(
             "flex flex-col items-center justify-center gap-1 h-full min-h-[44px] rounded-xl transition-all duration-150 cursor-pointer select-none active:scale-95",
             isMobileOpen

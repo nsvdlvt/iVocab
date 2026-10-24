@@ -5,7 +5,7 @@ import { loginSchema, type LoginFormValues } from "@/lib/validators/auth";
 import { mapAuthError } from "@/lib/auth/error-map";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
-import { getSafeRedirectUrl } from "@/lib/auth/redirect-utils";
+import { getAuthorizedRedirectUrl } from "@/lib/auth/redirect-utils";
 
 export type LoginActionResult = {
   success: boolean;
@@ -27,7 +27,7 @@ export async function loginAction(values: LoginFormValues): Promise<LoginActionR
   const { email, password, redirectTo } = validatedFields.data;
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: signInData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -42,6 +42,16 @@ export async function loginAction(values: LoginFormValues): Promise<LoginActionR
     };
   }
 
-  const destination = getSafeRedirectUrl(redirectTo, ROUTES.SELECT_WORKSPACE);
+  let userRole: string | null = null;
+  if (signInData?.user?.id && typeof supabase.from === "function") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", signInData.user.id)
+      .maybeSingle();
+    userRole = profile?.role ?? null;
+  }
+
+  const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.SELECT_WORKSPACE);
   redirect(destination);
 }
