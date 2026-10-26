@@ -45,7 +45,7 @@ export function VocabularyClient({
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handleEdit = (set: VocabSetRow) => {
-    router.push(`/vocabulary/${set.id}/edit`);
+    router.push(`/u/vocabulary/${set.id}/edit`);
   };
 
   const handleDelete = (set: VocabSetRow, isPermanent: boolean) => {

@@ -214,7 +214,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
               />
 
               <Link
-                href={`/vocabulary/${setId}/edit`}
+                href={`/u/vocabulary/${setId}/edit`}
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "h-9 gap-1.5 rounded-lg px-3.5 text-xs sm:text-sm font-medium justify-center"
@@ -309,7 +309,7 @@ export default async function VocabSetDetailPage({ params }: PageProps) {
               </p>
             </div>
             <Link
-              href={`/vocabulary/${setId}/edit`}
+              href={`/u/vocabulary/${setId}/edit`}
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "mt-1 gap-1.5 rounded-lg"

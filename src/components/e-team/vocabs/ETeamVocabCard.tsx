@@ -212,7 +212,7 @@ export function ETeamVocabCard({
                 <DropdownMenuContent align="end" className="w-44 rounded-xl">
                   <DropdownMenuItem
                     onClick={() => {
-                      window.location.href = `/vocabulary/${set.id}/edit`;
+                      window.location.href = `/u/vocabulary/${set.id}/edit`;
                     }}
                     className="gap-2 text-xs cursor-pointer"
                   >

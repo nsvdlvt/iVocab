@@ -29,7 +29,7 @@ interface StudyModesProps {
   basePath?: string;
 }
 
-export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps) {
+export function StudyModes({ setId, basePath = "/u/vocabulary" }: StudyModesProps) {
   const modes: StudyMode[] = [
     {
       id: "flashcard",
@@ -41,8 +41,8 @@ export function StudyModes({ setId, basePath = "/vocabulary" }: StudyModesProps)
     },
     {
       id: "learn",
-      title: "Học thích ứng",
-      description: "Chọn từ, học flashcards & luyện tập thích ứng theo năng lực.",
+      title: "Learn",
+      description: "Luyện tập thích ứng trắc nghiệm và gõ từ.",
       icon: BookOpen,
       href: `${basePath}/${setId}/learn`,
       iconStyle:

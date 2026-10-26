@@ -5,6 +5,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (
+    pathname.startsWith("/api/translate") ||
     pathname.startsWith("/api/reading") ||
     pathname.startsWith("/api/dictionary/lookup") ||
     pathname.startsWith("/api/dictionary/suggest") ||

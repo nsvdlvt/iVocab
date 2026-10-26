@@ -202,7 +202,7 @@ export function SpeakingViewer({ words, setInfo }: SpeakingViewerProps) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <p className="text-muted-foreground">Bộ từ vựng này chưa có từ nào.</p>
-        <Link href={`/vocabulary/${setInfo.id}`} className="mt-4 text-primary underline">
+        <Link href={`/u/vocabulary/${setInfo.id}`} className="mt-4 text-primary underline">
           Quay lại danh sách
         </Link>
       </div>
@@ -226,7 +226,7 @@ export function SpeakingViewer({ words, setInfo }: SpeakingViewerProps) {
       <div className="flex items-center justify-between gap-4 border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">
           <Link
-            href={`/vocabulary/${setInfo.id}`}
+            href={`/u/vocabulary/${setInfo.id}`}
             className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 hover:bg-muted text-muted-foreground transition"
             title="Quay lại bộ từ"
           >

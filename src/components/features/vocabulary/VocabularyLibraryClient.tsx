@@ -1165,7 +1165,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                     <SheetDescription className="text-xs text-muted-foreground">
                       {selected.vocab_sets?.title ? (
                         <Link
-                          href={`/vocabulary/${selected.set_id}?focusWord=${selected.id}`}
+                          href={`/u/vocabulary/${selected.set_id}?focusWord=${selected.id}`}
                           className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
                         >
                           <BookOpen className="h-3.5 w-3.5" />
@@ -1238,7 +1238,7 @@ export function VocabularyLibraryClient({ words, stats }: Props) {
                   <div className="flex items-center gap-2.5 border-t border-border/80 bg-muted/20 p-4">
                     {selected.set_id && (
                       <Link
-                        href={`/vocabulary/${selected.set_id}?focusWord=${selected.id}`}
+                        href={`/u/vocabulary/${selected.set_id}?focusWord=${selected.id}`}
                         className={cn(
                           buttonVariants({ variant: "outline" }),
                           "flex-1 gap-1.5 rounded-lg text-xs font-medium"

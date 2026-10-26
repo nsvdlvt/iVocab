@@ -71,6 +71,7 @@ export async function updateSession(request: NextRequest) {
   // 4. API routes handling: never redirect API requests to HTML /login
   if (path.startsWith("/api/")) {
     const isPublicApi =
+      path.startsWith("/api/translate") ||
       path.startsWith("/api/dictionary/lookup") ||
       path.startsWith("/api/dictionary/suggest") ||
       path.startsWith("/api/dictionary/context") ||

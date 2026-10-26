@@ -204,7 +204,7 @@ export default async function ETeamVocabSetDetailPage({ params }: PageProps) {
               />
 
               <Link
-                href={`/vocabulary/${setId}/edit`}
+                href={`/u/vocabulary/${setId}/edit`}
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "h-11 gap-1.5 rounded-xl px-3.5 text-xs sm:text-sm font-medium justify-center"
@@ -299,7 +299,7 @@ export default async function ETeamVocabSetDetailPage({ params }: PageProps) {
               </p>
             </div>
             <Link
-              href={`/vocabulary/${setId}/edit`}
+              href={`/u/vocabulary/${setId}/edit`}
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "mt-2 gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"

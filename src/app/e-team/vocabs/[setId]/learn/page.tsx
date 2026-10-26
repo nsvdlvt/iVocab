@@ -75,7 +75,7 @@ export default async function ETeamLearnFlowPage({ params }: PageProps) {
               <span>Quay lại chi tiết bộ từ</span>
             </Link>
             <Link
-              href={`/vocabulary/${setId}/edit`}
+              href={`/u/vocabulary/${setId}/edit`}
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "rounded-xl gap-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-semibold"

@@ -103,7 +103,7 @@ export function RecentVocabularySets({ sets }: RecentVocabularySetsProps) {
 
                   <div className="flex items-center gap-1.5">
                     <Link
-                      href={`/vocabulary/${set.id}/flashcard`}
+                      href={`/u/vocabulary/${set.id}/flashcard`}
                       className={cn(
                         buttonVariants({ variant: "ghost", size: "xs" }),
                         "text-muted-foreground hover:text-foreground"
@@ -113,7 +113,7 @@ export function RecentVocabularySets({ sets }: RecentVocabularySetsProps) {
                       <span>Thẻ từ</span>
                     </Link>
                     <Link
-                      href={`/vocabulary/${set.id}/learn`}
+                      href={`/u/vocabulary/${set.id}/learn`}
                       className={cn(
                         buttonVariants({ variant: "secondary", size: "xs" }),
                         "text-primary"

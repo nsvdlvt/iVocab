@@ -164,7 +164,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
       ipa: currentWord.ipa,
       part_of_speech: currentWord.part_of_speech,
       example: currentWord.example,
-      example_translation: currentWord.example_translation,
+      example_translation: (currentWord as { example_translation?: string | null }).example_translation ?? null,
       synonyms: currentWord.synonyms,
       note: currentWord.note,
     };
@@ -581,8 +581,8 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   if (initialWords.length === 0) {
     return (
       <EmptyFlashcard
-        onBack={onBack}
-        onAddWords={() => router.push(`/vocabulary/${setInfo.id}/edit`)}
+        onBack={() => void handleLeave()}
+        onAddWords={() => router.push(`/u/vocabulary/${setInfo.id}/edit`)}
       />
     );
   }
@@ -600,7 +600,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
         accuracy={accuracyValue}
         timeString={formatTime(elapsedTime)}
         onRestart={handleRestart}
-        onBackToSet={onBack}
+        onBackToSet={() => void handleLeave()}
       />
     );
   }

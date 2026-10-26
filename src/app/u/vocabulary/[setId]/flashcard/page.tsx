@@ -40,7 +40,7 @@ export default async function FlashcardPage({ params }: PageProps) {
       <FlashcardStudy
         initialWords={words}
         setInfo={{ id: set.id, title: set.title }}
-        onBackHref={`/vocabulary/${setId}`}
+        onBackHref={`/u/vocabulary/${setId}`}
       />
     </PageContainer>
   );

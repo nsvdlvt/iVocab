@@ -6,7 +6,6 @@ import type {
 import { dictionaryCache, suggestionsCache } from "./cache";
 import { FreeDictionaryProvider } from "./providers/free-dictionary.provider";
 import { DatamuseProvider } from "./providers/datamuse.provider";
-import { AiDictionaryProvider } from "./providers/ai-dictionary.provider";
 import { translateToVietnamese } from "./translation.service";
 import { normalizeIpa, isArpabet, isReliableIpa } from "./phonetics";
 
@@ -20,12 +19,10 @@ export interface LookupOptions {
 export class DictionaryService {
   private freeDictProvider: FreeDictionaryProvider;
   private datamuseProvider: DatamuseProvider;
-  private aiDictProvider: AiDictionaryProvider;
 
   constructor() {
     this.freeDictProvider = new FreeDictionaryProvider();
     this.datamuseProvider = new DatamuseProvider();
-    this.aiDictProvider = new AiDictionaryProvider();
   }
 
   async lookup(word: string, options?: LookupOptions): Promise<DictionaryResult | null> {
@@ -56,43 +53,36 @@ export class DictionaryService {
     let result: DictionaryResult | null = null;
     const isMultiWord = rawClean.includes(" ");
 
-    // Step 1: For idioms and multi-word phrases (e.g. "break the ice", "look forward to"),
-    // Free Dictionary does not support multi-word entries, so route directly to AI / translation
-    if (isMultiWord) {
-      try {
-        result = await this.aiDictProvider.lookup(rawClean, {
-          signal: options?.signal ?? AbortSignal.timeout(6000),
-          pos: options?.pos,
-          contextSentence: options?.contextSentence,
-        });
-      } catch {
-        result = null;
-      }
-    } else {
-      // Step 2: Try Free Dictionary API with 2500ms timeout
-      try {
-        result = await this.freeDictProvider.lookup(rawClean, {
-          signal: AbortSignal.timeout(2500),
-          pos: options?.pos,
-          contextSentence: options?.contextSentence,
-        });
-      } catch {
-        result = null;
-      }
+    // Step 1: Try Free Dictionary API with 2500ms timeout
+    try {
+      result = await this.freeDictProvider.lookup(rawClean, {
+        signal: options?.signal ?? AbortSignal.timeout(2500),
+        pos: options?.pos,
+        contextSentence: options?.contextSentence,
+      });
+    } catch {
+      result = null;
+    }
 
-      // Step 3: If Free Dictionary failed (e.g. 530 Cloudflare error on "eloquent" or 404),
-      // seamlessly fall back to Datamuse Dictionary (returns definitions & IPA in ~250ms)
-      if (!result || result.meanings.length === 0) {
-        try {
-          result = await this.datamuseProvider.lookup(rawClean, {
-            signal: AbortSignal.timeout(2500),
-          });
-        } catch {
-          result = null;
-        }
+    // Step 2: If Free Dictionary returned no result (or 404/530 error), seamlessly query Datamuse Provider
+    if (!result || result.meanings.length === 0) {
+      try {
+        result = await this.datamuseProvider.lookup(rawClean, {
+          signal: options?.signal ?? AbortSignal.timeout(2500),
+        });
+      } catch {
+        result = null;
       }
     }
 
+    // Step 3: For multi-word phrases (idioms/phrases like "break the ice") not indexed by dictionary APIs,
+    // gracefully translate via Google Translate (strictly non-AI)
+    if (isMultiWord && (!result || result.meanings.length === 0)) {
+      result = await this.fallbackTranslateLookup(rawClean, options?.signal);
+    }
+
+    // If word is not found in real dictionary providers, return null.
+    // Absolutely NO AI models or providers are used to invent or synthesize definitions.
     if (!result || result.meanings.length === 0) {
       return null;
     }
@@ -117,7 +107,7 @@ export class DictionaryService {
       }
     }
 
-    // Step 5: Enrich with Vietnamese translations and collocations (fast and cached)
+    // Step 5: Enrich with Vietnamese translations and collocations (fast and cached via Google Translate)
     await this.enrichDictionaryResult(result);
 
     // Cache the completed result
@@ -147,12 +137,67 @@ export class DictionaryService {
     sentence: string,
     signal?: AbortSignal
   ): Promise<ContextualTranslationResult> {
-    return this.aiDictProvider.translateContext(word, sentence, signal);
+    const cleanWord = word.trim();
+    const cleanSentence = sentence.trim();
+
+    if (!cleanWord || !cleanSentence) {
+      throw new Error("Từ và câu ngữ cảnh không được để trống.");
+    }
+
+    // Translate word and sentence using non-AI translation service (Google Translate)
+    const [wordVi, sentenceVi] = await Promise.all([
+      translateToVietnamese(cleanWord, signal),
+      translateToVietnamese(cleanSentence, signal),
+    ]);
+
+    return {
+      word: cleanWord,
+      sentence: cleanSentence,
+      selectedMeaningVi: wordVi || cleanWord,
+      explanationVi: sentenceVi ? `Bản dịch của cả câu: "${sentenceVi}"` : undefined,
+      highlightPhrase: cleanWord,
+    };
   }
 
   clearCache(): void {
     dictionaryCache.clear();
     suggestionsCache.clear();
+  }
+
+  private async fallbackTranslateLookup(
+    clean: string,
+    signal?: AbortSignal
+  ): Promise<DictionaryResult | null> {
+    const viMeaning = await translateToVietnamese(clean, signal);
+    if (!viMeaning || viMeaning.trim().toLowerCase() === clean.toLowerCase()) return null;
+
+    return {
+      word: clean,
+      normalizedWord: clean.toLowerCase(),
+      primaryVietnamese: viMeaning,
+      phonetics: [],
+      meanings: [
+        {
+          partOfSpeech: "phrase",
+          vietnameseSummary: viMeaning,
+          definitions: [
+            {
+              id: `${clean.toLowerCase()}-phrase-1`,
+              definitionEn: `Meaning of "${clean}" in English`,
+              definitionVi: viMeaning,
+              synonyms: [],
+              antonyms: [],
+            },
+          ],
+          synonyms: [],
+          antonyms: [],
+        },
+      ],
+      collocations: [],
+      wordForms: [],
+      source: "fallback",
+      timestamp: Date.now(),
+    };
   }
 
   private async enrichDictionaryResult(result: DictionaryResult): Promise<void> {
@@ -163,7 +208,7 @@ export class DictionaryService {
 
     const promises: Promise<void>[] = [];
 
-    // 1. Fetch primary Vietnamese translation if missing
+    // 1. Fetch primary Vietnamese translation if missing (via Google Translate)
     if (!result.primaryVietnamese) {
       promises.push(
         (async () => {

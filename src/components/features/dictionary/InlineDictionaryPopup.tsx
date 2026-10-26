@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, X, AlertCircle, Bookmark, Sparkles } from "lucide-react";
+import { Volume2, X, AlertCircle, Bookmark, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { detectPartOfSpeech } from "@/lib/nlp/pos";
@@ -193,7 +193,7 @@ export function InlineDictionaryPopup({
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-popover/90 px-4 py-2.5 backdrop-blur-md">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <BookOpen className="h-3.5 w-3.5 text-primary" />
               <span className="font-bold text-xs text-foreground uppercase tracking-wider">
                 Tra nhanh từ vựng
               </span>

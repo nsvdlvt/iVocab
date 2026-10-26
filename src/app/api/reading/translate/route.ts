@@ -1,17 +1,58 @@
 import { NextResponse } from "next/server";
-import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const FALLBACK_MODELS = [
-  "gpt-5.6-luna",
-  "gpt-6-luna",
-  "gpt-5.6-terra",
-  "gpt-6-sol",
-  "gpt-6.1-sol",
-];
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
 
+/**
+ * Translates reading text using official Google Cloud Translation API if GOOGLE_TRANSLATE_API_KEY is configured.
+ */
+async function translateWithGoogleCloud(
+  text: string,
+  apiKey: string,
+  signal?: AbortSignal
+): Promise<string | null> {
+  try {
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+    const body = {
+      q: text,
+      source: "en",
+      target: "vi",
+      format: "text",
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: signal ?? AbortSignal.timeout(6000),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const translation = data?.data?.translations?.[0]?.translatedText;
+
+    if (translation && typeof translation === "string") {
+      return decodeHtmlEntities(translation.trim());
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Translates reading text using Google GTX endpoint (standard fast proxy).
+ */
 async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promise<string | null> {
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
@@ -25,64 +66,15 @@ async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promi
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data) || !Array.isArray(data[0])) return null;
 
-    const translation = (data[0] as unknown[])
+    const rawTranslation = (data[0] as unknown[])
       .map((part) => (Array.isArray(part) && typeof part[0] === "string" ? part[0] : ""))
       .join("")
       .trim();
 
-    return translation || null;
+    return rawTranslation ? decodeHtmlEntities(rawTranslation) : null;
   } catch {
     return null;
   }
-}
-
-async function translateWithGemini(text: string, signal?: AbortSignal): Promise<string | null> {
-  const apiKey = getAiApiKey();
-  const baseURL = getAiBaseUrl();
-  if (!apiKey) return null;
-
-  for (const model of FALLBACK_MODELS) {
-    try {
-      const endpoint = `${baseURL}/chat/completions`;
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Bạn là dịch giả tiếng Anh - tiếng Việt chuyên nghiệp. Hãy dịch đoạn văn bản bài đọc sang tiếng Việt tự nhiên, chính xác, giữ nguyên ngữ cảnh học thuật và sắc thái nghĩa. Chỉ trả về kết quả dịch tiếng Việt, không kèm lời giải thích, không kèm markdown thừa.",
-            },
-            {
-              role: "user",
-              content: `Dịch đoạn văn bản tiếng Anh sau sang tiếng Việt:\n\n${text}`,
-            },
-          ],
-          temperature: 0.3,
-        }),
-        signal: signal ?? AbortSignal.timeout(12000),
-      });
-
-      if (!response.ok) continue;
-
-      const data = (await response.json().catch(() => null)) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      } | null;
-
-      const translated = data?.choices?.[0]?.message?.content?.trim();
-      if (translated) return translated;
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
 }
 
 export async function POST(request: Request) {
@@ -104,19 +96,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Try Google GTX first for speed
-    let translation = await translateWithGoogleGtx(text, request.signal);
-    let provider = "google";
+    let translation: string | null = null;
+    let provider = "google-gtx";
 
-    // Fallback to Gemini AI if GTX fails or returns empty
-    if (!translation) {
-      translation = await translateWithGemini(text, request.signal);
-      provider = "gemini";
+    // 1. Try official Google Cloud Translation API if configured in environment
+    const googleApiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+    if (googleApiKey) {
+      translation = await translateWithGoogleCloud(text, googleApiKey, request.signal);
+      if (translation) {
+        provider = "google-cloud";
+      }
     }
 
+    // 2. Otherwise try Google GTX endpoint
+    if (!translation) {
+      translation = await translateWithGoogleGtx(text, request.signal);
+      provider = "google-gtx";
+    }
+
+    // AI is strictly prohibited from translation. Return 502 if Google Translate fails.
     if (!translation) {
       return NextResponse.json(
-        { error: "Không thể dịch đoạn văn bản này vào lúc này. Vui lòng bấm thử lại." },
+        { error: "Không thể dịch đoạn văn bản này vào lúc này qua Google Translate. Vui lòng thử lại sau." },
         { status: 502 }
       );
     }

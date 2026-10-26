@@ -6,6 +6,7 @@ import { SidebarProvider } from "./SidebarProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { SmartTextSelectionTranslator } from "@/components/features/selection-translation/SmartTextSelectionTranslator";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export function Providers({ children }: ProvidersProps) {
         <Toaster position="top-right" richColors />
         <InstallPrompt />
         <ServiceWorkerRegister />
+        <SmartTextSelectionTranslator />
       </SidebarProvider>
     </ThemeProvider>
   );

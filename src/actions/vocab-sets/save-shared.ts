@@ -63,5 +63,5 @@ export async function saveSharedVocabularySet(setId: string) {
     );
   }
 
-  redirect(`/vocabulary/${copiedSet.id}`);
+  redirect(`/u/vocabulary/${copiedSet.id}`);
 }

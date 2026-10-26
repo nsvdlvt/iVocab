@@ -482,7 +482,7 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
     return (
       <EmptyFlashcard
         onBack={onBack}
-        onAddWords={() => router.push(`/vocabulary/${setInfo.id}/edit`)}
+        onAddWords={() => router.push(`/u/vocabulary/${setInfo.id}/edit`)}
       />
     );
   }

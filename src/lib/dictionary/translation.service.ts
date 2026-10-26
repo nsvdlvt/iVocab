@@ -1,12 +1,56 @@
-import { getAiApiKey } from "@/lib/ai/constants";
-import { request } from "@/lib/ai/responsesClient";
 import { translationCache } from "./cache";
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 /**
- * Server-side helper to translate English text/definitions to natural Vietnamese.
- * Features 2-tier fallback with caching:
- * 1. High-speed Google GTX translation (instant ~100ms, supports any sentence length).
- * 2. AI translation fallback (when Google GTX is unavailable).
+ * Translates English text/definitions to natural Vietnamese using official Google Cloud Translation API.
+ */
+async function translateWithGoogleCloud(
+  text: string,
+  apiKey: string,
+  signal?: AbortSignal
+): Promise<string | null> {
+  try {
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+    const body = {
+      q: text,
+      source: "en",
+      target: "vi",
+      format: "text",
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: signal ?? AbortSignal.timeout(4000),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const translation = data?.data?.translations?.[0]?.translatedText;
+
+    if (translation && typeof translation === "string") {
+      return decodeHtmlEntities(translation.trim());
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Server-side helper to translate English text/definitions to natural Vietnamese using Google Translate.
+ * Uses Google Cloud Translation API when configured, or standard Google GTX proxy.
+ * Absolutely NO AI API or models are used.
  */
 export async function translateToVietnamese(
   text: string,
@@ -20,7 +64,22 @@ export async function translateToVietnamese(
     return translationCache.get(clean) || null;
   }
 
-  // 2. High-speed Google GTX translation first (handles words, definitions, sentences)
+  // 2. Official Google Cloud Translation API if configured
+  const googleApiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+  if (googleApiKey) {
+    try {
+      const cloudSignal = signal ?? AbortSignal.timeout(4000);
+      const cloudResult = await translateWithGoogleCloud(clean, googleApiKey, cloudSignal);
+      if (cloudResult) {
+        translationCache.set(clean, cloudResult);
+        return cloudResult;
+      }
+    } catch {
+      // Fall through to GTX below
+    }
+  }
+
+  // 3. High-speed Google GTX translation (handles words, definitions, sentences)
   try {
     const gtxSignal = signal ?? AbortSignal.timeout(3500);
     const gtx = await translateWithGoogleGtx(clean, gtxSignal);
@@ -29,29 +88,7 @@ export async function translateToVietnamese(
       return gtx;
     }
   } catch {
-    // Fall through to AI fallback below
-  }
-
-  // 3. Fallback to AI translation if Google GTX fails
-  if (getAiApiKey()) {
-    try {
-      const prompt = `Dịch câu hoặc định nghĩa từ điển tiếng Anh sau sang tiếng Việt ngắn gọn, tự nhiên, chính xác cho người học tiếng Anh:\n"${clean}"\nChỉ trả về bản dịch tiếng Việt, không kèm giải thích hay ngoặc kép.`;
-      const aiSignal = signal ?? AbortSignal.timeout(5000);
-      const reply = await request<string>(
-        {
-          input: prompt,
-        },
-        aiSignal
-      );
-
-      const cleanedReply = reply?.trim().replace(/^["']|["']$/g, "");
-      if (cleanedReply && cleanedReply.length > 0) {
-        translationCache.set(clean, cleanedReply);
-        return cleanedReply;
-      }
-    } catch {
-      // Return null
-    }
+    // Return null, strictly no AI fallback
   }
 
   return null;
@@ -74,7 +111,7 @@ async function translateWithGoogleGtx(text: string, signal?: AbortSignal): Promi
       .join("")
       .trim();
 
-    return result || null;
+    return result ? decodeHtmlEntities(result) : null;
   } catch {
     return null;
   }

@@ -57,7 +57,7 @@ export default async function SentencePracticePage({ params }: PageProps) {
         onBack={async () => {
           "use server";
           const { redirect } = await import("next/navigation");
-          redirect(`/vocabulary/${setId}`);
+          redirect(`/u/vocabulary/${setId}`);
         }}
       />
     </PageContainer>
