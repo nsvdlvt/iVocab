@@ -612,6 +612,9 @@ export function DictationViewer({ initialWords, setInfo, onBack, reviewSessionId
                 autoPlayExplanationAudio={false} // Explanation autoplay disabled in dictation to avoid audio conflicts
                 onSpeakWord={() => speakText(currentQuestion.word.word)}
                 sentenceContext={sentenceHighlightContext}
+                correctAnswer={currentQuestion.correctAnswer}
+                direction={currentQuestion.direction}
+                questionType={currentQuestion.type}
               />
             )}
           </>

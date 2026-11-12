@@ -1,17 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Volume2, ArrowRight, CheckCircle2, AlertCircle, XCircle, HelpCircle } from "lucide-react";
+import { Volume2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Database } from "@/types/database";
-import { AnswerState } from "@/lib/learning/question-types";
+import { AnswerState, QuestionDirection, QuestionType } from "@/lib/learning/question-types";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import {
-  HighlightedExample,
-  HighlightedSentence,
-} from "@/components/common/HighlightedExample";
+import { HighlightedSentence } from "@/components/common/HighlightedExample";
 
 type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
@@ -24,6 +20,9 @@ interface StudyExplanationProps {
   onToggleAutoPlayExplanation?: () => void;
   onSpeakWord?: () => void;
   sentenceContext?: string; // Optional sentence dictation context
+  correctAnswer?: string;
+  direction?: QuestionDirection;
+  questionType?: QuestionType;
 }
 
 function renderFormattedSentence(text: string) {
@@ -40,6 +39,13 @@ function renderFormattedSentence(text: string) {
   });
 }
 
+function cleanExampleSentence(example?: string | null): string | null {
+  if (!example) return null;
+  // Clean markdown bold or special formatting if any
+  const cleaned = example.replace(/\*\*(.*?)\*\*/g, "$1").trim();
+  return cleaned || null;
+}
+
 export function StudyExplanation({
   word,
   answerState,
@@ -49,6 +55,8 @@ export function StudyExplanation({
   onToggleAutoPlayExplanation,
   onSpeakWord,
   sentenceContext,
+  correctAnswer,
+  direction,
 }: StudyExplanationProps) {
   const isCorrect = answerState === "correct";
   const isNearly = answerState === "near";
@@ -58,11 +66,16 @@ export function StudyExplanation({
   const countdownIntervalRef = useRef<number | null>(null);
   const continueTimeoutRef = useRef<number | null>(null);
 
+  // The actual expected answer for the specific question direction
+  const targetAnswer =
+    correctAnswer ||
+    (direction === "en-vi" ? word.meaning : word.word);
+
   useEffect(() => {
     continueRef.current = onContinue;
   }, [onContinue]);
 
-  // Auto transition layout
+  // Auto transition countdown
   useEffect(() => {
     const resetCountdownHandle = window.setTimeout(() => {
       setCountdown(2);
@@ -118,203 +131,166 @@ export function StudyExplanation({
     }
   };
 
-  useEffect(() => {
-    if (autoPlayExplanationAudio && (isCorrect || isNearly)) {
-      const timer = setTimeout(() => {
-        if (onSpeakWord) onSpeakWord();
-        else speakTextWeb(word.word);
-      }, 150);
-      return () => clearTimeout(timer);
-    }
-  }, [autoPlayExplanationAudio, isCorrect, isNearly, word.word, onSpeakWord]);
-
-  const hasSynonyms = Boolean(word.synonyms && word.synonyms.length > 0);
-  const hasAntonyms = Boolean(word.antonyms && word.antonyms.length > 0);
-  const hasExamples = Boolean(word.example || word.example_translation);
+  const exampleSentence = cleanExampleSentence(word.example);
+  const formattedSynonyms = Array.isArray(word.synonyms)
+    ? word.synonyms.filter(Boolean).join("; ")
+    : typeof word.synonyms === "string"
+    ? word.synonyms
+    : "";
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4 animate-in fade-in zoom-in-95 duration-200">
+    <div className="w-full max-w-2xl mx-auto space-y-3 animate-in fade-in zoom-in-95 duration-150 select-none">
+      {/* Optional Dictation Context Card (for dictation flows) */}
+      {sentenceContext && (
+        <div className="p-3 bg-muted/40 rounded-xl border border-border/60 text-left space-y-1 select-text">
+          <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Ngữ cảnh câu</p>
+          <p className="text-sm text-foreground leading-relaxed">
+            {renderFormattedSentence(sentenceContext)}
+          </p>
+          {word.example_translation && (
+            <p className="text-xs text-muted-foreground pt-1 border-t border-border/40">
+              <HighlightedSentence
+                sentence={word.example_translation}
+                type="vi"
+                meaning={word.meaning}
+              />
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Minimal Vocabulary Explanation Container */}
       <div
         className={cn(
-          "rounded-2xl border p-4 sm:p-5 shadow-sm space-y-4 text-center transition-all",
-          isCorrect && "border-emerald-500/30 bg-emerald-500/5",
-          isNearly && "border-amber-500/30 bg-amber-500/5",
-          isUnknown && "border-slate-500/30 bg-slate-500/5",
-          !isCorrect && !isNearly && !isUnknown && "border-rose-500/30 bg-rose-500/5"
+          "w-full rounded-xl border p-4 sm:p-5 text-left transition-all space-y-2.5 sm:space-y-3 select-text shadow-2xs",
+          isCorrect && "border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20",
+          isNearly && "border-amber-200/80 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20",
+          isUnknown && "border-slate-200/80 bg-slate-50/60 dark:border-slate-800/40 dark:bg-slate-900/20",
+          !isCorrect && !isNearly && !isUnknown && "border-rose-200/80 bg-rose-50/60 dark:border-rose-900/40 dark:bg-rose-950/20"
         )}
       >
-        {/* Status header banner */}
-        <div className="flex items-center justify-between pb-3 border-b border-border/60">
-          <div className="flex items-center gap-2">
-            {isCorrect && (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-bold text-sm text-emerald-800 dark:text-emerald-200">
-                  Chính xác!
-                </span>
-              </>
-            )}
-            {isNearly && (
-              <>
-                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-bold text-sm text-amber-800 dark:text-amber-200">
-                  Gần đúng! Chú ý chính tả nhé.
-                </span>
-              </>
-            )}
-            {isUnknown && (
-              <>
-                <HelpCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span className="font-bold text-sm text-foreground">
-                  Ghi nhớ từ này nhé!
-                </span>
-              </>
-            )}
-            {!isCorrect && !isNearly && !isUnknown && (
-              <>
-                <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />
-                <span className="font-bold text-sm text-rose-800 dark:text-rose-200">
-                  Chưa chính xác
-                </span>
-              </>
-            )}
-          </div>
+        {/* Line 1: Chưa chính xác | Đáp án đúng: Exhaustive | Auto Sound */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap text-sm sm:text-base leading-normal">
+          {isCorrect && (
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+              Chính xác
+            </span>
+          )}
+          {isNearly && (
+            <span className="font-semibold text-amber-600 dark:text-amber-400 shrink-0">
+              Gần đúng
+            </span>
+          )}
+          {isUnknown && (
+            <span className="font-semibold text-muted-foreground shrink-0">
+              Ghi nhớ từ này
+            </span>
+          )}
+          {!isCorrect && !isNearly && !isUnknown && (
+            <span className="font-semibold text-rose-600 dark:text-rose-400 shrink-0">
+              Chưa chính xác
+            </span>
+          )}
 
-          <div className="flex items-center gap-2">
-            {onToggleAutoPlayExplanation && (
-              <div className="flex items-center gap-1.5" title="Tự động phát âm thanh giải thích">
+          <span className="text-muted-foreground/40 select-none">|</span>
+
+          <span className="text-muted-foreground">
+            Đáp án đúng:{" "}
+            <span className="font-semibold text-foreground break-words">{targetAnswer}</span>
+          </span>
+
+          {onToggleAutoPlayExplanation && (
+            <>
+              <span className="text-muted-foreground/40 select-none">|</span>
+              <label
+                className="inline-flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm text-muted-foreground hover:text-foreground select-none"
+                title="Tự động phát âm thanh giải thích"
+              >
+                <span>Auto Sound</span>
                 <Switch
                   checked={!!autoPlayExplanationAudio}
                   onChange={onToggleAutoPlayExplanation}
                   ariaLabel="Tự động phát âm thanh giải thích"
                 />
-                <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-            )}
-            {word.difficulty && (
-              <Badge variant="outline" className="text-[10px] uppercase font-semibold">
-                {word.difficulty}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Word Information Card */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-4 p-3.5 bg-background/80 rounded-xl border border-border/80 text-left">
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xl sm:text-2xl font-black text-foreground tracking-tight select-text">
-                  {word.word}
-                </span>
-                {word.part_of_speech && (
-                  <Badge variant="secondary" className="text-[11px] capitalize">
-                    {word.part_of_speech}
-                  </Badge>
-                )}
-                {word.ipa && (
-                  <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
-                    {word.ipa}
-                  </span>
-                )}
-              </div>
-              <p className="text-base font-semibold text-foreground/90 leading-snug select-text">
-                {word.meaning}
-              </p>
-            </div>
-
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onSpeakWord || (() => speakTextWeb(word.word))}
-              className="h-9 w-9 rounded-xl text-primary hover:bg-primary/10 border-border/80 cursor-pointer shrink-0"
-              title="Phát âm"
-            >
-              <Volume2 className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Dynamic sentence dictation display */}
-          {sentenceContext && (
-            <div className="p-3.5 bg-muted/40 rounded-xl border border-border/60 text-left space-y-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Ngữ cảnh câu</p>
-              <p className="text-sm text-foreground leading-relaxed select-text">
-                {renderFormattedSentence(sentenceContext)}
-              </p>
-              {word.example_translation && (
-                <p className="text-xs text-muted-foreground leading-relaxed select-text pt-1 border-t border-border/40">
-                  <HighlightedSentence
-                    sentence={word.example_translation}
-                    type="vi"
-                    meaning={word.meaning}
-                  />
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Structured Example & Notes */}
-          {(hasExamples || word.note || hasSynonyms || hasAntonyms) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/50 text-left">
-              {hasExamples && (
-                <HighlightedExample
-                  word={word.word}
-                  meaning={word.meaning}
-                  example={word.example}
-                  exampleTranslation={word.example_translation}
-                  showLabels
-                  compact
-                />
-              )}
-
-              {(word.note || hasSynonyms || hasAntonyms) && (
-                <div className="space-y-2.5 rounded-xl bg-muted/25 p-3 border border-border/40">
-                  {word.note && (
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Ghi chú</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{word.note}</p>
-                    </div>
-                  )}
-                  {hasSynonyms && (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Đồng nghĩa</p>
-                      <div className="flex flex-wrap gap-1">
-                        {word.synonyms?.map((syn, idx) => (
-                          <span key={idx} className="bg-background border border-border/60 px-2 py-0.5 rounded-md text-[11px] text-foreground/80 font-medium">
-                            {syn}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {hasAntonyms && (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Trái nghĩa</p>
-                      <div className="flex flex-wrap gap-1">
-                        {word.antonyms?.map((ant, idx) => (
-                          <span key={idx} className="bg-background border border-border/60 px-2 py-0.5 rounded-md text-[11px] text-foreground/80 font-medium">
-                            {ant}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              </label>
+            </>
           )}
         </div>
+
+        {/* Line 2: Exhaustive | IPA | adjective */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap text-sm sm:text-base leading-normal">
+          <span className="font-bold text-base sm:text-lg text-foreground tracking-tight break-words">
+            {word.word}
+          </span>
+
+          <button
+            type="button"
+            onClick={onSpeakWord || (() => speakTextWeb(word.word))}
+            className="h-6 w-6 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            title="Nghe phát âm"
+          >
+            <Volume2 className="h-4 w-4" />
+          </button>
+
+          {word.ipa && (
+            <>
+              <span className="text-muted-foreground/40 select-none">|</span>
+              <span className="font-mono text-xs sm:text-sm text-muted-foreground break-words">
+                {word.ipa}
+              </span>
+            </>
+          )}
+
+          {word.part_of_speech && (
+            <>
+              <span className="text-muted-foreground/40 select-none">|</span>
+              <span className="text-xs sm:text-sm text-muted-foreground italic lowercase break-words">
+                {word.part_of_speech}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Line 3: Đồng nghĩa: Comprehensive; Thorough; Extensive */}
+        {formattedSynonyms ? (
+          <div className="text-xs sm:text-sm leading-normal text-foreground break-words">
+            <span className="text-muted-foreground font-medium">Đồng nghĩa: </span>
+            <span>{formattedSynonyms}</span>
+          </div>
+        ) : null}
+
+        {/* Line 4: Nghĩa: Toàn diện; thấu đáo; bao quát mọi khía cạnh */}
+        {word.meaning && (
+          <div className="text-xs sm:text-sm leading-normal text-foreground break-words">
+            <span className="text-muted-foreground font-medium">Nghĩa: </span>
+            <span className="font-medium text-foreground">{word.meaning}</span>
+          </div>
+        )}
+
+        {/* Line 5: Ví dụ: The researchers conducted an exhaustive investigation into the causes of the accident */}
+        {(exampleSentence || word.example_translation) && (
+          <div className="text-xs sm:text-sm leading-relaxed text-foreground break-words">
+            <span className="text-muted-foreground font-medium">Ví dụ: </span>
+            {exampleSentence && <span className="italic text-foreground/95">{exampleSentence}</span>}
+            {word.example_translation && (
+              <span className="block text-xs text-muted-foreground italic mt-0.5">
+                {word.example_translation}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Action button */}
+      {/* Prominent Continue Button */}
       <Button
         onClick={onContinue}
+        size="lg"
         className="rounded-xl h-11 w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm gap-2 cursor-pointer select-none flex items-center justify-center transition-all shadow-xs"
       >
         <span>
           Tiếp tục {autoContinue && (isCorrect || isNearly) && countdown > 0 ? `(${countdown}s)` : ""}
         </span>
-        <kbd className="border-primary-foreground/30 bg-primary-foreground/15 text-primary-foreground shadow-none">
+        <kbd className="border-primary-foreground/30 bg-primary-foreground/15 text-primary-foreground shadow-none text-[11px] px-1.5 py-0.5 rounded">
           Enter
         </kbd>
         <ArrowRight className="h-4 w-4" />

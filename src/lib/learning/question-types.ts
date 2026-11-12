@@ -9,6 +9,8 @@ export type AnswerState = "unanswered" | "correct" | "near" | "wrong" | "unknown
 export interface LearnOption {
   id: string;
   text: string;
+  english?: string;
+  meaning?: string;
   isCorrect: boolean;
 }
 

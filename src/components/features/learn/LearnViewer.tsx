@@ -129,7 +129,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   const [autoPlayExplanationAudio, setAutoPlayExplanationAudio] = useState(true);
 
   // Reusable Audio Speak Hook
-  const { speakText, triggerAutoplay } = useSpeak();
+  const { speakText, triggerAutoplay, stop } = useSpeak();
 
   // Round stats trackers
   const [recentAskedIds, setRecentAskedIds] = useState<string[]>([]);
@@ -345,18 +345,76 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     }
   }, [wordStates, currentQuestion, isFinished, selectNextWord, resumePromptOpen]);
 
-  // Autoplay speech trigger handlers (safe hook consumption)
+  // Stable speech trigger handlers for manual user actions
+  const handleSpeakPrompt = useCallback(() => {
+    if (!currentQuestion) return;
+    speakText(currentQuestion.prompt, {
+      audioUrl: currentQuestion.direction === "en-vi" ? currentQuestion.word.audio_url || undefined : undefined,
+    });
+  }, [currentQuestion, speakText]);
+
+  const handleSpeakExplanationWord = useCallback(() => {
+    if (!currentQuestion) return;
+    speakText(currentQuestion.word.word, {
+      audioUrl: currentQuestion.word.audio_url || undefined,
+    });
+  }, [currentQuestion, speakText]);
+
+  const handleToggleAutoPlayQuestion = useCallback(() => {
+    setAutoPlayQuestionAudio((prev) => {
+      const next = !prev;
+      if (!next) {
+        stop();
+      }
+      return next;
+    });
+  }, [stop]);
+
+  const handleToggleAutoPlayExplanation = useCallback(() => {
+    setAutoPlayExplanationAudio((prev) => {
+      const next = !prev;
+      if (!next) {
+        stop();
+      }
+      return next;
+    });
+  }, [stop]);
+
+  // Autoplay speech trigger handlers (scoped per question attempt index)
   useEffect(() => {
     if (currentQuestion && currentQuestion.direction === "en-vi" && answerState === "unanswered") {
-      triggerAutoplay(currentQuestion.id, currentQuestion.prompt, autoPlayQuestionAudio);
+      const token = `prompt:${currentQuestion.id}#${totalQuestions}`;
+      triggerAutoplay(token, currentQuestion.prompt, autoPlayQuestionAudio, {
+        audioUrl: currentQuestion.word.audio_url || undefined,
+      });
     }
-  }, [currentQuestion, answerState, autoPlayQuestionAudio, triggerAutoplay]);
+  }, [
+    currentQuestion?.id,
+    currentQuestion?.direction,
+    currentQuestion?.prompt,
+    currentQuestion?.word.audio_url,
+    answerState,
+    autoPlayQuestionAudio,
+    totalQuestions,
+    triggerAutoplay,
+  ]);
 
   useEffect(() => {
     if (currentQuestion && answerState !== "unanswered") {
-      triggerAutoplay(currentQuestion.id + "-ex", currentQuestion.word.word, autoPlayExplanationAudio);
+      const token = `explanation:${currentQuestion.id}#${totalQuestions}`;
+      triggerAutoplay(token, currentQuestion.word.word, autoPlayExplanationAudio, {
+        audioUrl: currentQuestion.word.audio_url || undefined,
+      });
     }
-  }, [currentQuestion, answerState, autoPlayExplanationAudio, triggerAutoplay]);
+  }, [
+    currentQuestion?.id,
+    currentQuestion?.word.word,
+    currentQuestion?.word.audio_url,
+    answerState,
+    autoPlayExplanationAudio,
+    totalQuestions,
+    triggerAutoplay,
+  ]);
 
   // Check Answer evaluations
   const handleCheckAnswer = useCallback((answerText: string) => {
@@ -379,6 +437,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
 
   const handleContinue = useCallback(() => {
     if (!currentQuestion) return;
+
+    // Stop active audio immediately upon advancing question
+    stop();
 
     const isSuccessful = answerState === "correct" || answerState === "near";
     setTotalQuestions((prev) => prev + 1);
@@ -418,10 +479,12 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     settings,
     saveSessionState,
     enqueueSave,
+    stop,
   ]);
 
   // Re-run session initialization
   const handleRestart = () => {
+    stop();
     setWordStates(AdaptiveEngine.initializeStates(initialWords));
     setWords(initialWords as LearnWord[]);
     setCurrentQuestion(null);
@@ -437,9 +500,10 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
   };
 
   const handleLeave = useCallback(async () => {
+    stop();
     await flushSaveQueue();
     await onBack();
-  }, [flushSaveQueue, onBack]);
+  }, [flushSaveQueue, onBack, stop]);
 
   const handleSaveEdit = useCallback((updated: EditableVocabulary) => {
     setWords((prev) =>
@@ -684,8 +748,8 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
                 onToggleStar={handleToggleStar}
                 isStarred={Boolean(currentWord?.is_starred)}
                 autoPlayQuestionAudio={autoPlayQuestionAudio}
-                onToggleAutoPlayQuestion={() => setAutoPlayQuestionAudio((prev) => !prev)}
-                onSpeakPrompt={() => speakText(currentQuestion.prompt)}
+                onToggleAutoPlayQuestion={handleToggleAutoPlayQuestion}
+                onSpeakPrompt={handleSpeakPrompt}
               />
             ) : (
               <LearnInput
@@ -700,8 +764,8 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
                 onToggleStar={handleToggleStar}
                 isStarred={Boolean(currentWord?.is_starred)}
                 autoPlayQuestionAudio={autoPlayQuestionAudio}
-                onToggleAutoPlayQuestion={() => setAutoPlayQuestionAudio((prev) => !prev)}
-                onSpeakPrompt={() => speakText(currentQuestion.prompt)}
+                onToggleAutoPlayQuestion={handleToggleAutoPlayQuestion}
+                onSpeakPrompt={handleSpeakPrompt}
               />
             )}
 
@@ -712,8 +776,11 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
                 onContinue={handleContinue}
                 autoContinue={settings.autoContinue}
                 autoPlayExplanationAudio={autoPlayExplanationAudio}
-                onToggleAutoPlayExplanation={() => setAutoPlayExplanationAudio((prev) => !prev)}
-                onSpeakWord={() => speakText(currentQuestion.word.word)}
+                onToggleAutoPlayExplanation={handleToggleAutoPlayExplanation}
+                onSpeakWord={handleSpeakExplanationWord}
+                correctAnswer={currentQuestion.correctAnswer}
+                direction={currentQuestion.direction}
+                questionType={currentQuestion.type}
               />
             )}
           </>

@@ -47,11 +47,13 @@ import type {
 } from "@/lib/ai/schemas/contextual-mcq";
 import type { WordStudyItem } from "@/lib/learning/adaptive-flow-engine";
 import { FlashcardDeck } from "@/components/features/flashcard/FlashcardDeck";
+import type { FlashcardRow } from "@/components/features/flashcard/flashcard-utils";
 import { DictionaryLearningPanel } from "@/components/features/dictionary/DictionaryLearningPanel";
 import { InlineDictionaryPopup } from "@/components/features/dictionary/InlineDictionaryPopup";
 import { HighlightedExample } from "@/components/common/HighlightedExample";
 import { WordSelectionView } from "./WordSelectionView";
 import type { VocabularyWithReview } from "@/lib/learning/mastery-selection";
+import { formatCompactMeaning } from "@/lib/learning/distractor-generator";
 
 interface AdaptiveLearningFlowProps {
   initialWords: WordStudyItem[];
@@ -742,7 +744,7 @@ export function AdaptiveLearningFlow({
             className="w-full"
           >
             <FlashcardDeck
-              word={currentFlashcard as any}
+              word={currentFlashcard as unknown as FlashcardRow}
               flipped={flipped}
               frontMode="term"
               onFlip={() => setFlipped((prev) => !prev)}
@@ -1011,7 +1013,7 @@ export function AdaptiveLearningFlow({
                     setSelectedOptionIndex(idx);
                   }}
                   className={cn(
-                    "flex items-center gap-3.5 rounded-xl border p-4 text-left text-sm transition-all cursor-pointer",
+                    "flex items-center gap-3.5 rounded-xl border p-3.5 sm:p-4 text-left text-sm transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] h-full",
                     optionStyle
                   )}
                 >
@@ -1025,9 +1027,27 @@ export function AdaptiveLearningFlow({
                   >
                     {letter}
                   </span>
-                  <span className="flex-1 font-medium text-sm leading-snug select-text">
-                    {option}
-                  </span>
+                  <div className="flex flex-col min-w-0 flex-1 justify-center">
+                    <span className="font-semibold text-sm leading-snug select-text">
+                      {option}
+                    </span>
+                    {submissionResult ? (() => {
+                      const matchedWord = activeWords.find(
+                        (w) => w.word.toLowerCase() === option.toLowerCase()
+                      );
+                      const meaning =
+                        matchedWord?.meaning ||
+                        (idx === submissionResult.correctAnswerIndex
+                          ? submissionResult.meaning || ""
+                          : "");
+                      if (!meaning) return null;
+                      return (
+                        <span className="text-xs text-muted-foreground/80 leading-snug break-words mt-0.5 line-clamp-2 font-normal italic animate-in fade-in duration-150">
+                          {formatCompactMeaning(meaning)}
+                        </span>
+                      );
+                    })() : null}
+                  </div>
                   {submissionResult && idx === submissionResult.correctAnswerIndex && (
                     <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
                   )}
