@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SmartTextSelectionTranslator } from "@/components/features/selection-translation/SmartTextSelectionTranslator";
+import { FloatingChatWidget } from "@/components/features/ai/floating-chat/FloatingChatWidget";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export function Providers({ children }: ProvidersProps) {
         <InstallPrompt />
         <ServiceWorkerRegister />
         <SmartTextSelectionTranslator />
+        <FloatingChatWidget />
       </SidebarProvider>
     </ThemeProvider>
   );

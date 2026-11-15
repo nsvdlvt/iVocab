@@ -52,7 +52,7 @@ export function ChatInput({ onSendMessage, disabled = false }: ChatInputProps) {
           disabled={disabled}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Hỏi trợ lý ảo về ngữ pháp, phát âm hoặc cách dùng từ..."
-          className="flex-1 rounded-xl bg-card border-border h-11 text-sm shadow-sm focus-visible:ring-1"
+          className="flex-1 rounded-xl bg-card border-border h-11 text-base md:text-sm shadow-sm focus-visible:ring-1"
         />
         <Button
           type="submit"

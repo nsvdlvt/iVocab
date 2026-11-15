@@ -95,7 +95,7 @@ export function AITestClient() {
               type="text"
               value={word}
               onChange={(e) => setWord(e.target.value)}
-              className="w-full px-3 py-2 text-sm border rounded-xl bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 text-base md:text-sm border rounded-xl bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -105,7 +105,7 @@ export function AITestClient() {
               rows={3}
               value={sentence}
               onChange={(e) => setSentence(e.target.value)}
-              className="w-full px-3 py-2 text-sm border rounded-xl bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              className="w-full px-3 py-2 text-base md:text-sm border rounded-xl bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
 

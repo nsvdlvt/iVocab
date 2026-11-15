@@ -35,7 +35,7 @@ interface VocabularyCardProps {
 }
 
 const inputBaseClass =
-  "h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+  "h-9 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
 
 function VocabularyCardComponent({
   index,
@@ -171,7 +171,7 @@ function VocabularyCardComponent({
               value={draft.ipa}
               onChange={(e) => handleFieldChange("ipa", e.target.value)}
               disabled={isPending}
-              className={cn(inputBaseClass, "font-mono text-xs")}
+              className={cn(inputBaseClass, "font-mono text-base md:text-xs")}
             />
           </div>
 

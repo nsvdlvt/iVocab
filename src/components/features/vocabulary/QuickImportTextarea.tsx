@@ -28,7 +28,7 @@ export function QuickImportTextarea({
         value={text}
         onChange={(e) => onChangeText(e.target.value)}
         disabled={isPending}
-        className="min-h-[175px] w-full flex-1 resize-none rounded-xl border border-input bg-background p-3 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
+        className="min-h-[175px] w-full flex-1 resize-none rounded-xl border border-input bg-background p-3 font-mono text-base md:text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/55 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
       />
       <div className="flex items-center justify-between px-1 text-[11px] text-muted-foreground select-none">
         <span>Mỗi dòng tương ứng với 1 thẻ từ vựng</span>

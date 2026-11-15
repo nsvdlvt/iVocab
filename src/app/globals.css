@@ -133,6 +133,32 @@
   kbd {
     @apply inline-flex items-center justify-center rounded border border-border bg-muted/70 px-1.5 py-0.5 font-mono text-[11px] font-medium text-muted-foreground shadow-[0_1px_0_0_var(--border)];
   }
+
+  /* Prevent 300ms tap delay and accidental double-tap zoom while preserving pinch-to-zoom */
+  button,
+  input,
+  textarea,
+  select,
+  a {
+    touch-action: manipulation;
+  }
+
+  /* iOS Safari Auto-Zoom Prevention:
+     Enforce a minimum font-size of 16px on mobile viewports (< 768px)
+     so iOS Safari will never auto-zoom on input focus.
+     On desktop (>= 768px), individual utility classes like text-sm take precedence. */
+  @media screen and (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    textarea,
+    select,
+    [contenteditable="true"] {
+      font-size: 16px !important;
+    }
+    input::placeholder,
+    textarea::placeholder {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @utility perspective-1000 {

@@ -271,7 +271,7 @@ export function AIImportDialog({
                   value={topicPrompt}
                   onChange={(e) => setTopicPrompt(e.target.value)}
                   placeholder="Ví dụ: Từ vựng IELTS Speaking & Writing Band 7.5 về biến đổi khí hậu, năng lượng tái tạo..."
-                  className="min-h-[105px] w-full resize-none rounded-xl border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
+                  className="min-h-[105px] w-full resize-none rounded-xl border border-input bg-background p-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
                   disabled={isProcessing}
                 />
               </div>
@@ -407,7 +407,7 @@ export function AIImportDialog({
                   value={passageText}
                   onChange={(e) => setPassageText(e.target.value)}
                   placeholder="Dán đoạn văn tiếng Anh tại đây. AI sẽ quét và tự động trích lọc các từ/cụm từ quan trọng nhất..."
-                  className="min-h-[140px] w-full resize-none rounded-xl border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
+                  className="min-h-[140px] w-full resize-none rounded-xl border border-input bg-background p-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none"
                   disabled={isProcessing}
                 />
               </div>
@@ -461,7 +461,7 @@ export function AIImportDialog({
                   value={customWordsText}
                   onChange={(e) => setCustomWordsText(e.target.value)}
                   placeholder="Ví dụ: resilient, elaborate, meticulous, pragmatic, ubiquitous..."
-                  className="min-h-[140px] w-full resize-none rounded-xl border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none font-mono text-xs"
+                  className="min-h-[140px] w-full resize-none rounded-xl border border-input bg-background p-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/50 transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none font-mono"
                   disabled={isProcessing}
                 />
               </div>

@@ -89,7 +89,7 @@ export function ContextualTranslationCard({
               value={word}
               onChange={(e) => setWord(e.target.value)}
               placeholder="e.g. run"
-              className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full h-10 px-3 rounded-xl border border-border bg-background text-base md:text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
@@ -100,7 +100,7 @@ export function ContextualTranslationCard({
               value={sentence}
               onChange={(e) => setSentence(e.target.value)}
               placeholder="e.g. She decided to run her own startup company."
-              className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full h-10 px-3 rounded-xl border border-border bg-background text-base md:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>

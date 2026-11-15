@@ -314,7 +314,7 @@ export function AIImportPreview({
                           <input
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="h-7 w-36 rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                            className="h-7 w-36 rounded-md border border-input bg-background px-2 text-base md:text-xs focus:outline-none"
                             autoFocus
                           />
                           <button
@@ -359,7 +359,7 @@ export function AIImportPreview({
                           <input
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="h-7 w-28 rounded-md border border-input bg-background px-2 font-mono text-xs focus:outline-none"
+                            className="h-7 w-28 rounded-md border border-input bg-background px-2 font-mono text-base md:text-xs focus:outline-none"
                             autoFocus
                           />
                           <button
@@ -415,7 +415,7 @@ export function AIImportPreview({
                         <input
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="h-6 w-24 rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                          className="h-6 w-24 rounded-md border border-input bg-background px-2 text-base md:text-xs focus:outline-none"
                           autoFocus
                         />
                         <button
@@ -473,7 +473,7 @@ export function AIImportPreview({
                         <input
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-base md:text-xs focus:outline-none"
                           autoFocus
                         />
                         <button
@@ -522,7 +522,7 @@ export function AIImportPreview({
                         <input
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-base md:text-xs focus:outline-none"
                           autoFocus
                         />
                         <button
@@ -586,7 +586,7 @@ export function AIImportPreview({
                         <input
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none"
+                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-base md:text-xs focus:outline-none"
                           autoFocus
                         />
                         <button

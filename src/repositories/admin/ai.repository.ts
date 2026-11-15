@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { request as sendAiRequest } from "@/lib/ai/responsesClient";
 import { adminFallbackStore, FallbackAiLog } from "@/lib/admin/fallback-store";
-import { getAiApiKey, AI_MODEL } from "@/lib/ai/constants";
+import { getAiApiKey, getAiModel, AI_MODEL, isUsingOpenRouter } from "@/lib/ai/constants";
 
 export interface AiTelemetryStats {
   totalRequests: number;
@@ -64,8 +64,8 @@ export class AdminAiRepository {
           avgDurationMs: avgDuration,
           totalTokens,
           estimatedCostUsd: estimatedCost,
-          activeProvider: "ModelAPI",
-          configuredModel: AI_MODEL,
+          activeProvider: isUsingOpenRouter() ? "OpenRouter" : "ModelAPI",
+          configuredModel: getAiModel(),
           isApiKeyConfigured,
           isDatabaseLive: true,
         };
@@ -90,8 +90,8 @@ export class AdminAiRepository {
       avgDurationMs: avgDuration,
       totalTokens,
       estimatedCostUsd: estimatedCost,
-      activeProvider: "ModelAPI",
-      configuredModel: AI_MODEL,
+      activeProvider: isUsingOpenRouter() ? "OpenRouter" : "ModelAPI",
+      configuredModel: getAiModel(),
       isApiKeyConfigured,
       isDatabaseLive: false,
     };
@@ -162,8 +162,8 @@ export class AdminAiRepository {
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: "modelapi",
-        model: AI_MODEL,
+        provider: isUsingOpenRouter() ? "openrouter" : "modelapi",
+        model: getAiModel(),
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: Math.round(textOutput.length / 4),
         total_tokens: Math.round((promptText.length + textOutput.length) / 4),
@@ -185,8 +185,8 @@ export class AdminAiRepository {
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: "modelapi",
-        model: AI_MODEL,
+        provider: isUsingOpenRouter() ? "openrouter" : "modelapi",
+        model: getAiModel(),
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: 0,
         total_tokens: Math.round(promptText.length / 4),

@@ -96,7 +96,7 @@ export function FilterBar({ onAddClick }: FilterBarProps) {
             placeholder="Tìm bộ từ theo tên hoặc mô tả..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="h-9 w-full rounded-lg pl-9 pr-8 text-xs sm:text-sm"
+            className="h-9 w-full rounded-lg pl-9 pr-8 text-base md:text-sm"
           />
           {searchVal && (
             <button

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 import { Database } from "@/types/database";
-import { getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
+import { getAiApiKey, getAiBaseUrl, getAiHeaders, isUsingOpenRouter } from "@/lib/ai/constants";
 
 export type HealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
 
@@ -73,22 +73,24 @@ export class AdminHealthRepository {
   static async checkAiProvider(): Promise<SystemHealthResult> {
     const apiKey = getAiApiKey();
     const baseURL = getAiBaseUrl();
+    const serviceName = isUsingOpenRouter() ? "OpenRouter AI" : "Gemini AI";
 
     const start = performance.now();
     try {
       const res = await fetch(`${baseURL}/models`, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
+          ...getAiHeaders(),
         },
         signal: AbortSignal.timeout(5000),
       });
       const latencyMs = Math.round(performance.now() - start);
       if (res.ok) {
-        return { service: "Gemini AI", status: "healthy", latencyMs };
+        return { service: serviceName, status: "healthy", latencyMs };
       }
-      return { service: "Gemini AI", status: "degraded", latencyMs, message: `Status code: ${res.status}` };
+      return { service: serviceName, status: "degraded", latencyMs, message: `Status code: ${res.status}` };
     } catch (e: unknown) {
-      return { service: "Gemini AI", status: "unhealthy", message: e instanceof Error ? e.message : String(e) };
+      return { service: serviceName, status: "unhealthy", message: e instanceof Error ? e.message : String(e) };
     }
   }
 

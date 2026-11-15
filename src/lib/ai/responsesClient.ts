@@ -1,4 +1,14 @@
-import { AI_MODEL, DEFAULT_AI_MODELS, getAiApiKey, getAiBaseUrl } from "@/lib/ai/constants";
+import {
+  AI_MODEL,
+  DEFAULT_AI_MODELS,
+  getAiApiKey,
+  getAiBaseUrl,
+  getAiFallbackModels,
+  getAiHeaders,
+  getAiModel,
+  getAiProvider,
+  isUsingOpenRouter,
+} from "@/lib/ai/constants";
 import { AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
 import crypto from "crypto";
 
@@ -55,14 +65,19 @@ export async function request<T = unknown>(
   const apiKey = getAiApiKey();
   const baseURL = getAiBaseUrl();
 
-  let requestedModel = payload.model ?? AI_MODEL;
-  if (requestedModel.startsWith("gemini-")) {
-    requestedModel = AI_MODEL;
+  let requestedModel = payload.model ?? getAiModel();
+  if (requestedModel.startsWith("gemini-") && !requestedModel.includes("/")) {
+    if (isUsingOpenRouter()) {
+      requestedModel = `google/${requestedModel}`;
+    } else {
+      requestedModel = getAiModel();
+    }
   }
 
+  const fallbackModels = getAiFallbackModels();
   const modelsToTry = [
     requestedModel,
-    ...DEFAULT_AI_MODELS.filter((m) => m !== requestedModel),
+    ...fallbackModels.filter((m) => m !== requestedModel),
   ];
 
   // Convert input to OpenAI chat messages format
@@ -110,7 +125,7 @@ export async function request<T = unknown>(
     const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
 
     if (process.env.NODE_ENV === "development") {
-      console.log("[responsesClient:modelapi] Outbound payload", {
+      console.log(`[responsesClient:${getAiProvider()}] Outbound payload`, {
         callerFile,
         endpoint,
         model,
@@ -141,6 +156,7 @@ export async function request<T = unknown>(
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
+            ...getAiHeaders(),
           },
           body: bodyJson,
           signal: controller.signal,
@@ -158,6 +174,10 @@ export async function request<T = unknown>(
             }
           } catch {
             // keep raw txt
+          }
+
+          if (response.status === 402) {
+            parsedErrorMsg = `Tài khoản AI (${getAiProvider()}) hết hạn mức hoặc chưa nạp credit: ${parsedErrorMsg}`;
           }
 
           const error = new AIResponseError(`API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);

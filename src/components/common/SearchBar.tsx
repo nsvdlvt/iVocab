@@ -21,7 +21,7 @@ export function SearchBar() {
       <Input
         type="search"
         placeholder="Tìm kiếm từ vựng, bộ học..."
-        className="w-full pl-9 pr-16 bg-muted/30 border-border rounded-xl focus-visible:ring-1 text-sm h-9 transition-all hover:bg-muted/50"
+        className="w-full pl-9 pr-16 bg-muted/30 border-border rounded-xl focus-visible:ring-1 text-base md:text-sm h-9 transition-all hover:bg-muted/50"
         readOnly
       />
       <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground shadow-sm flex h-5">

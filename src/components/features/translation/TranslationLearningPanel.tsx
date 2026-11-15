@@ -213,7 +213,7 @@ export function TranslationLearningPanel({ className }: { className?: string }) 
             placeholder="Nhập từ, cụm từ, câu hoặc đoạn văn bản cần dịch (Ctrl + Enter để dịch)..."
             rows={4}
             maxLength={5000}
-            className="w-full resize-y rounded-xl border border-transparent bg-transparent text-sm sm:text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            className="w-full resize-y rounded-xl border border-transparent bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
           />
         </div>
 

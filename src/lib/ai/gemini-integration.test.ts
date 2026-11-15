@@ -10,7 +10,7 @@ describe.sequential("Gemini AI Integration", () => {
   it("should ping Gemini AI health check successfully", async () => {
     const health = await AdminHealthRepository.checkAiProvider();
     expect(health.status).toBe("healthy");
-    expect(health.service).toBe("Gemini AI");
+    expect(["Gemini AI", "OpenRouter AI"]).toContain(health.service);
   }, 20000);
 
   it("should generate a simple text response via responsesClient", async () => {
