@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database";
 import { VocabSetRepository } from "@/repositories/vocab-set.repository";
 import { VocabularyRepository } from "@/repositories/vocabulary.repository";
-import { ReviewRepository } from "@/repositories/review.repository";
 import { VocabularyStatsService } from "@/lib/statistics/vocabulary-stats.service";
 import { VocabSetSummaryService } from "@/lib/statistics/vocab-set-summary.service";
 import { classifyForecastRow } from "@/lib/srs/upcoming-reviews";
@@ -42,6 +41,8 @@ export class AgentExecutor {
           return await this.searchVocabulary(rawArgs);
         case "get_vocabulary_details":
           return await this.getVocabularyDetails(rawArgs);
+        case "lookup_dictionary_word":
+          return await this.lookupDictionaryWord(rawArgs);
         case "find_duplicate_vocabularies":
           return await this.findDuplicateVocabularies(rawArgs);
         case "get_vocabularies_by_cefr":
@@ -51,13 +52,13 @@ export class AgentExecutor {
         case "get_review_schedule":
           return await this.getReviewSchedule(rawArgs);
         case "get_srs_sets_distribution":
-          return await this.getSrsSetsDistribution(rawArgs);
+          return await this.getSrsSetsDistribution();
         case "get_learning_history":
           return await this.getLearningHistory(rawArgs);
         case "get_frequently_incorrect_words":
           return await this.getFrequentlyIncorrectWords(rawArgs);
         case "get_sets_learning_comparison":
-          return await this.getSetsLearningComparison(rawArgs);
+          return await this.getSetsLearningComparison();
 
         // --- Safe Writes ---
         case "create_vocab_set":
@@ -420,6 +421,62 @@ export class AgentExecutor {
     };
   }
 
+  private async lookupDictionaryWord(args: Record<string, unknown>): Promise<ToolExecutionResult> {
+    const rawWord = typeof args.word === "string" ? args.word.trim() : "";
+    if (!rawWord) {
+      return {
+        error: "Vui lòng cung cấp từ vựng tiếng Anh cần tra cứu.",
+        summary: "Thiếu từ khóa tra cứu từ điển.",
+      };
+    }
+
+    try {
+      const { DictionaryService } = await import("@/lib/dictionary/dictionary.service");
+      const dictService = new DictionaryService();
+      const result = await dictService.lookup(rawWord);
+
+      if (!result) {
+        return {
+          data: {
+            word: rawWord,
+            found: false,
+            message: `Không tìm thấy từ "${rawWord}" trong hệ thống từ điển chuẩn của Vocabee.`,
+          },
+          summary: `Không tìm thấy từ "${rawWord}" trong từ điển Vocabee.`,
+        };
+      }
+
+      return {
+        data: {
+          word: result.word,
+          ipa: result.ipa || result.ipaUs || result.ipaUk || "",
+          primaryVietnamese: result.primaryVietnamese || "",
+          collocations: result.collocations || [],
+          meanings: (result.meanings || []).map((m) => ({
+            part_of_speech: m.partOfSpeech,
+            vietnamese_summary: m.vietnameseSummary,
+            definitions: (m.definitions || []).map((d) => ({
+              definition_en: d.definitionEn,
+              definition_vi: d.definitionVi,
+              example_en: d.exampleEn,
+              example_vi: d.exampleVi,
+            })),
+            synonyms: m.synonyms || [],
+            antonyms: m.antonyms || [],
+          })),
+          source: "Vocabee Official Dictionary",
+        },
+        summary: `Đã tra cứu thành công từ "${result.word}" trong từ điển Vocabee (IPA: /${result.ipa || ""}/).`,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        error: `Lỗi khi tra cứu từ điển: ${msg}`,
+        summary: `Không thể tra cứu từ "${rawWord}" từ từ điển.`,
+      };
+    }
+  }
+
   private async findDuplicateVocabularies(args: Record<string, unknown>): Promise<ToolExecutionResult> {
     const supabase = await createClient();
     const setId = typeof args.set_id === "string" ? args.set_id.trim() : null;
@@ -699,7 +756,7 @@ export class AgentExecutor {
     };
   }
 
-  private async getSrsSetsDistribution(args: Record<string, unknown>): Promise<ToolExecutionResult> {
+  private async getSrsSetsDistribution(): Promise<ToolExecutionResult> {
     const supabase = await createClient();
     const stats = await VocabularyStatsService.getUserVocabularyStats(this.userId);
     const now = new Date();
@@ -1019,7 +1076,7 @@ export class AgentExecutor {
     };
   }
 
-  private async getSetsLearningComparison(args: Record<string, unknown>): Promise<ToolExecutionResult> {
+  private async getSetsLearningComparison(): Promise<ToolExecutionResult> {
     const { data: sets } = await VocabSetRepository.getVocabSets(this.userId, { limit: 100 });
     const summaries = await VocabSetSummaryService.getUserVocabSetSummaries(this.userId);
 

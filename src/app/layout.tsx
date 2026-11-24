@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Fredoka } from "next/font/google";
 import { siteConfig } from "@/constants/site";
 import { Providers } from "@/providers/Providers";
 import "./globals.css";
@@ -9,6 +9,13 @@ const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-sans",
   subsets: ["vietnamese", "latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -78,7 +85,7 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} h-full overflow-x-hidden antialiased`}
+      className={`${beVietnamPro.variable} ${fredoka.variable} h-full overflow-x-hidden antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full overflow-x-hidden flex flex-col bg-background text-foreground">

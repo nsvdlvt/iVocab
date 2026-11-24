@@ -10,18 +10,11 @@ import {
   PendingConfirmation,
 } from "./types";
 import {
-  AI_MODEL,
-  getAiFallbackModels,
-  getAiModel,
-  isUsingOpenRouter,
-} from "@/lib/ai/constants";
-import {
-  getOpenRouterModels,
-  isOpenRouterConfigured,
   getMaxAgentSteps,
   sanitizeErrorMessage,
+  getOpenRouterChatModel,
+  getOpenRouterModelsForFeature,
 } from "@/lib/ai/openrouter/config";
-import { isRetryableModelError } from "@/lib/ai/openrouter/provider";
 import type {
   ChatCompletionMessageParam,
   ChatCompletionToolMessageParam,
@@ -33,6 +26,7 @@ export const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_vocab_set_details: "Tra cứu chi tiết bộ từ",
   search_vocabulary: "Tìm kiếm từ vựng",
   get_vocabulary_details: "Tra cứu thông tin từ vựng",
+  lookup_dictionary_word: "Tra cứu từ điển Vocabee",
   find_duplicate_vocabularies: "Quét từ vựng trùng lặp",
   get_vocabularies_by_cefr: "Lọc từ theo chuẩn CEFR",
   get_learning_progress: "Đọc dữ liệu tiến trình học",
@@ -137,7 +131,7 @@ export async function runAgentConversation(
   const executedToolSignatures = new Map<string, unknown>();
   const toolCallFrequencies = new Map<string, number>();
 
-  // Build initial message chain
+  // Build initial message chain with recent conversation context (trimmed for performance)
   const conversationMessages: ChatCompletionMessageParam[] = [
     { role: "system", content: VOCABEE_AGENT_SYSTEM_PROMPT },
     ...userMessages.slice(-15).map((m): ChatCompletionMessageParam => {
@@ -155,96 +149,45 @@ export async function runAgentConversation(
     }),
   ];
 
-  // Resolve models list in strict priority order
-  let modelsToTry: string[];
-  if (isOpenRouterConfigured()) {
-    modelsToTry = getOpenRouterModels();
-  } else {
-    let configuredModel =
-      process.env.OPENROUTER_MODEL?.trim() ||
-      process.env.AI_MODEL?.trim() ||
-      process.env.OPENAI_MODEL?.trim() ||
-      getAiModel();
-
-    if (configuredModel.startsWith("gemini-") && !configuredModel.includes("/")) {
-      if (isUsingOpenRouter()) {
-        configuredModel = `google/${configuredModel}`;
-      } else {
-        configuredModel = getAiModel();
-      }
-    }
-
-    const fallbackModels = getAiFallbackModels();
-    modelsToTry = [
-      configuredModel,
-      ...fallbackModels.filter((m) => m !== configuredModel),
-    ];
-  }
-
-  let chosenModel = modelsToTry[0] || AI_MODEL;
+  let chosenModel = getOpenRouterChatModel();
   let step = 0;
   let executedAnyDbTool = false;
   const isDataQuery = isPersonalDataQuery(userMessages);
 
+  const modelsToTry = getOpenRouterModelsForFeature("agent");
+
   while (step < maxSteps) {
     step += 1;
+    options?.onStatusChange?.("Đang phân tích yêu cầu...");
+
     let completion = null;
     let lastError: unknown = null;
 
-    options?.onStatusChange?.("Đang phân tích yêu cầu...");
-
-    // Try models in prioritized fallback order
-    for (let i = 0; i < modelsToTry.length; i++) {
-      const model = modelsToTry[i];
+    for (const model of modelsToTry) {
+      if (options?.signal?.aborted) break;
       try {
-        const response = await openai.chat.completions.create({
-          model,
-          messages: conversationMessages,
-          tools: AGENT_TOOLS,
-          tool_choice: "auto",
-          temperature: 0.2,
-        });
+        const response = await openai.chat.completions.create(
+          {
+            model,
+            messages: conversationMessages,
+            tools: AGENT_TOOLS,
+            tool_choice: "auto",
+            temperature: 0.2,
+          },
+          { signal: options?.signal }
+        );
 
         if (response && response.choices && response.choices.length > 0) {
-          const choice = response.choices[0];
-          // If this is the initial turn of a clear data query, but model returned 0 tools and there are other fallback models:
-          // Check if a fallback model might properly invoke tools instead of hallucinating or giving generic text
-          const hasToolCalls = Boolean(choice.message?.tool_calls && choice.message.tool_calls.length > 0);
-          if (step === 1 && isDataQuery && !hasToolCalls && i + 1 < modelsToTry.length) {
-            console.warn(
-              `[AgentOrchestrator] Model ${model} returned text without tool calls for data query. Trying next model ${modelsToTry[i + 1]} to check for tool calling...`
-            );
-            // Attempt next model to see if it supports tools
-            try {
-              const fallbackResponse = await openai.chat.completions.create({
-                model: modelsToTry[i + 1],
-                messages: conversationMessages,
-                tools: AGENT_TOOLS,
-                tool_choice: "auto",
-                temperature: 0.2,
-              });
-              if (fallbackResponse?.choices?.[0]?.message?.tool_calls?.length) {
-                completion = fallbackResponse;
-                chosenModel = modelsToTry[i + 1];
-                break;
-              }
-            } catch {
-              // fallback failed, stick with primary response
-            }
-          }
-
           completion = response;
           chosenModel = model;
           break;
         }
-      } catch (err) {
+      } catch (err: unknown) {
         lastError = err;
         const sanitized = sanitizeErrorMessage(err);
-        console.warn(`[AgentOrchestrator] Model "${model}" failed: ${sanitized}, trying next fallback...`);
-
-        if (!isRetryableModelError(err)) {
-          console.warn(`[AgentOrchestrator] Error on "${model}" was non-standard: ${sanitized}`);
-        }
+        console.warn(
+          `[AgentOrchestrator] Model "${model}" failed: ${sanitized}. Trying fallback...`
+        );
       }
     }
 
@@ -255,23 +198,24 @@ export async function runAgentConversation(
         reply: "Rất tiếc, máy chủ AI đang bận hoặc gặp sự cố kết nối. Vui lòng thử lại sau ít phút.",
         toolEvents: consolidateToolEvents(rawToolEvents),
         confirmation: null,
-        error: lastError instanceof Error ? sanitizeErrorMessage(lastError.message) : "API Error",
+        error: lastError ? sanitizeErrorMessage(lastError) : "API Error",
       };
     }
 
     const message = completion.choices[0].message;
     conversationMessages.push(message);
 
-    // If model made tool calls
+    // If model made tool calls (one or multiple in this turn)
     if (message.tool_calls && message.tool_calls.length > 0) {
       for (const call of message.tool_calls) {
         if (call.type !== "function") continue;
         const toolName = call.function.name;
         let toolArgs: Record<string, unknown> = {};
         try {
-          toolArgs = typeof call.function.arguments === "string"
-            ? JSON.parse(call.function.arguments || "{}")
-            : (call.function.arguments || {});
+          toolArgs =
+            typeof call.function.arguments === "string"
+              ? JSON.parse(call.function.arguments || "{}")
+              : call.function.arguments || {};
         } catch {
           toolArgs = {};
         }
@@ -358,17 +302,23 @@ export async function runAgentConversation(
     }
 
     // No tool calls -> Model generated final response text
-    // If client requested streaming text delta:
     const finalReply = message.content?.trim() || "";
 
-    // If streaming callback is active and final reply came non-streaming, stream it out
+    // If streaming callback is active and final reply exists, stream out in progressive chunks
     if (options?.onTextDelta && finalReply) {
-      options.onTextDelta(finalReply);
+      const tokens = finalReply.match(/(\S+\s*|\s+)/g) || [finalReply];
+      for (const token of tokens) {
+        if (options.signal?.aborted) break;
+        options.onTextDelta(token);
+        await new Promise((r) => setTimeout(r, 12));
+      }
     }
 
     // Anti-hallucination check: If user requested personal database stats but no tools were executed
     if (isDataQuery && !executedAnyDbTool && step === 1) {
-      console.warn("[AgentOrchestrator] Warning: Data query completed without any database tool execution.");
+      console.warn(
+        "[AgentOrchestrator] Warning: Data query completed without any database tool execution."
+      );
     }
 
     return {

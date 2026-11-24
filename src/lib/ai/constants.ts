@@ -1,12 +1,22 @@
 // src/lib/ai/constants.ts
 import {
   DEFAULT_OPENROUTER_MODELS,
+  DEFAULT_OPENROUTER_CHAT_MODEL,
+  DEFAULT_OPENROUTER_VOCAB_MODEL,
+  DEFAULT_OPENROUTER_FALLBACK_MODEL,
   getOpenRouterApiKey,
   getOpenRouterBaseUrl,
+  getOpenRouterModelsForFeature,
   getOpenRouterModels,
+  type AIFeature,
 } from "./openrouter/config";
 
-export { DEFAULT_OPENROUTER_MODELS };
+export {
+  DEFAULT_OPENROUTER_MODELS,
+  DEFAULT_OPENROUTER_CHAT_MODEL,
+  DEFAULT_OPENROUTER_VOCAB_MODEL,
+  DEFAULT_OPENROUTER_FALLBACK_MODEL,
+};
 
 export const DEFAULT_MODELAPI_MODELS = [
   "gpt-5.6-luna",
@@ -90,7 +100,11 @@ export function getAiHeaders(): Record<string, string> {
   return headers;
 }
 
-export function getAiModel(): string {
+export function getAiModel(feature?: AIFeature): string {
+  if (isUsingOpenRouter()) {
+    return getOpenRouterModelsForFeature(feature)[0];
+  }
+
   if (process.env.OPENROUTER_MODEL) {
     return process.env.OPENROUTER_MODEL.trim();
   }
@@ -98,27 +112,16 @@ export function getAiModel(): string {
     return process.env.AI_MODEL.trim();
   }
 
-  if (isUsingOpenRouter()) {
-    const configured = process.env.OPENAI_MODEL?.trim() || process.env.GEMINI_MODEL?.trim();
-    if (configured && !configured.startsWith("gpt-5.") && !configured.startsWith("gpt-6")) {
-      return configured;
-    }
-    const openRouterModels = getOpenRouterModels();
-    if (openRouterModels.length > 0) {
-      return openRouterModels[0];
-    }
-  }
-
   return (
     process.env.OPENAI_MODEL?.trim() ||
     process.env.GEMINI_MODEL?.trim() ||
-    DEFAULT_OPENROUTER_MODELS[0]
+    DEFAULT_OPENROUTER_CHAT_MODEL
   );
 }
 
-export function getAiFallbackModels(): string[] {
+export function getAiFallbackModels(feature?: AIFeature): string[] {
   if (isUsingOpenRouter()) {
-    return getOpenRouterModels();
+    return getOpenRouterModelsForFeature(feature);
   }
   return DEFAULT_MODELAPI_MODELS;
 }
@@ -133,4 +136,3 @@ export const DEFAULT_GEMINI_MODELS = DEFAULT_AI_MODELS;
 export const AI_BASE_URL = getAiBaseUrl();
 
 export const AI_MODEL = getAiModel();
-

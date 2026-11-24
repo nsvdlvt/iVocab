@@ -9,6 +9,113 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      personal_tests: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          schema_version: string;
+          content: Json;
+          total_words: number;
+          total_sets: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          schema_version?: string;
+          content: Json;
+          total_words: number;
+          total_sets: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          schema_version?: string;
+          content?: Json;
+          total_words?: number;
+          total_sets?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "personal_tests_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      personal_test_attempts: {
+        Row: {
+          id: string;
+          test_id: string;
+          user_id: string;
+          status: "in_progress" | "completed" | "abandoned";
+          mode: "practice" | "test";
+          answers: Json;
+          score: number;
+          total_questions: number;
+          correct_answers: number;
+          current_set_index: number;
+          current_exercise_index: number;
+          started_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          test_id: string;
+          user_id: string;
+          status: "in_progress" | "completed" | "abandoned";
+          mode: "practice" | "test";
+          answers?: Json;
+          score?: number;
+          total_questions?: number;
+          correct_answers?: number;
+          current_set_index?: number;
+          current_exercise_index?: number;
+          started_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          test_id?: string;
+          user_id?: string;
+          status?: "in_progress" | "completed" | "abandoned";
+          mode?: "practice" | "test";
+          answers?: Json;
+          score?: number;
+          total_questions?: number;
+          correct_answers?: number;
+          current_set_index?: number;
+          current_exercise_index?: number;
+          started_at?: string;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "personal_test_attempts_test_id_fkey";
+            columns: ["test_id"];
+            isOneToOne: false;
+            referencedRelation: "personal_tests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "personal_test_attempts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       profiles: {
         Row: {
           id: string;

@@ -33,6 +33,7 @@ export function useAiAssistant() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const msgCounter = useRef<number>(0);
+  const currentAbortControllerRef = useRef<AbortController | null>(null);
 
   // Sync current user ID & load conversation
   useEffect(() => {
@@ -139,6 +140,12 @@ export function useAiAssistant() {
       setIsLoading(true);
       setCurrentToolStatus("Đang phân tích yêu cầu...");
 
+      if (currentAbortControllerRef.current) {
+        currentAbortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      currentAbortControllerRef.current = controller;
+
       try {
         const response = await fetch("/api/ai/chat", {
           method: "POST",
@@ -153,6 +160,7 @@ export function useAiAssistant() {
             })),
             stream: true,
           }),
+          signal: controller.signal,
         });
 
         const contentType = response.headers.get("content-type") || "";
@@ -288,6 +296,10 @@ export function useAiAssistant() {
           setUnreadCount((prev) => prev + 1);
         }
       } catch (err: unknown) {
+        if (err instanceof Error && (err.name === "AbortError" || err.message.includes("aborted"))) {
+          return;
+        }
+
         msgCounter.current += 1;
         const errorText =
           err instanceof Error
@@ -306,6 +318,9 @@ export function useAiAssistant() {
 
         setMessages((prev) => [...prev, errAssistantMsg]);
       } finally {
+        if (currentAbortControllerRef.current === controller) {
+          currentAbortControllerRef.current = null;
+        }
         setIsLoading(false);
         setCurrentToolStatus(null);
       }
@@ -446,6 +461,15 @@ export function useAiAssistant() {
     setIsExpanded((prev) => !prev);
   }, []);
 
+  const abortCurrentRequest = useCallback(() => {
+    if (currentAbortControllerRef.current) {
+      currentAbortControllerRef.current.abort();
+      currentAbortControllerRef.current = null;
+      setIsLoading(false);
+      setCurrentToolStatus(null);
+    }
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -455,6 +479,7 @@ export function useAiAssistant() {
     isExpanded,
     unreadCount,
     sendMessage,
+    abortCurrentRequest,
     confirmAction,
     cancelAction,
     clearConversation,

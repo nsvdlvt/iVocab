@@ -15,6 +15,7 @@ const HIDDEN_PATH_PATTERNS = [
   "/sentence",
   "/ai-quiz",
   "/review/session/",
+  "/personal-test/",
 ];
 
 export function BottomNav() {

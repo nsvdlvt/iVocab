@@ -2,21 +2,36 @@
 
 /**
  * OpenRouter AI Provider Configuration
- * Centralized, secure configuration for OpenRouter integration.
+ * Centralized, secure configuration for Vocabee's OpenRouter integration.
  * NEVER expose OPENROUTER_API_KEY to client bundles or browser responses.
  */
 
 export const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
+// Primary and Fallback Models specified in project requirements
+export const DEFAULT_OPENROUTER_CHAT_MODEL = "google/gemma-4-26b-a4b-it:free";
+export const DEFAULT_OPENROUTER_VOCAB_MODEL = "google/gemma-4-26b-a4b-it:free";
+export const DEFAULT_OPENROUTER_FALLBACK_MODEL = "nvidia/nemotron-3.5-lightning:free";
+
 export const DEFAULT_OPENROUTER_MODELS: readonly string[] = [
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3.5-lightning:free",
-  "openrouter/free",
+  DEFAULT_OPENROUTER_CHAT_MODEL,
+  DEFAULT_OPENROUTER_FALLBACK_MODEL,
 ];
 
 export const DEFAULT_OPENROUTER_TIMEOUT_MS = 45000;
 export const DEFAULT_MAX_AGENT_STEPS = 5;
-export const DEFAULT_MAX_FALLBACK_RETRIES = 3;
+export const DEFAULT_MAX_FALLBACK_RETRIES = 2;
+
+export type AIFeature =
+  | "chat"
+  | "agent"
+  | "vocab"
+  | "grammar"
+  | "quiz"
+  | "sentence"
+  | "import"
+  | "writing"
+  | "general";
 
 /**
  * Returns the OpenRouter API key from server environment.
@@ -28,6 +43,20 @@ export function getOpenRouterApiKey(): string {
 }
 
 /**
+ * Asserts that OpenRouter has been configured with an API key.
+ * Throws a clear, descriptive configuration error if missing.
+ */
+export function assertOpenRouterConfigured(): string {
+  const key = getOpenRouterApiKey();
+  if (!key) {
+    throw new Error(
+      "Chưa cấu hình biến môi trường OPENROUTER_API_KEY. Vui lòng thêm OPENROUTER_API_KEY vào .env.local trên server."
+    );
+  }
+  return key;
+}
+
+/**
  * Returns the OpenRouter base URL.
  */
 export function getOpenRouterBaseUrl(): string {
@@ -36,23 +65,96 @@ export function getOpenRouterBaseUrl(): string {
 }
 
 /**
- * Returns the prioritized list of OpenRouter models.
- * Parses OPENROUTER_MODELS from comma-separated string if provided.
+ * Returns the primary Chat model.
  */
-export function getOpenRouterModels(): string[] {
-  const raw = process.env.OPENROUTER_MODELS;
-  if (raw && raw.trim().length > 0) {
-    const parsed = raw
+export function getOpenRouterChatModel(): string {
+  if (process.env.OPENROUTER_CHAT_MODEL) {
+    return process.env.OPENROUTER_CHAT_MODEL.trim();
+  }
+  if (process.env.OPENROUTER_MODEL) {
+    return process.env.OPENROUTER_MODEL.trim();
+  }
+  const aiModel = process.env.AI_MODEL?.trim();
+  if (aiModel && !aiModel.startsWith("gpt-5.") && !aiModel.startsWith("gpt-6")) {
+    return aiModel;
+  }
+  return DEFAULT_OPENROUTER_CHAT_MODEL;
+}
+
+/**
+ * Returns the primary Vocabulary & Grammar model.
+ */
+export function getOpenRouterVocabModel(): string {
+  return (
+    process.env.OPENROUTER_VOCAB_MODEL?.trim() ||
+    DEFAULT_OPENROUTER_VOCAB_MODEL
+  );
+}
+
+/**
+ * Returns the Fallback model for technical failure recovery.
+ */
+export function getOpenRouterFallbackModel(): string {
+  return (
+    process.env.OPENROUTER_FALLBACK_MODEL?.trim() ||
+    DEFAULT_OPENROUTER_FALLBACK_MODEL
+  );
+}
+
+/**
+ * Returns the prioritized list of OpenRouter models for a specific feature.
+ * Primary model is selected based on feature, followed by fallback model.
+ */
+export function getOpenRouterModelsForFeature(feature?: AIFeature): string[] {
+  let primary: string;
+
+  switch (feature) {
+    case "vocab":
+    case "grammar":
+    case "quiz":
+    case "sentence":
+    case "import":
+    case "writing":
+      primary = getOpenRouterVocabModel();
+      break;
+    case "chat":
+    case "agent":
+    case "general":
+    default:
+      primary = getOpenRouterChatModel();
+      break;
+  }
+
+  const fallback = getOpenRouterFallbackModel();
+  const models = [primary];
+
+  if (fallback && fallback !== primary) {
+    models.push(fallback);
+  }
+
+  // Also include any extra models from OPENROUTER_MODELS if explicitly provided
+  const rawExtra = process.env.OPENROUTER_MODELS;
+  if (rawExtra && rawExtra.trim().length > 0) {
+    const parsed = rawExtra
       .split(",")
       .map((m) => m.trim())
       .filter((m) => Boolean(m) && !m.startsWith("#"));
 
-    if (parsed.length > 0) {
-      return parsed;
+    for (const m of parsed) {
+      if (!models.includes(m)) {
+        models.push(m);
+      }
     }
   }
 
-  return [...DEFAULT_OPENROUTER_MODELS];
+  return models;
+}
+
+/**
+ * Returns general prioritized list of OpenRouter models (backwards compatibility).
+ */
+export function getOpenRouterModels(): string[] {
+  return getOpenRouterModelsForFeature("general");
 }
 
 /**
@@ -100,6 +202,10 @@ export function sanitizeErrorMessage(error: unknown): string {
   // Mask any sk- or Bearer tokens
   message = message.replace(/sk-[a-zA-Z0-9_\-]{8,}/g, "sk-***");
   message = message.replace(/Bearer\s+[a-zA-Z0-9_\-\.]+/gi, "Bearer ***");
+
+  if (message.includes("free-models-per-day")) {
+    return "Tài khoản OpenRouter đã dùng hết hạn mức 50 yêu cầu miễn phí trong ngày (free-models-per-day). Vui lòng thêm $5-10 credit vào OpenRouter để nâng hạn mức lên 1.000 lượt/ngày hoặc chờ reset lúc 00:00 UTC.";
+  }
 
   return message;
 }

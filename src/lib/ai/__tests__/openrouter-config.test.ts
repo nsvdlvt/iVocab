@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   isUsingOpenRouter,
   getAiProvider,
@@ -19,6 +19,9 @@ describe("OpenRouter & AI Configuration", () => {
     // Reset process.env before each test
     process.env = { ...originalEnv };
     delete process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_CHAT_MODEL;
+    delete process.env.OPENROUTER_VOCAB_MODEL;
+    delete process.env.OPENROUTER_FALLBACK_MODEL;
     delete process.env.OPENROUTER_MODEL;
     delete process.env.OPENROUTER_MODELS;
     delete process.env.OPENROUTER_BASE_URL;

@@ -2,17 +2,10 @@
 
 import React from "react";
 import Image from "next/image";
-import { Fredoka } from "next/font/google";
 import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MascotState } from "@/components/mascot/BeeMascot";
-
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-});
 
 export type LoadingContextKey =
   | "workspace"
@@ -817,8 +810,7 @@ export function BeeLoading({
       <div className="relative z-10 space-y-1.5 max-w-sm px-2">
         <h3
           className={cn(
-            "text-lg sm:text-xl font-bold tracking-tight text-[#030f31] dark:text-slate-100",
-            fredoka.className
+            "text-lg sm:text-xl font-bold tracking-tight text-[#030f31] dark:text-slate-100 font-fredoka"
           )}
         >
           {resolvedTitle}

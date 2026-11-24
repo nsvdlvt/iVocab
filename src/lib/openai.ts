@@ -1,10 +1,4 @@
-import OpenAI from "openai";
-import { getAiApiKey, getAiBaseUrl, getAiHeaders } from "@/lib/ai/constants";
+import { getOpenRouterClient } from "@/lib/ai/openrouter/provider";
 
-// Safe OpenAI client instance compatible with OpenRouter, ModelAPI, and OpenAI
-export const openai = new OpenAI({
-  apiKey: getAiApiKey(),
-  baseURL: getAiBaseUrl(),
-  defaultHeaders: getAiHeaders(),
-  timeout: 45000,
-});
+// Centralized OpenAI client instance configured for OpenRouter
+export const openai = getOpenRouterClient();

@@ -1,11 +1,5 @@
 import Image from "next/image";
-import { Fredoka } from "next/font/google";
 import { cn } from "@/lib/utils";
-
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
 
 type BrandLogoProps = {
   className?: string;
@@ -37,8 +31,7 @@ export function BrandLogo({
 
       <div
         className={cn(
-          "flex items-baseline leading-none tracking-[-0.04em] font-bold text-2xl sm:text-[1.65rem]",
-          fredoka.className,
+          "flex items-baseline leading-none tracking-[-0.04em] font-bold text-2xl sm:text-[1.65rem] font-fredoka",
           textClassName
         )}
       >

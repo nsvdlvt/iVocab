@@ -27,6 +27,9 @@ export const ROUTES = {
   AI: "/u/ai",
   STATISTICS: "/u/statistics",
   READING: "/u/reading",
+  PERSONAL_TEST: "/u/personal-test",
+  PERSONAL_TEST_TAKE: (id: string) => `/u/personal-test/${id}`,
+  PERSONAL_TEST_RESULT: (id: string, attemptId: string) => `/u/personal-test/${id}/result/${attemptId}`,
   DICTIONARY: "/u/dictionary",
   SETTINGS: "/u/settings",
   SETTINGS_PROFILE: "/u/settings/profile",
@@ -34,4 +37,4 @@ export const ROUTES = {
 } as const;
 
 export type AppRoutes =
-  typeof ROUTES[keyof Omit<typeof ROUTES, "VOCABULARY_DETAIL" | "SHARE_VOCABULARY_DETAIL" | "AI_QUIZ" | "SPEAKING" | "ETEAM_VOCAB_DETAIL" | "ETEAM_VOCAB_LEARN">] | string;
+  typeof ROUTES[keyof Omit<typeof ROUTES, "VOCABULARY_DETAIL" | "SHARE_VOCABULARY_DETAIL" | "AI_QUIZ" | "SPEAKING" | "ETEAM_VOCAB_DETAIL" | "ETEAM_VOCAB_LEARN" | "PERSONAL_TEST_TAKE" | "PERSONAL_TEST_RESULT">] | string;

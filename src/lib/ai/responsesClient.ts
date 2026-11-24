@@ -1,6 +1,5 @@
+// src/lib/ai/responsesClient.ts
 import {
-  AI_MODEL,
-  DEFAULT_AI_MODELS,
   getAiApiKey,
   getAiBaseUrl,
   getAiFallbackModels,
@@ -9,8 +8,13 @@ import {
   getAiProvider,
   isUsingOpenRouter,
 } from "@/lib/ai/constants";
+import {
+  executeChatCompletionWithFallback,
+  type AIFeature,
+} from "@/lib/ai/openrouter";
 import { AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
 import crypto from "crypto";
+import type { ChatCompletionContentPart, ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export interface InputPart {
   type: "input_text" | "input_image" | "input_file" | string;
@@ -32,6 +36,7 @@ export interface ResponsesRequestPayload {
       schema?: unknown;
     };
   };
+  feature?: AIFeature;
   [key: string]: unknown;
 }
 
@@ -59,34 +64,18 @@ interface OpenAIChatResponse {
 }
 
 export async function request<T = unknown>(
-  payload: Omit<ResponsesRequestPayload, "model"> & { model?: string },
+  payload: Omit<ResponsesRequestPayload, "model"> & { model?: string; feature?: AIFeature },
   abortSignal?: AbortSignal
 ): Promise<T> {
-  const apiKey = getAiApiKey();
-  const baseURL = getAiBaseUrl();
-
-  let requestedModel = payload.model ?? getAiModel();
-  if (requestedModel.startsWith("gemini-") && !requestedModel.includes("/")) {
-    if (isUsingOpenRouter()) {
-      requestedModel = `google/${requestedModel}`;
-    } else {
-      requestedModel = getAiModel();
-    }
-  }
-
-  const fallbackModels = getAiFallbackModels();
-  const modelsToTry = [
-    requestedModel,
-    ...fallbackModels.filter((m) => m !== requestedModel),
-  ];
+  const callerFile = getCallerFile();
 
   // Convert input to OpenAI chat messages format
-  const messages: Array<{ role: string; content: unknown }> = [];
+  const messages: ChatCompletionMessageParam[] = [];
 
   if (typeof payload.input === "string") {
     messages.push({ role: "user", content: payload.input });
   } else if (Array.isArray(payload.input)) {
-    const userContentParts: Array<Record<string, unknown>> = [];
+    const userContentParts: ChatCompletionContentPart[] = [];
     for (const part of payload.input) {
       if ((part.type === "input_text" || part.type === "text") && part.text) {
         userContentParts.push({ type: "text", text: part.text });
@@ -110,7 +99,55 @@ export async function request<T = unknown>(
     throw new AIResponseError("Không có nội dung để gửi tới AI.");
   }
 
-  const callerFile = getCallerFile();
+  // 1. If using OpenRouter, route through the Centralized OpenRouter Service
+  if (isUsingOpenRouter()) {
+    let feature: AIFeature = payload.feature || "vocab";
+    if (!payload.feature) {
+      if (callerFile.includes("sentence")) feature = "sentence";
+      else if (callerFile.includes("writing")) feature = "writing";
+      else if (callerFile.includes("quiz")) feature = "quiz";
+      else if (callerFile.includes("import")) feature = "import";
+    }
+
+    try {
+      const result = await executeChatCompletionWithFallback({
+        messages,
+        feature,
+        signal: abortSignal,
+        modelsOverride: payload.model ? [payload.model] : undefined,
+        temperature: 0.3,
+      });
+
+      const replyText = result.completion.choices?.[0]?.message?.content ?? "";
+      if (!replyText) {
+        throw new AIResponseError("AI không trả về nội dung hợp lệ.");
+      }
+
+      return replyText as unknown as T;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.name === "AbortError" || err.message.includes("bị hủy") || err.message.includes("Timeout")) {
+          throw new AIAbortError("Yêu cầu AI bị gián đoạn hoặc quá thời gian xử lý.");
+        }
+        if (err.message.includes("kết nối") || err.message.includes("network")) {
+          throw new AINetworkError(`Lỗi kết nối mạng: ${err.message}`);
+        }
+        throw new AIResponseError(err.message);
+      }
+      throw new AIResponseError(String(err));
+    }
+  }
+
+  // 2. Fallback for non-OpenRouter legacy custom providers
+  const apiKey = getAiApiKey();
+  const baseURL = getAiBaseUrl();
+  const requestedModel = payload.model ?? getAiModel();
+  const fallbackModels = getAiFallbackModels();
+  const modelsToTry = [
+    requestedModel,
+    ...fallbackModels.filter((m) => m !== requestedModel),
+  ];
+
   let lastError: unknown = null;
 
   for (const model of modelsToTry) {
@@ -177,12 +214,11 @@ export async function request<T = unknown>(
           }
 
           if (response.status === 402) {
-            parsedErrorMsg = `Tài khoản AI (${getAiProvider()}) hết hạn mức hoặc chưa nạp credit: ${parsedErrorMsg}`;
+            parsedErrorMsg = `Tài khoản AI (${getAiProvider()}) hết hạn mức: ${parsedErrorMsg}`;
           }
 
           const error = new AIResponseError(`API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);
 
-          // Fallback to next model if model unavailable / deprecated / high demand
           if (
             response.status === 404 ||
             response.status === 429 ||
@@ -191,7 +227,7 @@ export async function request<T = unknown>(
             response.status === 504
           ) {
             lastError = error;
-            break; // Break inner retry loop to try next model
+            break;
           }
 
           if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
@@ -206,7 +242,6 @@ export async function request<T = unknown>(
         const txt = await response.text();
         const data = JSON.parse(txt) as OpenAIChatResponse;
 
-        // Parse content from chat completions choice or responses fallback
         const replyText =
           data.choices?.[0]?.message?.content ??
           data.output?.[0]?.content?.[0]?.text ??
@@ -271,7 +306,13 @@ function isRetryableResponseStatus(status: number): boolean {
 
 function isRetryableMessage(message: string): boolean {
   const lower = message.toLowerCase();
-  return lower.includes("502") || lower.includes("503") || lower.includes("504") || lower.includes("high demand") || lower.includes("no available channel");
+  return (
+    lower.includes("502") ||
+    lower.includes("503") ||
+    lower.includes("504") ||
+    lower.includes("high demand") ||
+    lower.includes("no available channel")
+  );
 }
 
 function backoffMs(attempt: number): number {

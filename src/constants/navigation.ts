@@ -32,6 +32,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     href: ROUTES.READING,
     iconName: "BookOpen",
   },
+  {
+    title: "Bài kiểm tra cá nhân",
+    href: ROUTES.PERSONAL_TEST,
+    iconName: "ClipboardCheck",
+  },
 ];
 
 export const SECONDARY_NAVIGATION_ITEMS: NavigationItem[] = [

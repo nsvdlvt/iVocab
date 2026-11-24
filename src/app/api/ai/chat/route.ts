@@ -81,6 +81,7 @@ export async function POST(request: Request) {
 
           try {
             const agentResult = await runAgentConversation(user.id, rawMessages, {
+              signal: request.signal,
               onStatusChange: (status) => {
                 sendEvent("status", { status });
               },
@@ -129,7 +130,9 @@ export async function POST(request: Request) {
     }
 
     // 4. Handle Standard JSON Response
-    const agentResult = await runAgentConversation(user.id, rawMessages);
+    const agentResult = await runAgentConversation(user.id, rawMessages, {
+      signal: request.signal,
+    });
 
     if (!agentResult.success) {
       return NextResponse.json(

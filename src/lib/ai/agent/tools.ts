@@ -110,6 +110,24 @@ export const AGENT_TOOLS: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "lookup_dictionary_word",
+      description:
+        "Tra cứu thông tin từ điển chính thức của Vocabee (phiên âm IPA chuẩn, nghĩa, từ loại, định nghĩa tiếng Anh/Việt, ví dụ và từ đồng nghĩa). Dùng khi giải thích từ vựng, phân biệt từ gần nghĩa, collocations hoặc khi từ vựng chưa có trong kho cá nhân.",
+      parameters: {
+        type: "object",
+        properties: {
+          word: {
+            type: "string",
+            description: "Từ tiếng Anh cần tra cứu từ điển",
+          },
+        },
+        required: ["word"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "find_duplicate_vocabularies",
       description:
         "Quét toàn bộ kho từ vựng của người dùng hoặc trong một bộ từ cụ thể để tìm các từ bị trùng lặp (xuất hiện nhiều hơn 1 lần).",
