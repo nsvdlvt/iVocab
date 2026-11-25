@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Search, Shield, User, ExternalLink, MoreHorizontal, Flame, AlertTriangle, Briefcase } from "lucide-react";
+import { Search, Shield, User, ExternalLink, MoreHorizontal, Flame, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,7 @@ export function UsersTableClient({
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [selectedUser, setSelectedUser] = useState<ProfileRow | null>(null);
-  const [newRoleToApply, setNewRoleToApply] = useState<"user" | "member" | "e_team" | "admin" | null>(null);
+  const [newRoleToApply, setNewRoleToApply] = useState<"user" | "member" | "admin" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const applyFilters = (newSearch: string, newRole: string, newPage: number = 1) => {
@@ -120,8 +120,7 @@ export function UsersTableClient({
             className="h-10 px-3 rounded-md border border-input bg-background text-sm font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="all">Tất cả phân quyền</option>
-            <option value="user">Member (Học viên)</option>
-            <option value="e_team">E-Team</option>
+            <option value="member">Member (Học viên)</option>
             <option value="admin">Admin (Quản trị viên)</option>
           </select>
         </div>
@@ -180,14 +179,6 @@ export function UsersTableClient({
                             </Badge>
                           );
                         }
-                        if (norm === "e_team") {
-                          return (
-                            <Badge variant="outline" className="border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10">
-                              <Briefcase className="h-3 w-3 mr-1" />
-                              E-Team
-                            </Badge>
-                          );
-                        }
                         return (
                           <Badge variant="secondary" className="bg-muted text-muted-foreground">
                             Member
@@ -239,17 +230,6 @@ export function UsersTableClient({
                                 className="text-foreground focus:text-primary cursor-pointer"
                               >
                                 Gán vai trò: Member
-                              </DropdownMenuItem>
-                            )}
-                            {normalizeRole(u.role) !== "e_team" && (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedUser(u);
-                                  setNewRoleToApply("e_team");
-                                }}
-                                className="text-purple-600 dark:text-purple-400 focus:text-purple-600 cursor-pointer font-medium"
-                              >
-                                Gán vai trò: E-Team
                               </DropdownMenuItem>
                             )}
                             {normalizeRole(u.role) !== "admin" && (

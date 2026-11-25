@@ -50,23 +50,22 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     const request = new NextRequest("http://localhost:3000/reset-password");
     const response = await updateSession(request);
 
-    // Must NOT redirect away to /vocabulary or /dashboard
     expect(response.status).toBe(200);
   });
 
   it("should redirect unauthenticated users from protected routes to /login with next param", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
 
-    const request = new NextRequest("http://localhost:3000/vocabulary/set-123");
+    const request = new NextRequest("http://localhost:3000/u/vocabulary/set-123");
     const response = await updateSession(request);
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
     expect(location).toContain("/login");
-    expect(location).toContain("next=%2Fvocabulary%2Fset-123");
+    expect(location).toContain("next=%2Fu%2Fvocabulary%2Fset-123");
   });
 
-  it("should redirect authenticated users away from guest-only pages to /select-workspace", async () => {
+  it("should redirect authenticated users away from guest-only pages directly to /u", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 
     const request = new NextRequest("http://localhost:3000/login");
@@ -74,7 +73,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/select-workspace");
+    expect(location).toBe("http://localhost:3000/u");
   });
 
   it("should redirect authenticated users on /login to preserved next parameter if safe and authorized", async () => {
@@ -85,12 +84,12 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
       maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "member" }, error: null }),
     });
 
-    const request = new NextRequest("http://localhost:3000/login?next=/vocabulary");
+    const request = new NextRequest("http://localhost:3000/login?next=/u/vocabulary");
     const response = await updateSession(request);
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/vocabulary");
+    expect(location).toBe("http://localhost:3000/u/vocabulary");
   });
 
   it("should permit unauthenticated visitors on /verify-otp", async () => {
@@ -102,7 +101,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(response.status).toBe(200);
   });
 
-  it("should redirect authenticated users on /verify-otp to /select-workspace", async () => {
+  it("should redirect authenticated users on /verify-otp directly to /u", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 
     const request = new NextRequest("http://localhost:3000/verify-otp");
@@ -110,7 +109,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/select-workspace");
+    expect(location).toBe("http://localhost:3000/u");
   });
 
   it("should permit unauthenticated visitors on /dictionary and /dictionary?q=word", async () => {
@@ -142,7 +141,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
     expect(data.success).toBe(false);
   });
 
-  it("should block malicious next parameter on guest-only page redirect", async () => {
+  it("should block malicious next parameter on guest-only page redirect and fallback to /u", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: { id: "logged-in-user" } }, error: null });
 
     const request = new NextRequest("http://localhost:3000/login?next=https://evil.com");
@@ -150,11 +149,49 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/select-workspace");
+    expect(location).toBe("http://localhost:3000/u");
+  });
+
+  describe("Legacy Workspace & E-Team URL compatibility redirects", () => {
+    it("redirects authenticated users on /select-workspace and /choose-workspace to /u", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      const res1 = await updateSession(new NextRequest("http://localhost:3000/select-workspace"));
+      expect(res1.status).toBe(307);
+      expect(res1.headers.get("location")).toBe("http://localhost:3000/u");
+
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      const res2 = await updateSession(new NextRequest("http://localhost:3000/choose-workspace"));
+      expect(res2.status).toBe(307);
+      expect(res2.headers.get("location")).toBe("http://localhost:3000/u");
+    });
+
+    it("redirects authenticated users from /e-team/* to corresponding /u/* pages without loops", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      const resDash = await updateSession(new NextRequest("http://localhost:3000/e-team/dashboard"));
+      expect(resDash.status).toBe(307);
+      expect(resDash.headers.get("location")).toBe("http://localhost:3000/u");
+
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      const resVocabs = await updateSession(new NextRequest("http://localhost:3000/e-team/vocabs"));
+      expect(resVocabs.status).toBe(307);
+      expect(resVocabs.headers.get("location")).toBe("http://localhost:3000/u/vocabulary");
+
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
+      const resLearn = await updateSession(new NextRequest("http://localhost:3000/e-team/vocabs/set-1/learn"));
+      expect(resLearn.status).toBe(307);
+      expect(resLearn.headers.get("location")).toBe("http://localhost:3000/u/vocabulary/set-1/learn");
+    });
+
+    it("redirects unauthenticated users on legacy /e-team/vocabs to /login with mapped /u/vocabulary next", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+      const res = await updateSession(new NextRequest("http://localhost:3000/e-team/vocabs"));
+      expect(res.status).toBe(307);
+      expect(res.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fu%2Fvocabulary");
+    });
   });
 
   describe("Role-based route authorization guards", () => {
-    it("redirects member attempting to access /e-team to /403", async () => {
+    it("permits member accessing /u and /u/vocabulary (including on reload)", async () => {
       mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-member" } }, error: null });
       mockFrom.mockReturnValueOnce({
         select: vi.fn().mockReturnThis(),
@@ -162,11 +199,10 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
         maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "member" }, error: null }),
       });
 
-      const request = new NextRequest("http://localhost:3000/e-team/dashboard");
+      const request = new NextRequest("http://localhost:3000/u/vocabulary");
       const response = await updateSession(request);
 
-      expect(response.status).toBe(307);
-      expect(response.headers.get("location")).toBe("http://localhost:3000/403");
+      expect(response.status).toBe(200);
     });
 
     it("redirects member attempting to access /admin to /403", async () => {
@@ -184,50 +220,7 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
       expect(response.headers.get("location")).toBe("http://localhost:3000/403");
     });
 
-    it("permits E-Team member accessing /e-team", async () => {
-      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
-      mockFrom.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
-      });
-
-      const request = new NextRequest("http://localhost:3000/e-team/dashboard");
-      const response = await updateSession(request);
-
-      expect(response.status).toBe(200);
-    });
-
-    it("permits E-Team member accessing /u (Vocabeer)", async () => {
-      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
-      mockFrom.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
-      });
-
-      const request = new NextRequest("http://localhost:3000/u/vocabulary");
-      const response = await updateSession(request);
-
-      expect(response.status).toBe(200);
-    });
-
-    it("redirects E-Team member attempting to access /admin to /403", async () => {
-      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-eteam" } }, error: null });
-      mockFrom.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "e_team" }, error: null }),
-      });
-
-      const request = new NextRequest("http://localhost:3000/admin");
-      const response = await updateSession(request);
-
-      expect(response.status).toBe(307);
-      expect(response.headers.get("location")).toBe("http://localhost:3000/403");
-    });
-
-    it("permits Admin accessing /admin, /e-team, and /u", async () => {
+    it("permits Admin accessing /admin and /u", async () => {
       // 1. /admin
       mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
       mockFrom.mockReturnValueOnce({
@@ -238,25 +231,15 @@ describe("Supabase Proxy/Middleware (updateSession)", () => {
       const reqAdmin = new NextRequest("http://localhost:3000/admin");
       expect((await updateSession(reqAdmin)).status).toBe(200);
 
-      // 2. /e-team
+      // 2. /u
       mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
       mockFrom.mockReturnValueOnce({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "admin" }, error: null }),
       });
-      const reqETeam = new NextRequest("http://localhost:3000/e-team");
-      expect((await updateSession(reqETeam)).status).toBe(200);
-
-      // 3. /u
-      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-admin" } }, error: null });
-      mockFrom.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValueOnce({ data: { role: "admin" }, error: null }),
-      });
-      const reqVocabeer = new NextRequest("http://localhost:3000/u");
-      expect((await updateSession(reqVocabeer)).status).toBe(200);
+      const reqMember = new NextRequest("http://localhost:3000/u");
+      expect((await updateSession(reqMember)).status).toBe(200);
     });
   });
 });

@@ -10,7 +10,6 @@ import {
   BarChart3,
   Bell,
   ShieldCheck,
-  ArrowLeftRight,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -26,7 +25,7 @@ import { logoutAction } from "@/actions/auth/logout";
 import { Database } from "@/types/database";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/auth/get-current-user";
-import { canSwitchWorkspace, normalizeRole, ROLE_DISPLAY_NAMES } from "@/lib/auth/roles";
+import { normalizeRole, ROLE_DISPLAY_NAMES } from "@/lib/auth/roles";
 import { ROUTES } from "@/constants/routes";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { toast } from "sonner";
@@ -162,7 +161,6 @@ export function UserMenu({ profile: initialProfile, collapsed = false }: UserMen
   const appRole = normalizeRole(profile?.role);
   const roleName = ROLE_DISPLAY_NAMES[appRole];
   const isAdmin = !isLoading && appRole === "admin";
-  const canSwitch = !isLoading && canSwitchWorkspace(profile?.role);
 
   return (
     <DropdownMenu>
@@ -240,22 +238,6 @@ export function UserMenu({ profile: initialProfile, collapsed = false }: UserMen
         </div>
 
         <DropdownMenuSeparator className="my-1 bg-border/60" />
-
-        {canSwitch && (
-          <>
-            <DropdownMenuItem
-              onClick={() => {
-                closeMobileNav();
-                router.push(ROUTES.SELECT_WORKSPACE);
-              }}
-              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold cursor-pointer flex items-center gap-2 text-primary focus:bg-primary/10"
-            >
-              <ArrowLeftRight className="h-3.5 w-3.5 text-primary" />
-              <span>Chuyển đổi không gian</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1 bg-border/60" />
-          </>
-        )}
 
         <DropdownMenuItem
           onClick={() => {

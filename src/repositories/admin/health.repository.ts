@@ -2,7 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
 import { Database } from "@/types/database";
-import { getAiApiKey, getAiBaseUrl, getAiHeaders, isUsingOpenRouter } from "@/lib/ai/constants";
+import {
+  getCloudflareApiToken,
+  getCloudflareHealthCheckUrl,
+  isCloudflareConfigured,
+} from "@/lib/ai/cloudflare/config";
 
 export type HealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
 
@@ -71,21 +75,34 @@ export class AdminHealthRepository {
   }
 
   static async checkAiProvider(): Promise<SystemHealthResult> {
-    const apiKey = getAiApiKey();
-    const baseURL = getAiBaseUrl();
-    const serviceName = isUsingOpenRouter() ? "OpenRouter AI" : "Gemini AI";
+    const serviceName = "Cloudflare Workers AI";
 
+    if (!isCloudflareConfigured()) {
+      return {
+        service: serviceName,
+        status: "unhealthy",
+        message: "Chưa cấu hình CLOUDFLARE_API_TOKEN hoặc CLOUDFLARE_ACCOUNT_ID",
+      };
+    }
+
+    const apiToken = getCloudflareApiToken();
+    const healthUrl = getCloudflareHealthCheckUrl();
     const start = performance.now();
+
     try {
-      const res = await fetch(`${baseURL}/models`, {
+      const res = await fetch(healthUrl, {
         headers: {
-          Authorization: `Bearer ${apiKey}`,
-          ...getAiHeaders(),
+          Authorization: `Bearer ${apiToken}`,
+          "Content-Type": "application/json",
         },
         signal: AbortSignal.timeout(5000),
       });
       const latencyMs = Math.round(performance.now() - start);
       if (res.ok) {
+        const body = (await res.json().catch(() => null)) as { success?: boolean } | null;
+        if (body && body.success === false) {
+          return { service: serviceName, status: "degraded", latencyMs, message: "Cloudflare API returned success=false" };
+        }
         return { service: serviceName, status: "healthy", latencyMs };
       }
       return { service: serviceName, status: "degraded", latencyMs, message: `Status code: ${res.status}` };

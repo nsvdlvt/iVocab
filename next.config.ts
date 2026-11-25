@@ -13,8 +13,58 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/select-workspace",
+        destination: "/u",
+        permanent: false,
+      },
+      {
+        source: "/select-workspace/:path*",
+        destination: "/u",
+        permanent: false,
+      },
+      {
+        source: "/choose-workspace",
+        destination: "/u",
+        permanent: false,
+      },
+      {
+        source: "/choose-workspace/:path*",
+        destination: "/u",
+        permanent: false,
+      },
+      {
         source: "/e-team",
-        destination: "/e-team/dashboard",
+        destination: "/u",
+        permanent: false,
+      },
+      {
+        source: "/e-team/dashboard",
+        destination: "/u",
+        permanent: false,
+      },
+      {
+        source: "/e-team/vocabs",
+        destination: "/u/vocabulary",
+        permanent: false,
+      },
+      {
+        source: "/e-team/vocabs/:setId/learn",
+        destination: "/u/vocabulary/:setId/learn",
+        permanent: false,
+      },
+      {
+        source: "/e-team/vocabs/:setId/flashcard",
+        destination: "/u/vocabulary/:setId/flashcard",
+        permanent: false,
+      },
+      {
+        source: "/e-team/vocabs/:setId",
+        destination: "/u/vocabulary/:setId",
+        permanent: false,
+      },
+      {
+        source: "/e-team/:path*",
+        destination: "/u",
         permanent: false,
       },
       {

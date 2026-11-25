@@ -13,7 +13,7 @@ export default async function HomePage() {
   const user = await getCurrentUser();
 
   if (user) {
-    redirect(ROUTES.SELECT_WORKSPACE);
+    redirect(ROUTES.DASHBOARD);
   }
 
   return <LandingPage />;

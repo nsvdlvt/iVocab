@@ -81,7 +81,7 @@ export function AITestClient() {
     <PageContainer className="space-y-6 max-w-4xl mx-auto pb-10">
       <PageHeader
         title="Kiểm thử Kết nối AI"
-        description="Giao diện debug để kiểm tra khả năng tích hợp và phản hồi từ dịch vụ Gemini AI qua Route Handlers"
+        description="Giao diện debug để kiểm tra khả năng tích hợp và phản hồi từ dịch vụ Cloudflare Workers AI qua Route Handlers"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

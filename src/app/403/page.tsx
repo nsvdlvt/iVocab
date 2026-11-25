@@ -33,14 +33,14 @@ export default function ForbiddenPage() {
 
         <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
           <Link
-            href={ROUTES.SELECT_WORKSPACE}
+            href={ROUTES.DASHBOARD}
             className={cn(
               buttonVariants({ variant: "default" }),
               "rounded-xl px-5 font-semibold"
             )}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Chọn không gian làm việc
+            Về bảng điều khiển
           </Link>
           <Link
             href={ROUTES.LANDING}

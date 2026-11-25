@@ -52,6 +52,6 @@ export async function loginAction(values: LoginFormValues): Promise<LoginActionR
     userRole = profile?.role ?? null;
   }
 
-  const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.SELECT_WORKSPACE);
+  const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.DASHBOARD);
   redirect(destination);
 }

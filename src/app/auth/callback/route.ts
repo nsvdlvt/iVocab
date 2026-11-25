@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const providerErrorDescription = searchParams.get("error_description");
 
   // Validate initial target to check reset password flow
-  const safeTarget = getSafeRedirectUrl(nextRaw, ROUTES.SELECT_WORKSPACE);
+  const safeTarget = getSafeRedirectUrl(nextRaw, ROUTES.DASHBOARD);
   const isResetPasswordFlow =
     safeTarget === ROUTES.RESET_PASSWORD ||
     safeTarget.startsWith("/reset-password") ||
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
 
   const destination = isResetPasswordFlow
     ? ROUTES.RESET_PASSWORD
-    : getAuthorizedRedirectUrl(nextRaw, userRole, ROUTES.SELECT_WORKSPACE);
+    : getAuthorizedRedirectUrl(nextRaw, userRole, ROUTES.DASHBOARD);
 
   const redirectResponse = NextResponse.redirect(new URL(destination, origin));
   response.cookies.getAll().forEach((cookie) => {

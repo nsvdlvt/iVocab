@@ -230,7 +230,7 @@ export function PromptsManagerClient({ prompts, isDatabaseLive = true }: Prompts
                     Chạy thử nghiệm Prompt Trực tiếp (Sandbox)
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Điền các biến số và thực thi prompt trên Gemini 2.5 Flash
+                    Điền các biến số và thực thi prompt trên Cloudflare Workers AI (Gemma 4 26B A4B)
                   </CardDescription>
                 </div>
                 <Button

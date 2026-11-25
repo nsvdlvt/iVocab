@@ -3,184 +3,399 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { CodeBlock } from "./CodeBlock";
 
 interface MarkdownContentProps {
   content: string;
   className?: string;
 }
 
-export function MarkdownContent({ content, className }: MarkdownContentProps) {
-  // Parse lines for tables, bullet points, headers, etc.
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
+type Block =
+  | { type: "code"; language: string; content: string }
+  | { type: "heading"; level: 1 | 2 | 3 | 4; content: string }
+  | { type: "blockquote"; lines: string[] }
+  | { type: "ul"; items: string[] }
+  | { type: "ol"; start: number; items: string[] }
+  | { type: "table"; headers: string[]; rows: string[][] }
+  | { type: "hr" }
+  | { type: "paragraph"; content: string };
 
-  let inTable = false;
-  let tableHeader: string[] = [];
-  let tableRows: string[][] = [];
+function isTableSeparator(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed.includes("|")) return false;
+  const cells = trimmed
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((c) => c.trim());
+  return cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c));
+}
 
-  const flushTable = (key: number) => {
-    if (tableHeader.length > 0 || tableRows.length > 0) {
-      elements.push(
-        <div key={`table-${key}`} className="my-2 overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-left text-xs border-collapse">
-            {tableHeader.length > 0 && (
-              <thead className="bg-muted/70 text-foreground font-semibold">
-                <tr>
-                  {tableHeader.map((th, idx) => (
-                    <th key={idx} className="border-b border-border px-3 py-2">
-                      {renderInline(th.trim())}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-            )}
-            <tbody>
-              {tableRows.map((tr, rIdx) => (
-                <tr
-                  key={rIdx}
-                  className={cn(
-                    "border-b border-border/50 last:border-b-0 hover:bg-muted/30 transition-colors",
-                    rIdx % 2 === 1 && "bg-muted/10"
-                  )}
-                >
-                  {tr.map((td, cIdx) => (
-                    <td key={cIdx} className="px-3 py-2 text-foreground/90">
-                      {renderInline(td.trim())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-    inTable = false;
-    tableHeader = [];
-    tableRows = [];
-  };
+function splitTableRow(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((c) => c.trim());
+}
 
-  for (let i = 0; i < lines.length; i++) {
+function parseMarkdownBlocks(raw: string): Block[] {
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+  const blocks: Block[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // Table detection: line starts and ends with |
-    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
-      const cells = trimmed
-        .slice(1, -1)
-        .split("|")
-        .map((c) => c.trim());
-
-      // If it's a separator line like |---|---|
-      if (cells.every((c) => /^:?-+:?$/.test(c))) {
-        continue;
-      }
-
-      if (!inTable) {
-        inTable = true;
-        tableHeader = cells;
-      } else {
-        tableRows.push(cells);
-      }
-      continue;
-    } else if (inTable) {
-      flushTable(i);
-    }
-
-    // Empty line
+    // Blank line
     if (!trimmed) {
-      elements.push(<div key={`empty-${i}`} className="h-1.5" />);
+      i += 1;
       continue;
     }
 
-    // Headers
-    if (trimmed.startsWith("### ")) {
-      elements.push(
-        <h4 key={i} className="text-sm font-bold text-foreground mt-3 mb-1">
-          {renderInline(trimmed.slice(4))}
-        </h4>
-      );
-      continue;
-    }
-    if (trimmed.startsWith("## ")) {
-      elements.push(
-        <h3 key={i} className="text-sm font-extrabold text-foreground mt-3.5 mb-1.5">
-          {renderInline(trimmed.slice(3))}
-        </h3>
-      );
-      continue;
-    }
-    if (trimmed.startsWith("# ")) {
-      elements.push(
-        <h2 key={i} className="text-base font-extrabold text-foreground mt-4 mb-2">
-          {renderInline(trimmed.slice(2))}
-        </h2>
-      );
+    // Fenced code block (supports unclosed block while streaming)
+    const fenceMatch = trimmed.match(/^```([A-Za-z0-9_+-]*)\s*$/);
+    if (fenceMatch) {
+      const language = fenceMatch[1] || "";
+      const codeLines: string[] = [];
+      i += 1;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i += 1;
+      }
+      if (i < lines.length && lines[i].trim().startsWith("```")) {
+        i += 1;
+      }
+      blocks.push({ type: "code", language, content: codeLines.join("\n") });
       continue;
     }
 
-    // Bullet points
-    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-      elements.push(
-        <div key={i} className="flex items-start gap-2 text-xs leading-relaxed my-0.5">
-          <span className="text-primary mt-1 select-none font-bold">•</span>
-          <div className="flex-1 text-foreground/90">{renderInline(trimmed.slice(2))}</div>
-        </div>
-      );
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      blocks.push({ type: "hr" });
+      i += 1;
       continue;
     }
 
-    // Numbered lists (1. , 2. )
-    const numberedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
-    if (numberedMatch) {
-      elements.push(
-        <div key={i} className="flex items-start gap-2 text-xs leading-relaxed my-0.5">
-          <span className="text-primary font-bold min-w-[16px] text-right">
-            {numberedMatch[1]}.
-          </span>
-          <div className="flex-1 text-foreground/90">{renderInline(numberedMatch[2])}</div>
-        </div>
-      );
+    // Headings (# .. ####)
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+    if (headingMatch) {
+      blocks.push({
+        type: "heading",
+        level: headingMatch[1].length as 1 | 2 | 3 | 4,
+        content: headingMatch[2],
+      });
+      i += 1;
       continue;
     }
 
-    // Standard paragraph
-    elements.push(
-      <p key={i} className="text-xs leading-relaxed my-1 text-foreground/90">
-        {renderInline(trimmed)}
-      </p>
-    );
+    // Table (header row + separator row)
+    if (
+      trimmed.includes("|") &&
+      i + 1 < lines.length &&
+      isTableSeparator(lines[i + 1])
+    ) {
+      const headers = splitTableRow(line);
+      const rows: string[][] = [];
+      i += 2;
+      while (
+        i < lines.length &&
+        lines[i].trim().includes("|") &&
+        lines[i].trim().length > 0
+      ) {
+        rows.push(splitTableRow(lines[i]));
+        i += 1;
+      }
+      blocks.push({ type: "table", headers, rows });
+      continue;
+    }
+
+    // Blockquote
+    if (trimmed.startsWith(">")) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ""));
+        i += 1;
+      }
+      blocks.push({ type: "blockquote", lines: quoteLines });
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-*+]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*+]\s+/, ""));
+        i += 1;
+      }
+      blocks.push({ type: "ul", items });
+      continue;
+    }
+
+    // Ordered list
+    const olFirst = trimmed.match(/^(\d+)\.\s+(.*)$/);
+    if (olFirst) {
+      const start = parseInt(olFirst[1], 10) || 1;
+      const items: string[] = [];
+      while (i < lines.length) {
+        const match = lines[i].match(/^\s*\d+\.\s+(.*)$/);
+        if (!match) break;
+        items.push(match[1]);
+        i += 1;
+      }
+      blocks.push({ type: "ol", start, items });
+      continue;
+    }
+
+    // Paragraph (gather contiguous non-special lines)
+    const paraLines: string[] = [trimmed];
+    i += 1;
+    while (i < lines.length) {
+      const nextTrimmed = lines[i].trim();
+      if (
+        !nextTrimmed ||
+        nextTrimmed.startsWith("```") ||
+        /^#{1,4}\s+/.test(nextTrimmed) ||
+        nextTrimmed.startsWith(">") ||
+        /^[-*+]\s+/.test(nextTrimmed) ||
+        /^\d+\.\s+/.test(nextTrimmed) ||
+        /^(-{3,}|\*{3,}|_{3,})$/.test(nextTrimmed) ||
+        (nextTrimmed.includes("|") &&
+          i + 1 < lines.length &&
+          isTableSeparator(lines[i + 1]))
+      ) {
+        break;
+      }
+      paraLines.push(nextTrimmed);
+      i += 1;
+    }
+    blocks.push({ type: "paragraph", content: paraLines.join("\n") });
   }
 
-  if (inTable) {
-    flushTable(lines.length);
-  }
-
-  return <div className={cn("space-y-0.5 break-words", className)}>{elements}</div>;
+  return blocks;
 }
 
-function renderInline(text: string): React.ReactNode {
-  // Split on bold (**...**) and inline code (`...`)
-  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+function isSafeUrl(url: string): boolean {
+  const trimmed = url.trim().toLowerCase();
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("mailto:") ||
+    trimmed.startsWith("/")
+  );
+}
 
-  return tokens.map((part, idx) => {
-    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-      return (
-        <strong key={idx} className="font-bold text-foreground">
-          {part.slice(2, -2)}
-        </strong>
-      );
+const INLINE_REGEX =
+  /(`[^`\n]+`|\*\*\*[^*\n]+\*\*\*|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_|\[[^\]]+\]\([^)\s]+\))/g;
+
+function renderInline(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let lastIdx = 0;
+
+  for (const match of text.matchAll(INLINE_REGEX)) {
+    const idx = match.index ?? 0;
+    if (idx > lastIdx) {
+      parts.push(text.slice(lastIdx, idx));
     }
-    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
-      return (
+
+    const token = match[0];
+
+    if (token.startsWith("`") && token.endsWith("`")) {
+      parts.push(
         <code
           key={idx}
-          className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-primary"
+          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[12px] text-foreground border border-border/60"
         >
-          {part.slice(1, -1)}
+          {token.slice(1, -1)}
         </code>
       );
+    } else if (token.startsWith("***") && token.endsWith("***")) {
+      parts.push(
+        <strong key={idx} className="font-semibold italic text-foreground">
+          {renderInline(token.slice(3, -3))}
+        </strong>
+      );
+    } else if (
+      (token.startsWith("**") && token.endsWith("**")) ||
+      (token.startsWith("__") && token.endsWith("__"))
+    ) {
+      parts.push(
+        <strong key={idx} className="font-semibold text-foreground">
+          {renderInline(token.slice(2, -2))}
+        </strong>
+      );
+    } else if (token.startsWith("~~") && token.endsWith("~~")) {
+      parts.push(
+        <del key={idx} className="line-through text-muted-foreground">
+          {renderInline(token.slice(2, -2))}
+        </del>
+      );
+    } else if (
+      (token.startsWith("*") && token.endsWith("*")) ||
+      (token.startsWith("_") && token.endsWith("_"))
+    ) {
+      parts.push(
+        <em key={idx} className="italic">
+          {renderInline(token.slice(1, -1))}
+        </em>
+      );
+    } else if (token.startsWith("[")) {
+      const linkMatch = token.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
+      if (linkMatch && isSafeUrl(linkMatch[2])) {
+        parts.push(
+          <a
+            key={idx}
+            href={linkMatch[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            {linkMatch[1]}
+          </a>
+        );
+      } else {
+        parts.push(token);
+      }
+    } else {
+      parts.push(token);
     }
-    return <React.Fragment key={idx}>{part}</React.Fragment>;
-  });
+
+    lastIdx = idx + token.length;
+  }
+
+  if (lastIdx < text.length) {
+    parts.push(text.slice(lastIdx));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
+export function MarkdownContent({ content, className }: MarkdownContentProps) {
+  const blocks = React.useMemo(() => parseMarkdownBlocks(content), [content]);
+
+  return (
+    <div className={cn("space-y-2.5 text-[13px] leading-relaxed break-words min-w-0", className)}>
+      {blocks.map((block, idx) => {
+        switch (block.type) {
+          case "code":
+            return (
+              <CodeBlock
+                key={idx}
+                language={block.language}
+                code={block.content}
+              />
+            );
+
+          case "heading": {
+            const headingClasses = {
+              1: "text-base font-bold text-foreground pt-1",
+              2: "text-[15px] font-bold text-foreground pt-1",
+              3: "text-sm font-semibold text-foreground pt-0.5",
+              4: "text-[13px] font-semibold text-foreground",
+            }[block.level];
+            const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4";
+            return (
+              <Tag key={idx} className={headingClasses}>
+                {renderInline(block.content)}
+              </Tag>
+            );
+          }
+
+          case "blockquote":
+            return (
+              <blockquote
+                key={idx}
+                className="border-l-2 border-primary/60 bg-muted/40 pl-3 pr-2 py-1.5 rounded-r-lg text-muted-foreground italic space-y-1"
+              >
+                {block.lines.map((line, lIdx) => (
+                  <p key={lIdx}>{renderInline(line)}</p>
+                ))}
+              </blockquote>
+            );
+
+          case "ul":
+            return (
+              <ul
+                key={idx}
+                className="list-disc pl-5 space-y-1 text-foreground/95 marker:text-muted-foreground"
+              >
+                {block.items.map((item, iIdx) => (
+                  <li key={iIdx} className="leading-relaxed">
+                    {renderInline(item)}
+                  </li>
+                ))}
+              </ul>
+            );
+
+          case "ol":
+            return (
+              <ol
+                key={idx}
+                start={block.start}
+                className="list-decimal pl-5 space-y-1 text-foreground/95 marker:text-muted-foreground marker:font-medium"
+              >
+                {block.items.map((item, iIdx) => (
+                  <li key={iIdx} className="leading-relaxed">
+                    {renderInline(item)}
+                  </li>
+                ))}
+              </ol>
+            );
+
+          case "table":
+            return (
+              <div
+                key={idx}
+                className="my-2 overflow-x-auto rounded-xl border border-border bg-background/60"
+              >
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-muted/70 text-foreground font-semibold">
+                    <tr>
+                      {block.headers.map((th, hIdx) => (
+                        <th
+                          key={hIdx}
+                          className="border-b border-border px-3 py-2 whitespace-nowrap"
+                        >
+                          {renderInline(th)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {block.rows.map((tr, rIdx) => (
+                      <tr
+                        key={rIdx}
+                        className="border-b border-border/50 last:border-b-0 even:bg-muted/20"
+                      >
+                        {block.headers.map((_, cIdx) => (
+                          <td
+                            key={cIdx}
+                            className="px-3 py-2 text-foreground/90 align-top"
+                          >
+                            {renderInline(tr[cIdx] ?? "")}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+
+          case "hr":
+            return <hr key={idx} className="my-3 border-border" />;
+
+          case "paragraph":
+          default:
+            return (
+              <p key={idx} className="whitespace-pre-wrap text-foreground/95">
+                {renderInline(block.content)}
+              </p>
+            );
+        }
+      })}
+    </div>
+  );
 }

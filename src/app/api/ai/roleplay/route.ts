@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requestTextResponse, extractJsonPayload } from "@/lib/ai/json-response";
-import { getAiApiKey } from "@/lib/ai/constants";
+import { isAiConfigured } from "@/lib/ai/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -68,10 +68,9 @@ interface RoleplayRequestBody {
 
 export async function POST(request: Request) {
   try {
-    const apiKey = getAiApiKey();
-    if (!apiKey) {
+    if (!isAiConfigured()) {
       return NextResponse.json(
-        { success: false, error: "Thiếu cấu hình AI API key trong .env.local" },
+        { success: false, error: "Thiếu cấu hình Cloudflare AI (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID) trong .env.local" },
         { status: 500 }
       );
     }

@@ -67,7 +67,7 @@ export async function verifyOtpAction(values: VerifyOtpFormValues): Promise<Veri
       }
     }
 
-    const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.SELECT_WORKSPACE);
+    const destination = getAuthorizedRedirectUrl(redirectTo, userRole, ROUTES.DASHBOARD);
     redirect(destination);
   }
 

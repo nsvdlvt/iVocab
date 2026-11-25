@@ -1,20 +1,13 @@
 // src/lib/ai/responsesClient.ts
 import {
-  getAiApiKey,
-  getAiBaseUrl,
-  getAiFallbackModels,
-  getAiHeaders,
-  getAiModel,
-  getAiProvider,
-  isUsingOpenRouter,
-} from "@/lib/ai/constants";
-import {
   executeChatCompletionWithFallback,
   type AIFeature,
-} from "@/lib/ai/openrouter";
+} from "@/lib/ai/cloudflare";
 import { AIResponseError, AIAbortError, AINetworkError } from "@/lib/ai/errors";
-import crypto from "crypto";
-import type { ChatCompletionContentPart, ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import type {
+  ChatCompletionContentPart,
+  ChatCompletionMessageParam,
+} from "openai/resources/chat/completions";
 
 export interface InputPart {
   type: "input_text" | "input_image" | "input_file" | string;
@@ -37,30 +30,9 @@ export interface ResponsesRequestPayload {
     };
   };
   feature?: AIFeature;
+  temperature?: number;
+  max_tokens?: number;
   [key: string]: unknown;
-}
-
-interface OpenAIChatResponse {
-  choices?: Array<{
-    message?: {
-      role?: string;
-      content?: string;
-    };
-    finish_reason?: string;
-  }>;
-  output?: Array<{
-    content?: Array<{
-      type?: string;
-      text?: string;
-    }>;
-  }>;
-  output_text?: string;
-  content?: string;
-  error?: {
-    code?: number | string;
-    message?: string;
-    type?: string;
-  };
 }
 
 export async function request<T = unknown>(
@@ -99,194 +71,42 @@ export async function request<T = unknown>(
     throw new AIResponseError("Không có nội dung để gửi tới AI.");
   }
 
-  // 1. If using OpenRouter, route through the Centralized OpenRouter Service
-  if (isUsingOpenRouter()) {
-    let feature: AIFeature = payload.feature || "vocab";
-    if (!payload.feature) {
-      if (callerFile.includes("sentence")) feature = "sentence";
-      else if (callerFile.includes("writing")) feature = "writing";
-      else if (callerFile.includes("quiz")) feature = "quiz";
-      else if (callerFile.includes("import")) feature = "import";
-    }
-
-    try {
-      const result = await executeChatCompletionWithFallback({
-        messages,
-        feature,
-        signal: abortSignal,
-        modelsOverride: payload.model ? [payload.model] : undefined,
-        temperature: 0.3,
-      });
-
-      const replyText = result.completion.choices?.[0]?.message?.content ?? "";
-      if (!replyText) {
-        throw new AIResponseError("AI không trả về nội dung hợp lệ.");
-      }
-
-      return replyText as unknown as T;
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.name === "AbortError" || err.message.includes("bị hủy") || err.message.includes("Timeout")) {
-          throw new AIAbortError("Yêu cầu AI bị gián đoạn hoặc quá thời gian xử lý.");
-        }
-        if (err.message.includes("kết nối") || err.message.includes("network")) {
-          throw new AINetworkError(`Lỗi kết nối mạng: ${err.message}`);
-        }
-        throw new AIResponseError(err.message);
-      }
-      throw new AIResponseError(String(err));
-    }
+  let feature: AIFeature = payload.feature || "vocab";
+  if (!payload.feature) {
+    if (callerFile.includes("sentence")) feature = "sentence";
+    else if (callerFile.includes("writing")) feature = "writing";
+    else if (callerFile.includes("quiz")) feature = "quiz";
+    else if (callerFile.includes("import")) feature = "import";
   }
 
-  // 2. Fallback for non-OpenRouter legacy custom providers
-  const apiKey = getAiApiKey();
-  const baseURL = getAiBaseUrl();
-  const requestedModel = payload.model ?? getAiModel();
-  const fallbackModels = getAiFallbackModels();
-  const modelsToTry = [
-    requestedModel,
-    ...fallbackModels.filter((m) => m !== requestedModel),
-  ];
-
-  let lastError: unknown = null;
-
-  for (const model of modelsToTry) {
-    const endpoint = `${baseURL}/chat/completions`;
-    const requestBody: Record<string, unknown> = {
-      model,
+  try {
+    const result = await executeChatCompletionWithFallback({
       messages,
-      temperature: 0.3,
-    };
+      feature,
+      signal: abortSignal,
+      modelsOverride: payload.model ? [payload.model] : undefined,
+      temperature: typeof payload.temperature === "number" ? payload.temperature : 0.3,
+      maxTokens: typeof payload.max_tokens === "number" ? payload.max_tokens : undefined,
+    });
 
-    const bodyJson = JSON.stringify(requestBody);
-    const bodyHash = crypto.createHash("sha256").update(bodyJson).digest("hex");
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[responsesClient:${getAiProvider()}] Outbound payload`, {
-        callerFile,
-        endpoint,
-        model,
-        requestBodyHash: bodyHash,
-      });
+    const replyText = result.completion.choices?.[0]?.message?.content ?? "";
+    if (!replyText) {
+      throw new AIResponseError("AI không trả về nội dung hợp lệ.");
     }
 
-    const maxAttempts = 2;
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(new Error("TimeoutError")), 60000);
-
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            clearTimeout(timeoutId);
-            controller.abort(abortSignal.reason);
-          } else {
-            abortSignal.addEventListener("abort", () => {
-              clearTimeout(timeoutId);
-              controller.abort(abortSignal.reason);
-            });
-          }
-        }
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-            ...getAiHeaders(),
-          },
-          body: bodyJson,
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          const txt = await response.text();
-          let parsedErrorMsg = txt;
-          try {
-            const errObj = JSON.parse(txt) as OpenAIChatResponse;
-            if (errObj.error?.message) {
-              parsedErrorMsg = errObj.error.message;
-            }
-          } catch {
-            // keep raw txt
-          }
-
-          if (response.status === 402) {
-            parsedErrorMsg = `Tài khoản AI (${getAiProvider()}) hết hạn mức: ${parsedErrorMsg}`;
-          }
-
-          const error = new AIResponseError(`API error (${response.status}) on model ${model}: ${parsedErrorMsg}`);
-
-          if (
-            response.status === 404 ||
-            response.status === 429 ||
-            response.status === 502 ||
-            response.status === 503 ||
-            response.status === 504
-          ) {
-            lastError = error;
-            break;
-          }
-
-          if (isRetryableResponseStatus(response.status) && attempt < maxAttempts) {
-            lastError = error;
-            await delay(backoffMs(attempt));
-            continue;
-          }
-
-          throw error;
-        }
-
-        const txt = await response.text();
-        const data = JSON.parse(txt) as OpenAIChatResponse;
-
-        const replyText =
-          data.choices?.[0]?.message?.content ??
-          data.output?.[0]?.content?.[0]?.text ??
-          data.output_text ??
-          (typeof data.content === "string" ? data.content : null);
-
-        if (!replyText && typeof txt === "string") {
-          return txt as unknown as T;
-        }
-
-        if (replyText === null || replyText === undefined) {
-          throw new AIResponseError("AI không trả về nội dung hợp lệ.");
-        }
-
-        return replyText as unknown as T;
-      } catch (err: unknown) {
-        if (err instanceof Error && (err.name === "AbortError" || err.message === "TimeoutError")) {
-          throw new AIAbortError("Yêu cầu AI bị gián đoạn hoặc quá thời gian xử lý.");
-        }
-        if (err instanceof TypeError) {
-          throw new AINetworkError(`Lỗi kết nối mạng: ${err.message}`);
-        }
-        if (err instanceof AIResponseError || err instanceof AINetworkError || err instanceof AIAbortError) {
-          lastError = err;
-          if (err instanceof AIAbortError || err instanceof AINetworkError) {
-            throw err;
-          }
-          if (attempt < maxAttempts && isRetryableMessage(err.message)) {
-            await delay(backoffMs(attempt));
-            continue;
-          }
-          break;
-        }
-        const msg = err instanceof Error ? err.message : String(err);
-        lastError = new AIResponseError(`Unexpected error during AI request: ${msg}`);
-        if (attempt < maxAttempts) {
-          await delay(backoffMs(attempt));
-          continue;
-        }
-        break;
+    return replyText as unknown as T;
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      if (err.name === "AbortError" || err.message.includes("bị hủy") || err.message.includes("Timeout")) {
+        throw new AIAbortError("Yêu cầu AI bị gián đoạn hoặc quá thời gian xử lý.");
       }
+      if (err.message.includes("kết nối") || err.message.includes("network")) {
+        throw new AINetworkError(`Lỗi kết nối mạng: ${err.message}`);
+      }
+      throw new AIResponseError(err.message);
     }
+    throw new AIResponseError(String(err));
   }
-
-  throw (lastError as Error) ?? new AIResponseError("Không thể kết nối hoặc nhận phản hồi từ AI API.");
 }
 
 function getCallerFile(): string {
@@ -298,27 +118,4 @@ function getCallerFile(): string {
     if (line.includes("quiz.ts")) return "quiz.ts";
   }
   return "unknown";
-}
-
-function isRetryableResponseStatus(status: number): boolean {
-  return status === 502 || status === 503 || status === 504;
-}
-
-function isRetryableMessage(message: string): boolean {
-  const lower = message.toLowerCase();
-  return (
-    lower.includes("502") ||
-    lower.includes("503") ||
-    lower.includes("504") ||
-    lower.includes("high demand") ||
-    lower.includes("no available channel")
-  );
-}
-
-function backoffMs(attempt: number): number {
-  return 300 * Math.pow(2, attempt - 1);
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

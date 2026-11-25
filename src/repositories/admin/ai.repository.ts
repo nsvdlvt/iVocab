@@ -4,7 +4,8 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { request as sendAiRequest } from "@/lib/ai/responsesClient";
 import { adminFallbackStore, FallbackAiLog } from "@/lib/admin/fallback-store";
-import { getAiApiKey, getAiModel, AI_MODEL, isUsingOpenRouter } from "@/lib/ai/constants";
+import { getAiModel, isAiConfigured } from "@/lib/ai/constants";
+import { sanitizeErrorMessage } from "@/lib/ai/cloudflare/config";
 
 export interface AiTelemetryStats {
   totalRequests: number;
@@ -36,8 +37,7 @@ export class AdminAiRepository {
   }
 
   static async getTelemetry(): Promise<AiTelemetryStats> {
-    const apiKey = getAiApiKey();
-    const isApiKeyConfigured = Boolean(apiKey && apiKey.length > 5);
+    const isApiKeyConfigured = isAiConfigured();
 
     try {
       const supabase = await this.getSupabase();
@@ -55,8 +55,8 @@ export class AdminAiRepository {
         const totalDuration = logs.reduce((acc, l) => acc + (l.duration_ms || 0), 0);
         const avgDuration = logs.length > 0 ? Math.round(totalDuration / logs.length) : 0;
         const totalTokens = logs.reduce((acc, l) => acc + (l.total_tokens || 0), 0);
-        // Gemini 2.5 Flash pricing estimate: ~$0.075 per 1M tokens
-        const estimatedCost = Number(((totalTokens / 1_000_000) * 0.075).toFixed(4));
+        // Cloudflare Workers AI Gemma 4 26B A4B pricing estimate: ~$0.10/M input, $0.30/M output (~$0.20 avg per 1M tokens)
+        const estimatedCost = Number(((totalTokens / 1_000_000) * 0.2).toFixed(4));
 
         return {
           totalRequests: total,
@@ -64,7 +64,7 @@ export class AdminAiRepository {
           avgDurationMs: avgDuration,
           totalTokens,
           estimatedCostUsd: estimatedCost,
-          activeProvider: isUsingOpenRouter() ? "OpenRouter" : "ModelAPI",
+          activeProvider: "Cloudflare Workers AI",
           configuredModel: getAiModel(),
           isApiKeyConfigured,
           isDatabaseLive: true,
@@ -74,7 +74,6 @@ export class AdminAiRepository {
       // Fall through to fallback store
     }
 
-    // Fallback store
     const logs = adminFallbackStore.aiLogs;
     const total = logs.length;
     const successes = logs.filter((l) => l.status === "success").length;
@@ -82,7 +81,7 @@ export class AdminAiRepository {
     const totalDuration = logs.reduce((acc, l) => acc + (l.duration_ms || 0), 0);
     const avgDuration = logs.length > 0 ? Math.round(totalDuration / logs.length) : 0;
     const totalTokens = logs.reduce((acc, l) => acc + (l.total_tokens || 0), 0);
-    const estimatedCost = Number(((totalTokens / 1_000_000) * 0.075).toFixed(4));
+    const estimatedCost = Number(((totalTokens / 1_000_000) * 0.2).toFixed(4));
 
     return {
       totalRequests: total,
@@ -90,7 +89,7 @@ export class AdminAiRepository {
       avgDurationMs: avgDuration,
       totalTokens,
       estimatedCostUsd: estimatedCost,
-      activeProvider: isUsingOpenRouter() ? "OpenRouter" : "ModelAPI",
+      activeProvider: "Cloudflare Workers AI",
       configuredModel: getAiModel(),
       isApiKeyConfigured,
       isDatabaseLive: false,
@@ -144,7 +143,7 @@ export class AdminAiRepository {
     }
   }
 
-  static async testLiveGemini(promptText: string): Promise<{
+  static async testLiveAi(promptText: string): Promise<{
     success: boolean;
     response?: string;
     durationMs: number;
@@ -162,7 +161,7 @@ export class AdminAiRepository {
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: isUsingOpenRouter() ? "openrouter" : "modelapi",
+        provider: "cloudflare",
         model: getAiModel(),
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: Math.round(textOutput.length / 4),
@@ -180,12 +179,12 @@ export class AdminAiRepository {
       };
     } catch (err: unknown) {
       const durationMs = Math.round(performance.now() - start);
-      const errMsg = err instanceof Error ? err.message : String(err);
+      const errMsg = sanitizeErrorMessage(err);
 
       await this.recordLog({
         user_id: null,
         feature: "admin_test",
-        provider: isUsingOpenRouter() ? "openrouter" : "modelapi",
+        provider: "cloudflare",
         model: getAiModel(),
         prompt_tokens: Math.round(promptText.length / 4),
         completion_tokens: 0,
@@ -202,5 +201,10 @@ export class AdminAiRepository {
         error: errMsg,
       };
     }
+  }
+
+  // Backwards-compatible alias
+  static async testLiveGemini(promptText: string) {
+    return this.testLiveAi(promptText);
   }
 }

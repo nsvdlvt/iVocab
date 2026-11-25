@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, LayoutDashboard, Shield, Briefcase, ArrowLeftRight } from "lucide-react";
+import { User, LogOut, Settings, LayoutDashboard, Shield } from "lucide-react";
 import { AdminCommandPalette } from "@/components/admin/layout/command-palette";
 import { AdminMobileNav } from "@/components/admin/layout/mobile-nav";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -114,22 +114,10 @@ export function AdminTopbar({ user }: AdminTopbarProps) {
               </div>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push(ROUTES.SELECT_WORKSPACE)}>
-              <div className="flex items-center gap-2 cursor-pointer w-full text-primary font-medium">
-                <ArrowLeftRight className="h-4 w-4" />
-                <span>Chuyển đổi không gian</span>
-              </div>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push(ROUTES.DASHBOARD)}>
               <div className="flex items-center gap-2 cursor-pointer w-full">
                 <LayoutDashboard className="h-4 w-4" />
-                <span>Không gian Vocabeer</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push(ROUTES.ETEAM_DASHBOARD)}>
-              <div className="flex items-center gap-2 cursor-pointer w-full text-purple-600 dark:text-purple-400">
-                <Briefcase className="h-4 w-4" />
-                <span>Không gian E-Team</span>
+                <span>Không gian học tập</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/admin/settings")}>

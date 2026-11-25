@@ -47,7 +47,7 @@ export async function registerAction(values: RegisterFormValues): Promise<Regist
         name,
         avatar_url: null,
       },
-      emailRedirectTo: `${origin}/auth/callback?next=/select-workspace`,
+      emailRedirectTo: `${origin}/auth/callback?next=${ROUTES.DASHBOARD}`,
     },
   });
 
@@ -60,7 +60,7 @@ export async function registerAction(values: RegisterFormValues): Promise<Regist
 
   // If immediate session is provided (email confirmation disabled in Supabase)
   if (signupResponse.data?.session) {
-    redirect(ROUTES.SELECT_WORKSPACE);
+    redirect(ROUTES.DASHBOARD);
   }
 
   // Email confirmation required flow

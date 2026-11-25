@@ -26,7 +26,7 @@ import {
   HelpCircle,
   BookOpen,
   Trophy,
-  ArrowLeftRight,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -168,15 +168,15 @@ export function AdminSidebar() {
       {/* Footer Return Link */}
       <div className="border-t border-slate-800 p-3 shrink-0 bg-[#030f31]">
         <Link
-          href={ROUTES.SELECT_WORKSPACE}
+          href={ROUTES.DASHBOARD}
           className={cn(
             buttonVariants({ variant: "outline" }),
             "w-full justify-start border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white bg-slate-900/60",
             isCollapsed && "justify-center px-0"
           )}
         >
-          <ArrowLeftRight className={cn("h-4 w-4 shrink-0", !isCollapsed && "mr-2")} />
-          {!isCollapsed && <span className="truncate">Đổi không gian</span>}
+          <LogOut className={cn("h-4 w-4 shrink-0", !isCollapsed && "mr-2")} />
+          {!isCollapsed && <span className="truncate">Quay lại Ứng dụng</span>}
         </Link>
       </div>
     </aside>

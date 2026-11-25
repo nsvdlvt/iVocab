@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 
 export const metadata: Metadata = {
   title: "Trung tâm AI & Đo lường | Vocabee Admin",
-  description: "Theo dõi số lượng yêu cầu AI, tỷ lệ lỗi, độ trễ và kiểm tra mô hình Gemini trực tiếp.",
+  description: "Theo dõi số lượng yêu cầu AI, tỷ lệ lỗi, độ trễ và kiểm tra mô hình Cloudflare Workers AI trực tiếp.",
 };
 
 export default async function AdminAiPage() {
@@ -24,7 +24,7 @@ export default async function AdminAiPage() {
             Trung tâm AI & Đo lường Mô hình
           </h1>
           <p className="text-sm text-muted-foreground">
-            Quản trị các kết nối Google Gemini API, tỷ lệ phản hồi, chi phí ước tính và kiểm tra thực thi live.
+            Quản trị kết nối Cloudflare Workers AI, tỷ lệ phản hồi, chi phí ước tính và kiểm tra thực thi live.
           </p>
         </div>
       </div>

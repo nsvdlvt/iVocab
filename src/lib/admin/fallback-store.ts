@@ -118,7 +118,7 @@ class AdminFallbackStore {
     {
       id: "ann_ai_release",
       title: "Tính năng mới: AI Writing Assistant",
-      content: "Luyện tập đặt câu và nhận phản hồi chi tiết ngay lập tức từ trợ lý AI Gemini.",
+      content: "Luyện tập đặt câu và nhận phản hồi chi tiết ngay lập tức từ trợ lý AI Vocabee.",
       type: "success",
       target_audience: "all",
       is_active: true,
@@ -255,12 +255,12 @@ class AdminFallbackStore {
       key: "ai_configuration",
       category: "ai",
       value: {
-        defaultModel: "gemini-2.5-flash",
+        defaultModel: "@cf/google/gemma-4-26b-a4b-it",
         temperature: 0.4,
         maxOutputTokens: 2048,
         timeoutMs: 10000,
       },
-      description: "Cấu hình mặc định cho các yêu cầu Gemini AI",
+      description: "Cấu hình mặc định cho các yêu cầu Cloudflare Workers AI",
       updated_at: new Date().toISOString(),
     },
   };

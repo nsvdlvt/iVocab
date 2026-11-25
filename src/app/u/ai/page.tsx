@@ -7,7 +7,7 @@ import { AIStudioHub } from "@/components/features/ai/AIStudioHub";
 export const metadata: Metadata = {
   title: "Vocabee AI Studio",
   description:
-    "Phòng luyện AI thông minh: Dệt truyện ngẫu hồi từ vựng, thử thách nhập vai đàm thoại thực tế và giải đáp cùng gia sư ảo.",
+    "Phòng luyện AI thông minh: Dệt truyện ngẫu hồi từ vựng và thử thách nhập vai đàm thoại thực tế.",
 };
 
 export default function AIPage() {

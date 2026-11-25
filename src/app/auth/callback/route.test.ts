@@ -69,7 +69,7 @@ describe("Auth Callback Route Handler (GET /auth/callback)", () => {
     expect(location).toBe("http://localhost:3000/vocabulary/set-456");
   });
 
-  it("should block open redirect attacks and fallback to select-workspace", async () => {
+  it("should block open redirect attacks and fallback to /u", async () => {
     mockExchangeCodeForSession.mockResolvedValueOnce({ data: { session: {} }, error: null });
 
     const request = new Request(
@@ -79,7 +79,7 @@ describe("Auth Callback Route Handler (GET /auth/callback)", () => {
 
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/select-workspace");
+    expect(location).toBe("http://localhost:3000/u");
   });
 
   it("should redirect to /reset-password?error=expired-link if recovery code exchange fails", async () => {
@@ -98,7 +98,7 @@ describe("Auth Callback Route Handler (GET /auth/callback)", () => {
     expect(location).toBe("http://localhost:3000/reset-password?error=expired-link");
   });
 
-  it("should successfully verify token_hash OTP and redirect to select-workspace by default when next is dashboard", async () => {
+  it("should successfully verify token_hash OTP and redirect to /u by default when next is dashboard", async () => {
     mockVerifyOtp.mockResolvedValueOnce({ data: { session: {} }, error: null });
 
     const request = new Request(
@@ -109,7 +109,7 @@ describe("Auth Callback Route Handler (GET /auth/callback)", () => {
     expect(mockVerifyOtp).toHaveBeenCalledWith({ token_hash: "otp-token", type: "signup" });
     expect(response.status).toBe(307);
     const location = response.headers.get("location");
-    expect(location).toBe("http://localhost:3000/select-workspace");
+    expect(location).toBe("http://localhost:3000/u");
   });
 
   it("should handle failed token_hash OTP verification for recovery", async () => {

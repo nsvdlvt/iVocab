@@ -87,21 +87,6 @@ const mockAdminProfile: UserProfile = {
   updated_at: new Date().toISOString(),
 };
 
-const mockETeamProfile: UserProfile = {
-  id: "eteam-789",
-  email: "eteam@vocabee.site",
-  role: "e_team",
-  display_name: "E-Team Member",
-  avatar_url: null,
-  level: "Intermediate (B2)",
-  streak: 3,
-  longest_streak: 8,
-  daily_goal: 10,
-  last_activity_at: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
 const mockUserProfile: UserProfile = {
   id: "user-456",
   email: "learner@vocabee.site",
@@ -123,7 +108,7 @@ describe("UserMenu Component", () => {
   });
 
   describe("Role Badge", () => {
-    it("renders MEMBER badge for user account in dropdown content", () => {
+    it("renders MEMBER badge for user/member account in dropdown content", () => {
       const html = renderToString(<UserMenu profile={mockUserProfile} />);
       expect(html).toContain("MEMBER");
       expect(html).toContain("Nguyễn Học Viên");
@@ -136,28 +121,14 @@ describe("UserMenu Component", () => {
       expect(html).toContain("Dũng Nguyễn");
       expect(html).toContain("dungbnlvt@gmail.com");
     });
-
-    it("renders E-TEAM badge for e_team account in dropdown content", () => {
-      const html = renderToString(<UserMenu profile={mockETeamProfile} />);
-      expect(html).toContain("E-TEAM");
-      expect(html).toContain("E-Team Member");
-    });
   });
 
-  describe("Workspace Switcher Option", () => {
-    it("renders 'Chuyển đổi không gian' for admin account", () => {
-      const html = renderToString(<UserMenu profile={mockAdminProfile} />);
-      expect(html).toContain("Chuyển đổi không gian");
-    });
-
-    it("renders 'Chuyển đổi không gian' for e_team account", () => {
-      const html = renderToString(<UserMenu profile={mockETeamProfile} />);
-      expect(html).toContain("Chuyển đổi không gian");
-    });
-
-    it("does NOT render 'Chuyển đổi không gian' for member/user account", () => {
-      const html = renderToString(<UserMenu profile={mockUserProfile} />);
-      expect(html).not.toContain("Chuyển đổi không gian");
+  describe("Unified Navigation (No Workspace Switcher)", () => {
+    it("does NOT render 'Chuyển đổi không gian' for any role", () => {
+      const adminHtml = renderToString(<UserMenu profile={mockAdminProfile} />);
+      const memberHtml = renderToString(<UserMenu profile={mockUserProfile} />);
+      expect(adminHtml).not.toContain("Chuyển đổi không gian");
+      expect(memberHtml).not.toContain("Chuyển đổi không gian");
     });
   });
 
@@ -169,11 +140,6 @@ describe("UserMenu Component", () => {
 
     it("does NOT render 'Trang quản trị' menu item when profile role is 'user'", () => {
       const html = renderToString(<UserMenu profile={mockUserProfile} />);
-      expect(html).not.toContain("Trang quản trị");
-    });
-
-    it("does NOT render 'Trang quản trị' menu item when profile role is 'e_team'", () => {
-      const html = renderToString(<UserMenu profile={mockETeamProfile} />);
       expect(html).not.toContain("Trang quản trị");
     });
 

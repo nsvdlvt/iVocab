@@ -78,6 +78,8 @@ export function LogsClient({ healthChecks, logs, totalLogs, isDatabaseLive = tru
         return <DbIcon className="h-4 w-4 text-blue-500" />;
       case "Storage":
         return <HardDrive className="h-4 w-4 text-purple-500" />;
+      case "Cloudflare Workers AI":
+      case "OpenRouter AI":
       case "Gemini AI":
         return <Sparkles className="h-4 w-4 text-amber-500" />;
       case "Dictionary API":

@@ -1,10 +1,52 @@
-import { canAccessAdmin, canAccessETeam, canAccessVocabeer } from "./roles";
+import { canAccessAdmin, canAccessMember } from "./roles";
 import { ROUTES } from "@/constants/routes";
 
 /**
  * Utility functions for safe URL redirection to prevent open redirect vulnerabilities
- * and validate role-based workspace authorization.
+ * and validate role-based route authorization.
  */
+
+/**
+ * Maps legacy Choose Workspace and E-Team paths to their unified /u/... equivalents.
+ * Returns null if the path is not a legacy workspace/E-Team route.
+ */
+export function resolveLegacyRedirectPath(path: string): string | null {
+  const clean = path.trim();
+  const [pathname, rawSearch] = clean.split("?");
+  const querySuffix = rawSearch ? `?${rawSearch}` : "";
+
+  if (
+    pathname === "/select-workspace" ||
+    pathname.startsWith("/select-workspace/") ||
+    pathname === "/choose-workspace" ||
+    pathname.startsWith("/choose-workspace/")
+  ) {
+    return `${ROUTES.DASHBOARD}${querySuffix}`;
+  }
+
+  if (
+    pathname === "/e-team" ||
+    pathname === "/e-team/dashboard" ||
+    pathname.startsWith("/e-team/dashboard/")
+  ) {
+    return `${ROUTES.DASHBOARD}${querySuffix}`;
+  }
+
+  if (pathname === "/e-team/vocabs") {
+    return `${ROUTES.VOCABULARY}${querySuffix}`;
+  }
+
+  if (pathname.startsWith("/e-team/vocabs/")) {
+    const remainder = pathname.slice("/e-team/vocabs/".length);
+    return `${ROUTES.VOCABULARY}/${remainder}${querySuffix}`;
+  }
+
+  if (pathname.startsWith("/e-team/")) {
+    return `${ROUTES.DASHBOARD}${querySuffix}`;
+  }
+
+  return null;
+}
 
 /**
  * Validates whether a given path is a safe internal application route.
@@ -67,22 +109,22 @@ export function isDestinationAuthorized(
 
   const clean = path.trim();
 
+  // Legacy workspace / E-Team paths are deprecated and should be mapped, not treated as direct targets
+  if (resolveLegacyRedirectPath(clean) !== null) {
+    return false;
+  }
+
   // Admin routes: require admin role
   if (clean === "/admin" || clean.startsWith("/admin/")) {
     return canAccessAdmin(role);
   }
 
-  // E-Team routes: require e_team or admin role
-  if (clean === "/e-team" || clean.startsWith("/e-team/")) {
-    return canAccessETeam(role);
-  }
-
-  // Vocabeer routes: require vocabeer access
+  // Member routes (/u/...): require member or admin access
   if (clean === "/u" || clean.startsWith("/u/")) {
-    return canAccessVocabeer(role);
+    return canAccessMember(role);
   }
 
-  // General routes (like /select-workspace, /settings, etc.)
+  // General routes (like /settings, /vocabulary, etc.)
   return true;
 }
 
@@ -91,39 +133,41 @@ export function isDestinationAuthorized(
  */
 export function getSafeRedirectUrl(
   target: string | null | undefined,
-  fallback: string = ROUTES.SELECT_WORKSPACE
+  fallback: string = ROUTES.DASHBOARD
 ): string {
   if (target && isSafeRedirectPath(target)) {
-    return target.trim();
+    const clean = target.trim();
+    const mappedLegacy = resolveLegacyRedirectPath(clean);
+    return mappedLegacy ?? clean;
   }
   return fallback;
 }
 
 /**
  * Validates both safety and authorization for a redirect target.
- * Prevents redirecting directly to a workspace dashboard by default.
- * Preserves specific intended destinations when the user's role is authorized.
+ * Redirects authenticated users to /u by default, while preserving authorized specific destinations
+ * and mapping legacy workspace/E-Team URLs to their /u equivalents.
  */
 export function getAuthorizedRedirectUrl(
   target: string | null | undefined,
   role: string | null | undefined,
-  fallback: string = ROUTES.SELECT_WORKSPACE
+  fallback: string = ROUTES.DASHBOARD
 ): string {
   if (target && isSafeRedirectPath(target)) {
     const clean = target.trim();
+    const mappedLegacy = resolveLegacyRedirectPath(clean);
+    const candidate = mappedLegacy ?? clean;
 
-    // Do not redirect directly to workspace dashboard by default
     if (
-      clean === "/" ||
-      clean === ROUTES.LANDING ||
-      clean === "/dashboard" ||
-      clean === ROUTES.DASHBOARD
+      candidate === "/" ||
+      candidate === ROUTES.LANDING ||
+      candidate === "/dashboard"
     ) {
       return fallback;
     }
 
-    if (isDestinationAuthorized(clean, role)) {
-      return clean;
+    if (isDestinationAuthorized(candidate, role)) {
+      return candidate;
     }
   }
 

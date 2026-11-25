@@ -7,24 +7,19 @@ import { PushNotificationPromptBanner } from "@/components/notifications/PushNot
 import { NotificationPermissionModal } from "@/components/notifications/NotificationPermissionModal";
 import { perfEnd, perfStart } from "@/lib/perf";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
-import { canAccessVocabeer, canAccessETeam } from "@/lib/auth/roles";
-import { ROUTES } from "@/constants/routes";
+import { canAccessMember } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function VocabeerLayout({ children }: AppLayoutProps) {
-  const timer = perfStart("route:vocabeer-layout");
+export default async function MemberLayout({ children }: AppLayoutProps) {
+  const timer = perfStart("route:member-layout");
   try {
     const profile = await getCurrentUser();
 
-    // If authenticated user does not have permission to access Vocabeer (e.g. e_team only), redirect
-    if (profile && !canAccessVocabeer(profile.role)) {
-      if (canAccessETeam(profile.role)) {
-        redirect(ROUTES.ETEAM_DASHBOARD);
-      }
+    if (profile && !canAccessMember(profile.role)) {
       redirect("/403");
     }
 

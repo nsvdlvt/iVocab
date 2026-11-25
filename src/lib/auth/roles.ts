@@ -1,18 +1,16 @@
-export type AppRole = "member" | "e_team" | "admin";
+export type AppRole = "member" | "admin";
 
 /**
- * Normalizes any database role string ('user', 'member', 'e_team', 'admin') to the canonical AppRole.
- * Guarantees backward compatibility with existing 'user' profiles.
+ * Normalizes any database role string ('user', 'member', legacy 'e_team', 'admin') to the canonical AppRole.
+ * Guarantees backward compatibility with existing 'user' and migrated 'e_team' profiles.
  */
 export function normalizeRole(role: string | null | undefined): AppRole {
   if (role === "admin") return "admin";
-  if (role === "e_team" || role === "eteam") return "e_team";
   return "member";
 }
 
 export const ROLE_DISPLAY_NAMES: Record<AppRole, string> = {
   member: "Member",
-  e_team: "E-Team",
   admin: "Admin",
 };
 
@@ -22,11 +20,6 @@ export const ROLE_BADGE_STYLES: Record<AppRole, { bg: string; text: string; bord
     text: "text-blue-600 dark:text-blue-400",
     border: "border-blue-500/30",
   },
-  e_team: {
-    bg: "bg-purple-500/10 dark:bg-purple-500/20",
-    text: "text-purple-600 dark:text-purple-400",
-    border: "border-purple-500/30",
-  },
   admin: {
     bg: "bg-amber-500/10 dark:bg-amber-500/20",
     text: "text-amber-600 dark:text-amber-400",
@@ -35,34 +28,22 @@ export const ROLE_BADGE_STYLES: Record<AppRole, { bg: string; text: string; bord
 };
 
 /**
- * Vocabeer workspace is accessible to Members, E-Team, and Admins.
- * (All authenticated platform users are allowed into Vocabeer).
+ * Member area (/u/...) is accessible to all authenticated Members and Admins.
  */
-export function canAccessVocabeer(role: string | null | undefined): boolean {
+export function canAccessMember(role: string | null | undefined): boolean {
   const norm = normalizeRole(role);
-  return norm === "member" || norm === "e_team" || norm === "admin";
+  return norm === "member" || norm === "admin";
 }
 
 /**
- * E-Team workspace is accessible to E-Team members and Admins.
+ * @deprecated Use canAccessMember instead. Kept as alias for backward compatibility.
  */
-export function canAccessETeam(role: string | null | undefined): boolean {
-  const norm = normalizeRole(role);
-  return norm === "e_team" || norm === "admin";
-}
+export const canAccessVocabeer = canAccessMember;
 
 /**
- * Admin portal is accessible strictly to Admins.
+ * Admin portal (/admin/...) is accessible strictly to Admins.
  */
 export function canAccessAdmin(role: string | null | undefined): boolean {
   const norm = normalizeRole(role);
   return norm === "admin";
-}
-
-/**
- * Workspace switcher is visible only to users with access to more than one workspace (or E-Team & Admin).
- */
-export function canSwitchWorkspace(role: string | null | undefined): boolean {
-  const norm = normalizeRole(role);
-  return norm === "e_team" || norm === "admin";
 }

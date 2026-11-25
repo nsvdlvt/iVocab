@@ -1,4 +1,4 @@
-import { getOpenRouterClient } from "@/lib/ai/openrouter/provider";
+import { getCloudflareClient } from "@/lib/ai/cloudflare/provider";
 
-// Centralized OpenAI client instance configured for OpenRouter
-export const openai = getOpenRouterClient();
+// Centralized OpenAI client instance configured for Cloudflare Workers AI
+export const openai = getCloudflareClient();

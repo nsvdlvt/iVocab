@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 
 export const metadata: Metadata = {
   title: "Cài đặt & Cấu hình Hệ thống | Vocabee Admin",
-  description: "Cấu hình chung ứng dụng, thuật toán học tập SRS, kết nối Google Gemini AI và chính sách bảo mật.",
+  description: "Cấu hình chung ứng dụng, thuật toán học tập SRS, kết nối Cloudflare Workers AI và chính sách bảo mật.",
 };
 
 export default async function AdminSettingsPage() {

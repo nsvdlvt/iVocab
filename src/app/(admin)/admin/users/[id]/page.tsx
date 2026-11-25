@@ -58,7 +58,6 @@ export default async function AdminUserDetailPage({ params }: UserDetailPageProp
               </h1>
               <Badge
                 variant={normalizeRole(profile.role) === "admin" ? "default" : "secondary"}
-                className={normalizeRole(profile.role) === "e_team" ? "border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10" : ""}
               >
                 {ROLE_DISPLAY_NAMES[normalizeRole(profile.role)]}
               </Badge>

@@ -9,11 +9,11 @@ import { AdminHealthRepository } from "../../repositories/admin/health.repositor
 
 const shouldRunLive = process.env.RUN_LIVE_AI_TESTS === "true";
 
-describe.sequential("Gemini & OpenRouter AI Integration", () => {
+describe.sequential("Cloudflare Workers AI Integration", () => {
   it("should ping AI health check successfully", async () => {
     const health = await AdminHealthRepository.checkAiProvider();
     expect(["healthy", "degraded"]).toContain(health.status);
-    expect(["Gemini AI", "OpenRouter AI"]).toContain(health.service);
+    expect(health.service).toBe("Cloudflare Workers AI");
   }, 20000);
 
   it("should generate a simple text response via responsesClient", async () => {
@@ -63,7 +63,11 @@ describe.sequential("Gemini & OpenRouter AI Integration", () => {
 
   it("should import vocabulary from plain text", async () => {
     if (!shouldRunLive) return;
-    const vocabList = await importVocabulary("apple: quả táo\nbanana: quả chuối");
+    const vocabList = await importVocabulary({
+      prompt: "apple: quả táo\nbanana: quả chuối",
+      mode: "words",
+      count: 2,
+    });
     expect(vocabList.length).toBeGreaterThanOrEqual(1);
     expect(vocabList.some((item) => item.word.toLowerCase().includes("apple"))).toBe(true);
   }, 30000);

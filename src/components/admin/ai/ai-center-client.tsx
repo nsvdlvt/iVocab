@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { testLiveGeminiAction } from "@/actions/admin/ai";
+import { testLiveAiAction } from "@/actions/admin/ai";
 import { AiTelemetryStats } from "@/repositories/admin/ai.repository";
 import { FallbackAiLog } from "@/lib/admin/fallback-store";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ export function AiCenterClient({ telemetry, logs }: AiCenterClientProps) {
     setIsRunningTest(true);
     setTestResult(null);
     try {
-      const res = await testLiveGeminiAction(testPrompt);
+      const res = await testLiveAiAction(testPrompt);
       setTestResult(res);
       if (res.ok) {
         toast.success(`Phản hồi thành công (${res.durationMs}ms)`);
@@ -99,7 +99,9 @@ export function AiCenterClient({ telemetry, logs }: AiCenterClientProps) {
                       : "text-destructive border-destructive/30 bg-destructive/10 font-bold"
                   }
                 >
-                  {telemetry.isApiKeyConfigured ? "ĐÃ CẤU HÌNH (GEMINI_API_KEY)" : "CHƯA CẤU HÌNH"}
+                  {telemetry.isApiKeyConfigured
+                    ? "ĐÃ CẤU HÌNH (CLOUDFLARE)"
+                    : "CHƯA CẤU HÌNH"}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">Bảo mật server-only</p>
@@ -149,21 +151,21 @@ export function AiCenterClient({ telemetry, logs }: AiCenterClientProps) {
             Khu vực Kiểm tra Thực thi Trực tiếp (Live AI Playground)
           </CardTitle>
           <CardDescription className="text-xs">
-            Gửi yêu cầu kiểm tra trực tiếp tới mô hình Gemini 2.5 Flash để đo độ trễ và độ chuẩn xác phản hồi
+            Gửi yêu cầu kiểm tra trực tiếp tới Cloudflare Workers AI ({telemetry.configuredModel}) để đo độ trễ và độ chuẩn xác phản hồi
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Textarea
               rows={3}
-              placeholder="Nhập prompt tiếng Anh hoặc tiếng Việt để gửi đến Gemini..."
+              placeholder="Nhập prompt tiếng Anh hoặc tiếng Việt để gửi đến Cloudflare Workers AI..."
               value={testPrompt}
               onChange={(e) => setTestPrompt(e.target.value)}
               className="font-sans text-sm"
             />
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                Mô hình: <code className="font-mono text-foreground font-semibold">gemini-2.5-flash</code>
+                Mô hình: <code className="font-mono text-foreground font-semibold">{telemetry.configuredModel}</code>
               </span>
               <Button
                 onClick={handleRunTest}
@@ -171,7 +173,7 @@ export function AiCenterClient({ telemetry, logs }: AiCenterClientProps) {
                 className="bg-[#f9971d] hover:bg-[#e68512] text-[#030f31] font-bold h-9"
               >
                 <Play className="h-4 w-4 mr-1.5" />
-                {isRunningTest ? "Đang gọi Gemini..." : "Thực thi Test Live"}
+                {isRunningTest ? "Đang gọi Cloudflare AI..." : "Thực thi Test Live"}
               </Button>
             </div>
           </div>
@@ -212,7 +214,7 @@ export function AiCenterClient({ telemetry, logs }: AiCenterClientProps) {
         <Card className="shadow-xs border-border/80">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-bold">Các Tính năng AI Tích hợp</CardTitle>
-            <CardDescription className="text-xs">Các phân hệ đang sử dụng Gemini</CardDescription>
+            <CardDescription className="text-xs">Các phân hệ đang sử dụng Cloudflare Workers AI</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
             <div className="p-3 rounded-lg border bg-muted/20 flex justify-between items-center">

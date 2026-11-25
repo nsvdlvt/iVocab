@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { redirect } from "next/navigation";
 
-export type Role = "user" | "member" | "e_team" | "admin";
+export type Role = "user" | "member" | "admin";
 export type Action = 
   | "accessAdmin" 
   | "manageUsers" 
@@ -15,7 +15,6 @@ export type Action =
 const rolePermissions: Record<Role, Action[]> = {
   user: [],
   member: [],
-  e_team: [],
   admin: ["accessAdmin", "manageUsers", "manageVocabulary", "manageSettings", "manageSystem"],
 };
 

@@ -2,13 +2,6 @@ export const ROUTES = {
   LANDING: "/",
   HOME: "/u",
   DASHBOARD: "/u",
-  VOCABEER_DASHBOARD: "/u",
-  SELECT_WORKSPACE: "/select-workspace",
-  ETEAM: "/e-team",
-  ETEAM_DASHBOARD: "/e-team/dashboard",
-  ETEAM_VOCABS: "/e-team/vocabs",
-  ETEAM_VOCAB_DETAIL: (setId: string) => `/e-team/vocabs/${setId}`,
-  ETEAM_VOCAB_LEARN: (setId: string) => `/e-team/vocabs/${setId}/learn`,
   ADMIN: "/admin",
   LOGIN: "/login",
   REGISTER: "/register",
@@ -37,4 +30,4 @@ export const ROUTES = {
 } as const;
 
 export type AppRoutes =
-  typeof ROUTES[keyof Omit<typeof ROUTES, "VOCABULARY_DETAIL" | "SHARE_VOCABULARY_DETAIL" | "AI_QUIZ" | "SPEAKING" | "ETEAM_VOCAB_DETAIL" | "ETEAM_VOCAB_LEARN" | "PERSONAL_TEST_TAKE" | "PERSONAL_TEST_RESULT">] | string;
+  typeof ROUTES[keyof Omit<typeof ROUTES, "VOCABULARY_DETAIL" | "VOCABULARY_LEARN" | "SHARE_VOCABULARY_DETAIL" | "AI_QUIZ" | "SPEAKING" | "PERSONAL_TEST_TAKE" | "PERSONAL_TEST_RESULT">] | string;

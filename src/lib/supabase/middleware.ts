@@ -4,8 +4,12 @@ import { env } from "@/lib/env";
 import { Database } from "@/types/database";
 import { perfEnd, perfStart } from "@/lib/perf";
 import { ROUTES } from "@/constants/routes";
-import { getAuthorizedRedirectUrl, isSafeRedirectPath } from "@/lib/auth/redirect-utils";
-import { canAccessAdmin, canAccessETeam, canAccessVocabeer } from "@/lib/auth/roles";
+import {
+  getAuthorizedRedirectUrl,
+  isSafeRedirectPath,
+  resolveLegacyRedirectPath,
+} from "@/lib/auth/redirect-utils";
+import { canAccessAdmin, canAccessMember } from "@/lib/auth/roles";
 
 export async function updateSession(request: NextRequest) {
   const totalTimer = perfStart("middleware");
@@ -48,14 +52,36 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 2. Guest-only authentication pages (authenticated users should be redirected away)
+  // 2. Redirect legacy workspace selection & E-Team URLs to unified /u/... equivalents
+  const legacyTarget = resolveLegacyRedirectPath(`${path}${request.nextUrl.search || ""}`);
+  if (legacyTarget) {
+    if (!user) {
+      const loginUrl = new URL(ROUTES.LOGIN, request.nextUrl.origin);
+      loginUrl.searchParams.set("next", legacyTarget);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie);
+      });
+      perfEnd(totalTimer);
+      return redirectResponse;
+    }
+
+    const redirectResponse = NextResponse.redirect(new URL(legacyTarget, request.nextUrl.origin));
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    perfEnd(totalTimer);
+    return redirectResponse;
+  }
+
+  // 3. Guest-only authentication pages (authenticated users should be redirected away)
   const isGuestOnlyPage =
     path === "/login" ||
     path === "/register" ||
     path === "/forgot-password" ||
     path === "/verify-otp";
 
-  // 3. Publicly accessible routes
+  // 4. Publicly accessible routes
   const isPublicPage =
     path === "/" ||
     path === "/u/dictionary" ||
@@ -68,7 +94,7 @@ export async function updateSession(request: NextRequest) {
     path === "/reset-password" ||
     isGuestOnlyPage;
 
-  // 4. API routes handling: never redirect API requests to HTML /login
+  // 5. API routes handling: never redirect API requests to HTML /login
   if (path.startsWith("/api/")) {
     const isPublicApi =
       path.startsWith("/api/translate") ||
@@ -90,7 +116,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 5. Redirect unauthenticated users from protected routes to login, preserving intended destination
+  // 6. Redirect unauthenticated users from protected routes to login, preserving intended destination
   if (!user && !isPublicPage) {
     const loginUrl = new URL(ROUTES.LOGIN, request.nextUrl.origin);
     const destination = `${path}${request.nextUrl.search || ""}`;
@@ -106,7 +132,7 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
-  // 6. Redirect authenticated users away from guest-only pages to their destination or workspace selection
+  // 7. Redirect authenticated users away from guest-only pages to their destination or /u
   if (user && isGuestOnlyPage) {
     const nextParam = request.nextUrl.searchParams.get("next");
     let userRole: string | null = null;
@@ -121,7 +147,7 @@ export async function updateSession(request: NextRequest) {
       } catch {}
     }
 
-    const targetUrl = getAuthorizedRedirectUrl(nextParam, userRole, ROUTES.SELECT_WORKSPACE);
+    const targetUrl = getAuthorizedRedirectUrl(nextParam, userRole, ROUTES.DASHBOARD);
     const redirectUrl = new URL(targetUrl, request.nextUrl.origin);
 
     const redirectResponse = NextResponse.redirect(redirectUrl);
@@ -134,13 +160,12 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
-  // 7. Role-based route authorization guards for authenticated requests
+  // 8. Role-based route authorization guards for authenticated requests
   if (user && typeof supabase.from === "function") {
     const isAccessingAdmin = path.startsWith("/admin");
-    const isAccessingETeam = path.startsWith("/e-team");
-    const isAccessingVocabeer = path.startsWith("/u") && !path.startsWith("/u/dictionary");
+    const isAccessingMember = path.startsWith("/u") && !path.startsWith("/u/dictionary");
 
-    if (isAccessingAdmin || isAccessingETeam || isAccessingVocabeer) {
+    if (isAccessingAdmin || isAccessingMember) {
       let userRole: string | null = null;
       try {
         const query = supabase
@@ -157,14 +182,8 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(new URL("/403", request.nextUrl.origin));
       }
 
-      // Rule: E-Team routes (/e-team/...) accessible to E-Team and Admin
-      if (isAccessingETeam && !canAccessETeam(userRole)) {
-        perfEnd(totalTimer);
-        return NextResponse.redirect(new URL("/403", request.nextUrl.origin));
-      }
-
-      // Rule: Vocabeer routes (/u/...) accessible to Member, E-Team, and Admin
-      if (isAccessingVocabeer && !canAccessVocabeer(userRole)) {
+      // Rule: Member routes (/u/...) accessible to Member and Admin
+      if (isAccessingMember && !canAccessMember(userRole)) {
         perfEnd(totalTimer);
         return NextResponse.redirect(new URL("/403", request.nextUrl.origin));
       }

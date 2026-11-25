@@ -47,7 +47,7 @@ export function SettingsClient({ initialSettings, isDatabaseLive = true }: Setti
 
   // AI Settings state
   const aiInitial = (initialSettings.ai_configuration?.value as any) || {};
-  const [aiModel, setAiModel] = useState<string>(aiInitial.defaultModel || "gemini-2.5-flash");
+  const [aiModel, setAiModel] = useState<string>(aiInitial.defaultModel || "@cf/google/gemma-4-26b-a4b-it");
   const [aiTemp, setAiTemp] = useState<number>(aiInitial.temperature ?? 0.4);
   const [maxTokens, setMaxTokens] = useState<number>(aiInitial.maxOutputTokens ?? 2048);
   const [aiTimeout, setAiTimeout] = useState<number>(aiInitial.timeoutMs ?? 10000);
@@ -284,9 +284,9 @@ export function SettingsClient({ initialSettings, isDatabaseLive = true }: Setti
         <TabsContent value="ai">
           <Card className="shadow-xs border-border/80">
             <CardHeader>
-              <CardTitle className="text-lg">Cấu hình Mô hình Trí tuệ Nhân tạo (Gemini)</CardTitle>
+              <CardTitle className="text-lg">Cấu hình Mô hình Trí tuệ Nhân tạo (Cloudflare Workers AI)</CardTitle>
               <CardDescription>
-                Điều chỉnh thông số suy luận, nhiệt độ sáng tạo và độ trễ ngắt kết nối cho các tác vụ AI.
+                Điều chỉnh thông số suy luận, nhiệt độ sáng tạo và độ trễ ngắt kết nối cho các tác vụ AI trên Cloudflare Workers AI.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -298,9 +298,8 @@ export function SettingsClient({ initialSettings, isDatabaseLive = true }: Setti
                     value={aiModel}
                     onChange={(e) => setAiModel(e.target.value)}
                   >
-                    <option value="gemini-2.5-flash">Google Gemini 2.5 Flash (Tốc độ & Hiệu năng)</option>
-                    <option value="gemini-1.5-pro">Google Gemini 1.5 Pro (Suy luận sâu)</option>
-                    <option value="gemini-1.5-flash">Google Gemini 1.5 Flash (Phiên bản tiêu chuẩn)</option>
+                    <option value="@cf/google/gemma-4-26b-a4b-it">Google Gemma 4 26B A4B (Chính - Cloudflare Workers AI)</option>
+                    <option value="@cf/openai/gpt-oss-20b">OpenAI GPT-OSS 20B (Dự phòng - Cloudflare Workers AI)</option>
                   </select>
                 </div>
 

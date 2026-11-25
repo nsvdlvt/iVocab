@@ -63,14 +63,7 @@ export const columns: ColumnDef<UserRow>[] = [
       const role = row.getValue("role") as string;
       const norm = normalizeRole(role);
       return (
-        <Badge
-          variant={norm === "admin" ? "default" : "secondary"}
-          className={
-            norm === "e_team"
-              ? "border-purple-500/40 text-purple-600 dark:text-purple-400 bg-purple-500/10"
-              : ""
-          }
-        >
+        <Badge variant={norm === "admin" ? "default" : "secondary"}>
           {ROLE_DISPLAY_NAMES[norm]}
         </Badge>
       );

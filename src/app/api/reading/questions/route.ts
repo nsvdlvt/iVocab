@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getQuestionsForArticle, DEFAULT_READING_QUESTIONS } from "@/lib/reading/reading-questions";
 import type { ComprehensionQuestion } from "@/components/features/reading/reading-types";
-import { DEFAULT_AI_MODELS, getAiApiKey, getAiBaseUrl, AI_MODEL } from "@/lib/ai/constants";
+import { isAiConfigured } from "@/lib/ai/constants";
 import { extractJsonPayload, requestTextResponse } from "@/lib/ai/json-response";
 
 export const dynamic = "force-dynamic";
@@ -41,10 +41,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = getAiApiKey();
-    const baseURL = getAiBaseUrl();
-
-    if (!apiKey) {
+    if (!isAiConfigured()) {
       const fallback = slug ? DEFAULT_READING_QUESTIONS[slug] ?? [] : [];
       return NextResponse.json({ questions: fallback, source: "curated" });
     }
