@@ -28,7 +28,6 @@ import {
   Edit2,
   Trash2,
   MoreVertical,
-  CheckCircle2,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -122,9 +121,9 @@ export function PersonalTestCard({
                 <div className="flex items-center gap-2">
                   <Badge
                     variant="outline"
-                    className="text-[11px] font-mono border-primary/30 text-primary bg-primary/5"
+                    className="text-[11px] font-semibold border-primary/30 text-primary bg-primary/5"
                   >
-                    vocabee-test-v1
+                    AI Personal Test
                   </Badge>
                   {test.has_active_attempt && (
                     <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-semibold">

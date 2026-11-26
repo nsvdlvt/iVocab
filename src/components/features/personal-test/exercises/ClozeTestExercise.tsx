@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ClozeTestExercise as ClozeTestType, TestMode } from "@/types/vocabee-test";
 import { parseClozePassage } from "@/lib/personal-test/vocabee-test-parser";
 import { getQuestionKey, checkSingleAnswer } from "@/lib/personal-test/vocabee-test-grader";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, HelpCircle, Sparkles, BookOpen } from "lucide-react";
+import { CheckCircle2, XCircle, HelpCircle, BookOpen, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WordBankBar } from "./WordBankBar";
 
 interface ClozeTestExerciseProps {
   exercise: ClozeTestType;
@@ -27,96 +27,142 @@ export function ClozeTestExercise({
   mode,
   isChecked,
 }: ClozeTestExerciseProps) {
-  const [activeBlankId, setActiveBlankId] = useState<number | null>(
-    exercise.answers[0]?.id ?? null
-  );
+  const [focusedBlankId, setFocusedBlankId] = useState<number | null>(null);
+  const [selectedBankWord, setSelectedBankWord] = useState<string | null>(null);
+  const [hoveredBlankId, setHoveredBlankId] = useState<number | null>(null);
+  const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+
+  const isLocked = isChecked && mode === "practice";
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ blankId: number | null }>).detail;
+      setHoveredBlankId(detail?.blankId ?? null);
+    };
+    window.addEventListener("vocabee-blank-hover", handler);
+    return () => window.removeEventListener("vocabee-blank-hover", handler);
+  }, []);
 
   const segments = useMemo(() => {
     return parseClozePassage(exercise.passage);
   }, [exercise.passage]);
 
-  const handleWordBankClick = (word: string) => {
-    if (isChecked && mode === "practice") return;
-
-    if (activeBlankId !== null) {
-      const qKey = getQuestionKey(setIndex, exerciseIndex, "cloze_test", activeBlankId);
-      onAnswerChange(qKey, word);
-    }
+  const fillBlank = (blankId: number, word: string) => {
+    if (isLocked) return;
+    const qKey = getQuestionKey(setIndex, exerciseIndex, "cloze_test", blankId);
+    onAnswerChange(qKey, word);
+    setFocusedBlankId(blankId);
+    setTimeout(() => {
+      inputRefs.current.get(blankId)?.focus();
+    }, 0);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Exercise Instructions & Word Bank Header */}
-      <div className="rounded-2xl border border-primary/20 bg-muted/20 p-4 sm:p-5 space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>Ngân hàng từ vựng (Word Bank)</span>
-          </div>
-          <span className="text-[11px] text-muted-foreground">
-            Nhấn vào từ để điền vào ô trống đang chọn
-          </span>
-        </div>
+  const handleSelectBankWord = (word: string | null) => {
+    if (isLocked) return;
+    if (word && focusedBlankId !== null && selectedBankWord === null) {
+      fillBlank(focusedBlankId, word);
+      return;
+    }
+    setSelectedBankWord(word);
+  };
 
-        {/* Word Bank Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {exercise.word_bank.map((word, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleWordBankClick(word)}
-              disabled={isChecked && mode === "practice"}
-              className="rounded-xl border border-border/80 bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition-all cursor-pointer shadow-2xs active:scale-95 disabled:pointer-events-none disabled:opacity-60"
-            >
-              {word}
-            </button>
-          ))}
-        </div>
+  const usedAnswers = exercise.answers.map((ans) => {
+    const qKey = getQuestionKey(setIndex, exerciseIndex, "cloze_test", ans.id);
+    return userAnswers[qKey] || "";
+  });
+
+  return (
+    <div className="space-y-5">
+      {/* Sticky Word Bank */}
+      <WordBankBar
+        wordBank={exercise.word_bank}
+        usedAnswers={usedAnswers}
+        selectedWord={selectedBankWord}
+        onSelectWord={handleSelectBankWord}
+        onDropWordOnBlank={(blankId, word) => fillBlank(blankId, word)}
+        disabled={isLocked}
+        helperText="Kéo thả hoặc chạm từ rồi nhấn vào ô trống trong đoạn văn"
+      />
+
+      {/* Grammar Transformation Tip */}
+      <div className="flex items-start gap-2 rounded-xl border border-border/70 bg-muted/25 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <span>
+          <strong>Lưu ý ngữ pháp:</strong> Một số ô trống yêu cầu chia động từ, số ít/nhiều hoặc biến đổi từ loại dựa theo ngữ cảnh đoạn văn.
+        </span>
       </div>
 
-      {/* Natural Passage Container */}
+      {/* Passage Container */}
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-7 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground pb-2 border-b border-border/60">
-          <BookOpen className="h-4 w-4 text-primary" />
-          <span>Đoạn văn đọc hiểu (Reading Passage)</span>
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <span>Đoạn văn đọc hiểu (Reading Passage)</span>
+          </div>
+          {selectedBankWord && !isLocked && (
+            <span className="text-[11px] font-medium text-primary">
+              Nhấn vào ô trống để điền &ldquo;{selectedBankWord}&rdquo;
+            </span>
+          )}
         </div>
 
-        {/* Natural text flow rendering */}
         <div className="text-base sm:text-lg leading-loose sm:leading-loose text-foreground font-normal">
           {segments.map((segment, idx) => {
             if (segment.type === "text") {
               return <span key={idx}>{segment.value}</span>;
             }
 
-            // Blank replacement
             const blankId = segment.blankId!;
             const qKey = getQuestionKey(setIndex, exerciseIndex, "cloze_test", blankId);
             const answerObj = exercise.answers.find((a) => a.id === blankId);
             const currentAnswer = userAnswers[qKey] || "";
-            const isSelected = activeBlankId === blankId;
-            const isCorrect = isChecked && answerObj
-              ? checkSingleAnswer("cloze_test", currentAnswer, answerObj.answer)
-              : null;
+            const isSelected = focusedBlankId === blankId;
+            const isDropHovered = hoveredBlankId === blankId;
+            const isCorrect =
+              isChecked && answerObj
+                ? checkSingleAnswer("cloze_test", currentAnswer, answerObj.answer)
+                : null;
 
             return (
               <span
                 key={idx}
-                onClick={() => setActiveBlankId(blankId)}
-                className="inline-flex items-center mx-1.5 align-baseline"
+                data-blank-drop-id={blankId}
+                onClick={() => {
+                  if (isLocked) return;
+                  if (selectedBankWord) {
+                    fillBlank(blankId, selectedBankWord);
+                    setSelectedBankWord(null);
+                  } else {
+                    setFocusedBlankId(blankId);
+                    inputRefs.current.get(blankId)?.focus();
+                  }
+                }}
+                className="inline-flex items-center gap-1 mx-1.5 align-baseline"
               >
-                <span className="text-xs font-bold text-muted-foreground mr-1 select-none">
+                <span className="text-xs font-bold text-muted-foreground select-none">
                   ({blankId})
                 </span>
                 <input
+                  ref={(el) => {
+                    if (el) inputRefs.current.set(blankId, el);
+                    else inputRefs.current.delete(blankId);
+                  }}
                   type="text"
                   value={currentAnswer}
                   onChange={(e) => onAnswerChange(qKey, e.target.value)}
-                  onFocus={() => setActiveBlankId(blankId)}
-                  disabled={isChecked && mode === "practice"}
+                  onFocus={() => setFocusedBlankId(blankId)}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setFocusedBlankId((prev) => (prev === blankId ? null : prev));
+                    }, 150);
+                  }}
+                  disabled={isLocked}
                   placeholder="[ ______ ]"
                   className={cn(
-                    "h-8 sm:h-9 w-32 sm:w-38 text-center font-semibold text-xs sm:text-sm rounded-lg border-2 inline-block transition-all",
-                    isSelected
+                    "h-8 sm:h-9 w-36 sm:w-44 text-center font-semibold text-xs sm:text-sm rounded-lg border-2 inline-block transition-all",
+                    isDropHovered
+                      ? "ring-2 ring-primary/50 border-primary bg-primary/15"
+                      : isSelected
                       ? "ring-2 ring-primary/40 border-primary"
                       : "border-border/80 hover:border-primary/50",
                     isChecked
@@ -126,6 +172,19 @@ export function ClozeTestExercise({
                       : "bg-background"
                   )}
                 />
+                {currentAnswer && !isLocked && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAnswerChange(qKey, "");
+                    }}
+                    aria-label={`Xóa ô trống ${blankId}`}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </span>
             );
           })}
@@ -175,11 +234,24 @@ export function ClozeTestExercise({
 
                   <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
                     <div className="text-muted-foreground">
-                      Bạn điền: <strong className={isCorrect ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>{userAns || "(trống)"}</strong>
+                      Bạn điền:{" "}
+                      <strong
+                        className={
+                          isCorrect
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-destructive"
+                        }
+                      >
+                        {userAns || "(trống)"}
+                      </strong>
                     </div>
                     {!isCorrect && (
                       <div className="text-muted-foreground">
-                        • Đáp án đúng: <strong className="text-emerald-600 dark:text-emerald-400">{ans.answer}</strong>
+                        <span className="mx-1 text-border">|</span>
+                        Đáp án đúng:{" "}
+                        <strong className="text-emerald-600 dark:text-emerald-400">
+                          {ans.answer}
+                        </strong>
                       </div>
                     )}
                   </div>

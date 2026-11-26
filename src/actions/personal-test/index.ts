@@ -2,38 +2,8 @@
 
 import { requireVocabeerUser } from "@/lib/auth/require-user";
 import { PersonalTestRepository } from "@/repositories/personal-test.repository";
-import { validateVocabeeTestJson } from "@/lib/personal-test/vocabee-test-validator";
 import { revalidatePath } from "next/cache";
 import { TestMode } from "@/types/vocabee-test";
-
-export async function savePersonalTestAction(rawJson: unknown) {
-  const user = await requireVocabeerUser();
-
-  const validation = validateVocabeeTestJson(rawJson);
-  if (!validation.valid) {
-    return {
-      success: false as const,
-      errors: validation.errors,
-    };
-  }
-
-  const created = await PersonalTestRepository.createPersonalTest(user.id, validation.data);
-  if (!created) {
-    return {
-      success: false as const,
-      error: "Không thể lưu bài kiểm tra vào cơ sở dữ liệu. Vui lòng thử lại.",
-    };
-  }
-
-  revalidatePath("/u/personal-test");
-  revalidatePath("/personal-test");
-
-  return {
-    success: true as const,
-    testId: created.id,
-    summary: validation.summary,
-  };
-}
 
 export async function updatePersonalTestTitleAction(testId: string, title: string) {
   const user = await requireVocabeerUser();

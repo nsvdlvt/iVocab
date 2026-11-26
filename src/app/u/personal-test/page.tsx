@@ -4,18 +4,28 @@ import { requireVocabeerUser } from "@/lib/auth/require-user";
 import { PersonalTestRepository } from "@/repositories/personal-test.repository";
 import { PersonalTestDashboard } from "@/components/features/personal-test/PersonalTestDashboard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Personal Test - Vocabee",
-  description: "Tạo, nhập và thực hành các bài kiểm tra từ vựng cá nhân hóa theo chuẩn vocabee-test-v1",
+  description:
+    "Chọn bộ từ vựng, tùy chỉnh danh sách từ và tạo bài kiểm tra cá nhân hóa 4 kỹ năng bằng AI trên Vocabee",
 };
 
 export default async function PersonalTestPage() {
   const user = await requireVocabeerUser();
 
-  const [tests, recentAttempts] = await Promise.all([
+  const [selectableSets, tests, recentAttempts] = await Promise.all([
+    PersonalTestRepository.getUserSelectableVocabSets(user.id),
     PersonalTestRepository.getPersonalTests(user.id),
     PersonalTestRepository.getRecentAttempts(user.id, 5),
   ]);
 
-  return <PersonalTestDashboard tests={tests} recentAttempts={recentAttempts} />;
+  return (
+    <PersonalTestDashboard
+      selectableSets={selectableSets}
+      tests={tests}
+      recentAttempts={recentAttempts}
+    />
+  );
 }

@@ -7,7 +7,6 @@ import {
   PersonalTestAttemptRecord,
   TestMode,
   OverallGradingResult,
-  VocabeeExercise,
 } from "@/types/vocabee-test";
 import { TestProgress } from "./TestProgress";
 import { ExerciseRenderer } from "./ExerciseRenderer";
@@ -29,9 +28,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Save,
-  HelpCircle,
-  RotateCcw,
   LogOut,
   Send,
 } from "lucide-react";
@@ -67,6 +63,8 @@ export function TestSessionView({
   const [completedGrading, setCompletedGrading] = useState<OverallGradingResult | null>(
     initialGrading
   );
+  const [progressOffsetPx, setProgressOffsetPx] = useState(118);
+  const sessionRootRef = useRef<HTMLDivElement>(null);
 
   const currentSet = test.content.sets[currentSetIndex] || test.content.sets[0];
   const currentExercise = currentSet.exercises[currentExerciseIndex];
@@ -115,25 +113,43 @@ export function TestSessionView({
     currentSetIndex === test.content.sets.length - 1 && currentExerciseIndex === 3;
   const isFirstExercise = currentSetIndex === 0 && currentExerciseIndex === 0;
 
-  // Debounced auto-save checkpoint
+  // Debounced auto-save checkpoint + immediate flush helper
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const saveProgress = useCallback(
-    (newAnswers: Record<string, string>, sIdx: number, eIdx: number) => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          await saveAttemptProgressAction(attempt.id, {
-            answers: newAnswers,
-            currentSetIndex: sIdx,
-            currentExerciseIndex: eIdx,
-          });
-        } catch (e) {
-          console.error("Failed to auto-save attempt progress:", e);
-        }
-      }, 1000);
+
+  const flushProgress = useCallback(
+    async (newAnswers: Record<string, string>, sIdx: number, eIdx: number) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      try {
+        await saveAttemptProgressAction(attempt.id, {
+          answers: newAnswers,
+          currentSetIndex: sIdx,
+          currentExerciseIndex: eIdx,
+        });
+      } catch (e) {
+        console.error("Failed to save attempt progress:", e);
+      }
     },
     [attempt.id]
   );
+
+  const saveProgress = useCallback(
+    (newAnswers: Record<string, string>, sIdx: number, eIdx: number) => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        void flushProgress(newAnswers, sIdx, eIdx);
+      }, 600);
+    },
+    [flushProgress]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const handleAnswerChange = (questionKey: string, value: string) => {
     const updated = { ...answers, [questionKey]: value };
@@ -147,40 +163,36 @@ export function TestSessionView({
       return;
     }
     setCheckedMap((prev) => ({ ...prev, [currentExerciseKey]: true }));
+    void flushProgress(answers, currentSetIndex, currentExerciseIndex);
     toast.success("Đã chấm điểm! Xem giải thích chi tiết phía dưới.");
   };
 
-  const handleNext = () => {
-    if (mode === "practice" && !isCurrentChecked) {
-      toast.info('Nhấn "Kiểm tra đáp án" trước khi chuyển sang câu tiếp theo.');
-      return;
+  const handleNavigateTo = (nextSetIdx: number, nextExIdx: number) => {
+    setCurrentSetIndex(nextSetIdx);
+    setCurrentExerciseIndex(nextExIdx);
+    void flushProgress(answers, nextSetIdx, nextExIdx);
+    const scrollHost = sessionRootRef.current?.closest("main");
+    if (scrollHost) {
+      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  };
 
+  const handleNext = () => {
     if (currentExerciseIndex < 3) {
-      const nextExIdx = currentExerciseIndex + 1;
-      setCurrentExerciseIndex(nextExIdx);
-      saveProgress(answers, currentSetIndex, nextExIdx);
+      handleNavigateTo(currentSetIndex, currentExerciseIndex + 1);
     } else if (currentSetIndex < test.content.sets.length - 1) {
-      const nextSetIdx = currentSetIndex + 1;
-      setCurrentSetIndex(nextSetIdx);
-      setCurrentExerciseIndex(0);
-      saveProgress(answers, nextSetIdx, 0);
+      handleNavigateTo(currentSetIndex + 1, 0);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePrevious = () => {
     if (currentExerciseIndex > 0) {
-      const prevExIdx = currentExerciseIndex - 1;
-      setCurrentExerciseIndex(prevExIdx);
-      saveProgress(answers, currentSetIndex, prevExIdx);
+      handleNavigateTo(currentSetIndex, currentExerciseIndex - 1);
     } else if (currentSetIndex > 0) {
-      const prevSetIdx = currentSetIndex - 1;
-      setCurrentSetIndex(prevSetIdx);
-      setCurrentExerciseIndex(3);
-      saveProgress(answers, prevSetIdx, 3);
+      handleNavigateTo(currentSetIndex - 1, 3);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmitTest = async () => {
@@ -231,7 +243,11 @@ export function TestSessionView({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div
+      ref={sessionRootRef}
+      className="flex flex-col min-h-screen bg-background"
+      style={{ "--test-progress-offset": `${progressOffsetPx}px` } as React.CSSProperties}
+    >
       {/* Test Progress & Sticky Header */}
       <TestProgress
         testTitle={test.title}
@@ -243,9 +259,12 @@ export function TestSessionView({
         overallProgress={overallProgress}
         mode={mode}
         onModeToggle={(m) => setMode(m)}
+        onSelectExercise={(exIdx) => handleNavigateTo(currentSetIndex, exIdx)}
+        onSelectSet={(sIdx) => handleNavigateTo(sIdx, 0)}
         onExit={() => setIsExitDialogOpen(true)}
         answeredCount={answeredTotalCount}
         totalQuestions={testTotalQuestions}
+        onHeightChange={setProgressOffsetPx}
       />
 
       {/* Main Exercise Viewport */}
@@ -320,7 +339,6 @@ export function TestSessionView({
               variant="default"
               size="sm"
               onClick={handleNext}
-              disabled={mode === "practice" && !isCurrentChecked}
               className="cursor-pointer gap-1.5 text-xs h-9 font-semibold shadow-xs"
             >
               <span>Tiếp theo</span>
@@ -356,7 +374,8 @@ export function TestSessionView({
               type="button"
               variant="default"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
+                await flushProgress(answers, currentSetIndex, currentExerciseIndex);
                 setIsExitDialogOpen(false);
                 router.push("/u/personal-test");
               }}

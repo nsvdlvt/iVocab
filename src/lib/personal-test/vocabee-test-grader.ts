@@ -60,6 +60,16 @@ export function checkSingleAnswer(
     return correctAnswer.some((ans) => normalizeAnswer(ans) === normUser);
   }
 
+  if (typeof correctAnswer === "string" && /\s[\/|]\s/.test(correctAnswer)) {
+    const acceptedVariants = correctAnswer
+      .split(/\s[\/|]\s/)
+      .map((v) => normalizeAnswer(v))
+      .filter(Boolean);
+    if (acceptedVariants.length > 0) {
+      return acceptedVariants.includes(normUser);
+    }
+  }
+
   return normUser === normalizeAnswer(correctAnswer);
 }
 

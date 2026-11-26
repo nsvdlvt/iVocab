@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SentenceCompletionExercise as SentenceCompletionType, TestMode } from "@/types/vocabee-test";
 import { getQuestionKey, checkSingleAnswer } from "@/lib/personal-test/vocabee-test-grader";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, XCircle, HelpCircle, Sparkles, CornerDownLeft } from "lucide-react";
+import { CheckCircle2, XCircle, HelpCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WordBankBar } from "./WordBankBar";
 
 interface SentenceCompletionExerciseProps {
   exercise: SentenceCompletionType;
@@ -27,47 +28,77 @@ export function SentenceCompletionExercise({
   mode,
   isChecked,
 }: SentenceCompletionExerciseProps) {
-  const [activeItemId, setActiveItemId] = useState<number | null>(
-    exercise.items[0]?.id ?? null
-  );
+  const [focusedItemId, setFocusedItemId] = useState<number | null>(null);
+  const [selectedBankWord, setSelectedBankWord] = useState<string | null>(null);
+  const [hoveredBlankId, setHoveredBlankId] = useState<number | null>(null);
+  const inputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
-  const handleWordBankClick = (word: string) => {
-    if (isChecked && mode === "practice") return;
+  const isLocked = isChecked && mode === "practice";
 
-    if (activeItemId !== null) {
-      const qKey = getQuestionKey(setIndex, exerciseIndex, "sentence_completion", activeItemId);
-      onAnswerChange(qKey, word);
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ blankId: number | null }>).detail;
+      setHoveredBlankId(detail?.blankId ?? null);
+    };
+    window.addEventListener("vocabee-blank-hover", handler);
+    return () => window.removeEventListener("vocabee-blank-hover", handler);
+  }, []);
+
+  const fillBlank = (itemId: number, word: string) => {
+    if (isLocked) return;
+    const qKey = getQuestionKey(setIndex, exerciseIndex, "sentence_completion", itemId);
+    onAnswerChange(qKey, word);
+    setFocusedItemId(itemId);
+    setTimeout(() => {
+      inputRefs.current.get(itemId)?.focus();
+    }, 0);
+  };
+
+  const handleSelectBankWord = (word: string | null) => {
+    if (isLocked) return;
+    // If an input is actively focused and user clicked a chip, fill it directly
+    if (word && focusedItemId !== null && selectedBankWord === null) {
+      fillBlank(focusedItemId, word);
+      return;
+    }
+    setSelectedBankWord(word);
+  };
+
+  const handleBlankContainerClick = (itemId: number) => {
+    if (isLocked) return;
+    if (selectedBankWord) {
+      fillBlank(itemId, selectedBankWord);
+      setSelectedBankWord(null);
+    } else {
+      setFocusedItemId(itemId);
+      inputRefs.current.get(itemId)?.focus();
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Exercise Instructions & Word Bank Header */}
-      <div className="rounded-2xl border border-primary/20 bg-muted/20 p-4 sm:p-5 space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>Ngân hàng từ vựng (Word Bank)</span>
-          </div>
-          <span className="text-[11px] text-muted-foreground">
-            Nhấn vào từ để điền vào câu đang chọn
-          </span>
-        </div>
+  const usedAnswers = exercise.items.map((item) => {
+    const qKey = getQuestionKey(setIndex, exerciseIndex, "sentence_completion", item.id);
+    return userAnswers[qKey] || "";
+  });
 
-        {/* Word Bank Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {exercise.word_bank.map((word, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleWordBankClick(word)}
-              disabled={isChecked && mode === "practice"}
-              className="rounded-xl border border-border/80 bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary transition-all cursor-pointer shadow-2xs active:scale-95 disabled:pointer-events-none disabled:opacity-60"
-            >
-              {word}
-            </button>
-          ))}
-        </div>
+  return (
+    <div className="space-y-5">
+      {/* Sticky Word Bank */}
+      <WordBankBar
+        wordBank={exercise.word_bank}
+        usedAnswers={usedAnswers}
+        selectedWord={selectedBankWord}
+        onSelectWord={handleSelectBankWord}
+        onDropWordOnBlank={(blankId, word) => fillBlank(blankId, word)}
+        disabled={isLocked}
+        helperText="Kéo thả hoặc chạm từ rồi nhấn ô trống (có thể sửa/chia dạng từ)"
+      />
+
+      {/* Grammar Transformation Tip */}
+      <div className="flex items-start gap-2 rounded-xl border border-border/70 bg-muted/25 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <span>
+          <strong>Lưu ý ngữ pháp:</strong> Word Bank hiển thị dạng nguyên mẫu. Hãy kiểm tra thì, số ít/nhiều hoặc từ loại để điền dạng từ chính xác nhất (ví dụ: <em>exacerbate</em> → <em>exacerbated</em>).
+        </span>
       </div>
 
       {/* Sentence Items List */}
@@ -75,12 +106,12 @@ export function SentenceCompletionExercise({
         {exercise.items.map((item, index) => {
           const qKey = getQuestionKey(setIndex, exerciseIndex, "sentence_completion", item.id);
           const currentAnswer = userAnswers[qKey] || "";
-          const isSelected = activeItemId === item.id;
+          const isFocused = focusedItemId === item.id;
+          const isDropHovered = hoveredBlankId === item.id;
           const isCorrect = isChecked
             ? checkSingleAnswer("sentence_completion", currentAnswer, item.answer)
             : null;
 
-          // Split sentence at '___'
           const parts = item.sentence.split(/_{3,}/);
           const prefix = parts[0] || "";
           const suffix = parts.slice(1).join(" ") || "";
@@ -88,10 +119,14 @@ export function SentenceCompletionExercise({
           return (
             <div
               key={item.id}
-              onClick={() => setActiveItemId(item.id)}
+              data-blank-drop-id={item.id}
+              onClick={() => handleBlankContainerClick(item.id)}
               className={cn(
                 "rounded-2xl border p-4 sm:p-5 transition-all space-y-3",
-                isSelected
+                !isLocked && "cursor-pointer",
+                isDropHovered
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/40 shadow-sm"
+                  : isFocused
                   ? "border-primary/50 bg-card shadow-xs ring-1 ring-primary/30"
                   : isChecked
                   ? isCorrect
@@ -105,36 +140,69 @@ export function SentenceCompletionExercise({
                   Câu hỏi {index + 1} / {exercise.items.length}
                 </span>
 
-                {isChecked && (
-                  <div>
-                    {isCorrect ? (
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span>Chính xác</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-destructive font-semibold text-xs">
-                        <XCircle className="h-4 w-4" />
-                        <span>Chưa đúng</span>
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {isDropHovered && (
+                    <Badge className="text-[10px] font-semibold">Thả từ vào đây</Badge>
+                  )}
+                  {!isDropHovered && selectedBankWord && !isLocked && (
+                    <span className="text-[11px] font-medium text-primary">
+                      Nhấn để điền &ldquo;{selectedBankWord}&rdquo;
+                    </span>
+                  )}
+                  {isChecked && (
+                    <div>
+                      {isCorrect ? (
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Chính xác</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-destructive font-semibold text-xs">
+                          <XCircle className="h-4 w-4" />
+                          <span>Chưa đúng</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Natural Sentence Flow with Inline Input */}
+              {/* Natural Sentence Flow with Inline Editable & Droppable Input */}
               <div className="text-sm sm:text-base leading-loose text-foreground">
                 <span>{prefix}</span>
-                <span className="inline-block mx-2 align-middle">
+                <span
+                  data-blank-drop-id={item.id}
+                  className="inline-flex items-center gap-1 mx-1.5 align-middle"
+                >
                   <Input
+                    ref={(el) => {
+                      if (el) inputRefs.current.set(item.id, el);
+                      else inputRefs.current.delete(item.id);
+                    }}
                     type="text"
                     value={currentAnswer}
                     onChange={(e) => onAnswerChange(qKey, e.target.value)}
-                    onFocus={() => setActiveItemId(item.id)}
-                    disabled={isChecked && mode === "practice"}
-                    placeholder="điền từ..."
+                    onFocus={() => setFocusedItemId(item.id)}
+                    onBlur={() => {
+                      // Defer clearing focus so WordBank click can still read focusedItemId if needed
+                      setTimeout(() => {
+                        setFocusedItemId((prev) => (prev === item.id ? null : prev));
+                      }, 150);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedBankWord && !isLocked) {
+                        fillBlank(item.id, selectedBankWord);
+                        setSelectedBankWord(null);
+                      } else {
+                        setFocusedItemId(item.id);
+                      }
+                    }}
+                    disabled={isLocked}
+                    placeholder="điền hoặc thả từ..."
                     className={cn(
-                      "h-8 sm:h-9 w-36 sm:w-44 text-center font-semibold text-xs sm:text-sm rounded-lg border-2 inline-block",
+                      "h-8 sm:h-9 w-40 sm:w-48 text-center font-semibold text-xs sm:text-sm rounded-lg border-2 inline-block",
+                      isDropHovered && "border-primary bg-primary/15 ring-2 ring-primary/30",
                       isChecked
                         ? isCorrect
                           ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
@@ -142,6 +210,19 @@ export function SentenceCompletionExercise({
                         : "border-primary/40 focus:border-primary bg-background"
                     )}
                   />
+                  {currentAnswer && !isLocked && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAnswerChange(qKey, "");
+                      }}
+                      aria-label={`Xóa đáp án câu ${index + 1}`}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </span>
                 <span>{suffix}</span>
               </div>

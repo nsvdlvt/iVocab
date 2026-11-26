@@ -10,7 +10,7 @@ import {
 import { AnswerReview } from "./AnswerReview";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Trophy,
@@ -22,7 +22,6 @@ import {
   ArrowLeft,
   Layers,
   BookOpen,
-  Sparkles,
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -240,6 +239,76 @@ export function TestResult({
               ))}
             </div>
           </div>
+
+          {/* Incorrect Answers Review Summary */}
+          {(() => {
+            const incorrectQuestions = grading.questionResults.filter((q) => !q.isCorrect);
+            if (incorrectQuestions.length === 0) return null;
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <XCircle className="h-5 w-5 text-destructive" />
+                    <h3 className="text-lg font-bold text-foreground">
+                      Các câu trả lời sai cần ôn lại ({incorrectQuestions.length})
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab("review")}
+                    className="cursor-pointer text-xs"
+                  >
+                    Xem toàn bộ đáp án
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {incorrectQuestions.map((q) => (
+                    <Card
+                      key={q.questionKey}
+                      className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            {q.setLabel}
+                          </Badge>
+                          <Badge variant="secondary" className="text-[10px] font-mono">
+                            {q.exerciseType}
+                          </Badge>
+                        </div>
+                        <span className="font-semibold text-destructive">Chưa đúng</span>
+                      </div>
+
+                      <p className="text-sm font-semibold text-foreground">{q.prompt}</p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-lg bg-background/80 p-2.5">
+                          <span className="text-muted-foreground">Bạn chọn: </span>
+                          <span className="font-semibold text-destructive line-through">
+                            {q.userAnswer || "(Không trả lời)"}
+                          </span>
+                        </div>
+                        <div className="rounded-lg bg-background/80 p-2.5">
+                          <span className="text-muted-foreground">Đáp án đúng: </span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            {q.correctAnswer}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-muted-foreground bg-background/70 rounded-lg p-2.5 leading-relaxed">
+                        <strong className="text-foreground">Giải thích: </strong>
+                        {q.explanation}
+                      </p>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Prompt to view review */}
           <div className="rounded-2xl border border-border/80 bg-muted/20 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

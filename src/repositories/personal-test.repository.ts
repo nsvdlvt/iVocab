@@ -5,12 +5,18 @@ import {
   TestMode,
   PersonalTestRecord,
   PersonalTestAttemptRecord,
-  AttemptStatus,
 } from "@/types/vocabee-test";
 import { gradeVocabeeTest } from "@/lib/personal-test/vocabee-test-grader";
+import { SrsService } from "@/lib/srs/srs-service";
+import {
+  formatDifficultyLabel,
+  type SelectableVocabSet,
+  type SelectableVocabularyWord,
+} from "@/lib/personal-test/vocabulary-selection";
 
 type PersonalTestRow = Database["public"]["Tables"]["personal_tests"]["Row"];
-type PersonalTestAttemptRow = Database["public"]["Tables"]["personal_test_attempts"]["Row"];
+type VocabSetRow = Database["public"]["Tables"]["vocab_sets"]["Row"];
+type VocabularyRow = Database["public"]["Tables"]["vocabularies"]["Row"];
 
 export const PersonalTestRepository = {
   /**
@@ -331,7 +337,8 @@ export const PersonalTestRepository = {
       return null;
     }
 
-    const testContent = (attemptRow.personal_tests as any).content as VocabeeTest;
+    const joinedTest = attemptRow.personal_tests as unknown as { content: VocabeeTest };
+    const testContent = joinedTest.content;
 
     // 2. Authoritative server-side grading
     const grading = gradeVocabeeTest(testContent, finalAnswers);
@@ -450,7 +457,270 @@ export const PersonalTestRepository = {
       current_exercise_index: row.current_exercise_index,
       started_at: row.started_at,
       completed_at: row.completed_at,
-      test_title: (row.personal_tests as any)?.title || "Untitled Test",
+      test_title:
+        (row.personal_tests as unknown as { title?: string } | null)?.title ||
+        "Untitled Test",
     }));
+  },
+
+  /**
+   * Fetches all active vocabulary sets owned by the user with word counts and difficulty/CEFR distribution.
+   */
+  async getUserSelectableVocabSets(userId: string): Promise<SelectableVocabSet[]> {
+    const supabase = await createClient();
+    const sets: VocabSetRow[] = [];
+    const PAGE_SIZE = 1000;
+    let from = 0;
+
+    while (true) {
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("vocab_sets")
+        .select("*")
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("[PersonalTestRepository.getUserSelectableVocabSets] sets error:", error);
+        throw error;
+      }
+      const page = (data ?? []) as VocabSetRow[];
+      sets.push(...page);
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    if (sets.length === 0) return [];
+
+    // Paginate active vocabularies owned by user to compute accurate counts & level distribution
+    const statsBySet = new Map<
+      string,
+      { wordCount: number; levelDistribution: Record<string, number> }
+    >();
+
+    let vFrom = 0;
+    while (true) {
+      const vTo = vFrom + PAGE_SIZE - 1;
+      const { data: vocabRows, error: vocabErr } = await supabase
+        .from("vocabularies")
+        .select("set_id, difficulty")
+        .eq("owner_id", userId)
+        .is("deleted_at", null)
+        .range(vFrom, vTo);
+
+      if (vocabErr) {
+        console.error("[PersonalTestRepository.getUserSelectableVocabSets] vocab error:", vocabErr);
+        throw vocabErr;
+      }
+
+      const page = (vocabRows ?? []) as Array<{ set_id: string; difficulty: string | null }>;
+      for (const row of page) {
+        let entry = statsBySet.get(row.set_id);
+        if (!entry) {
+          entry = { wordCount: 0, levelDistribution: {} };
+          statsBySet.set(row.set_id, entry);
+        }
+        entry.wordCount += 1;
+        const label = formatDifficultyLabel(row.difficulty);
+        if (label) {
+          entry.levelDistribution[label] = (entry.levelDistribution[label] ?? 0) + 1;
+        }
+      }
+
+      if (page.length < PAGE_SIZE) break;
+      vFrom += PAGE_SIZE;
+    }
+
+    return sets.map((s) => {
+      const stats = statsBySet.get(s.id) ?? { wordCount: 0, levelDistribution: {} };
+      return {
+        id: s.id,
+        title: s.title,
+        description: s.description,
+        color: s.color,
+        icon: s.icon,
+        visibility: s.visibility,
+        source: s.source,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        last_studied_at: s.last_studied_at,
+        wordCount: stats.wordCount,
+        levelDistribution: stats.levelDistribution,
+      };
+    });
+  },
+
+  /**
+   * Fetches active vocabulary words belonging to the specified user-owned sets.
+   * Silently ignores any setId not owned by userId or soft-deleted.
+   */
+  async getUserSelectableWordsBySetIds(
+    userId: string,
+    setIds: string[]
+  ): Promise<SelectableVocabularyWord[]> {
+    const cleanSetIds = Array.from(new Set(setIds.map((id) => id.trim()).filter(Boolean)));
+    if (cleanSetIds.length === 0) return [];
+
+    const supabase = await createClient();
+
+    // Verify set ownership first
+    const { data: ownedSets, error: setErr } = await supabase
+      .from("vocab_sets")
+      .select("id, title, color")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .in("id", cleanSetIds);
+
+    if (setErr) {
+      console.error("[PersonalTestRepository.getUserSelectableWordsBySetIds] setErr:", setErr);
+      throw setErr;
+    }
+
+    const setMap = new Map<string, { title: string; color: string | null }>();
+    for (const s of ownedSets ?? []) {
+      setMap.set(s.id, { title: s.title, color: s.color });
+    }
+
+    const verifiedSetIds = Array.from(setMap.keys());
+    if (verifiedSetIds.length === 0) return [];
+
+    const words: SelectableVocabularyWord[] = [];
+    const PAGE_SIZE = 1000;
+    let from = 0;
+
+    while (true) {
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("vocabularies")
+        .select(
+          `
+          *,
+          review:reviews(status)
+        `
+        )
+        .eq("owner_id", userId)
+        .is("deleted_at", null)
+        .in("set_id", verifiedSetIds)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("[PersonalTestRepository.getUserSelectableWordsBySetIds] vocabErr:", error);
+        throw error;
+      }
+
+      type RowWithReview = VocabularyRow & {
+        review?: { status: string | null } | Array<{ status: string | null }> | null;
+      };
+      const page = (data ?? []) as unknown as RowWithReview[];
+      for (const row of page) {
+        const setInfo = setMap.get(row.set_id);
+        if (!setInfo) continue;
+        const reviewObj = Array.isArray(row.review) ? row.review[0] ?? null : row.review ?? null;
+        const srsLevel = SrsService.getLevelFromReview(reviewObj);
+        words.push({
+          id: row.id,
+          set_id: row.set_id,
+          set_title: setInfo.title,
+          set_color: setInfo.color,
+          word: row.word,
+          ipa: row.ipa,
+          part_of_speech: row.part_of_speech,
+          meaning: row.meaning,
+          example: row.example,
+          example_translation: row.example_translation,
+          synonyms: row.synonyms,
+          note: row.note,
+          difficulty: row.difficulty,
+          created_at: row.created_at,
+          is_starred: row.is_starred,
+          srsLevel,
+        });
+      }
+
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    return words;
+  },
+
+  /**
+   * Verifies ownership of every selected vocabulary record ID and its parent active set.
+   * Returns verified words in requested order alongside any unauthorized/missing IDs.
+   */
+  async getVerifiedSelectedWordsForUser(
+    userId: string,
+    vocabularyIds: string[]
+  ): Promise<{ words: SelectableVocabularyWord[]; unauthorizedIds: string[] }> {
+    const cleanIds = Array.from(new Set(vocabularyIds.map((id) => id.trim()).filter(Boolean)));
+    if (cleanIds.length === 0) {
+      return { words: [], unauthorizedIds: [] };
+    }
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("vocabularies")
+      .select(
+        `
+        *,
+        vocab_sets!inner(id, title, color, user_id, deleted_at)
+      `
+      )
+      .in("id", cleanIds)
+      .eq("owner_id", userId)
+      .is("deleted_at", null)
+      .eq("vocab_sets.user_id", userId)
+      .is("vocab_sets.deleted_at", null);
+
+    if (error) {
+      console.error("[PersonalTestRepository.getVerifiedSelectedWordsForUser] error:", error);
+      throw error;
+    }
+
+    type JoinedRow = VocabularyRow & {
+      vocab_sets:
+        | { id: string; title: string; color: string | null; user_id: string; deleted_at: string | null }
+        | Array<{ id: string; title: string; color: string | null; user_id: string; deleted_at: string | null }>;
+    };
+
+    const byId = new Map<string, SelectableVocabularyWord>();
+    for (const row of (data ?? []) as unknown as JoinedRow[]) {
+      const setObj = Array.isArray(row.vocab_sets) ? row.vocab_sets[0] : row.vocab_sets;
+      if (!setObj || setObj.user_id !== userId || setObj.deleted_at !== null) continue;
+      byId.set(row.id, {
+        id: row.id,
+        set_id: row.set_id,
+        set_title: setObj.title,
+        set_color: setObj.color,
+        word: row.word,
+        ipa: row.ipa,
+        part_of_speech: row.part_of_speech,
+        meaning: row.meaning,
+        example: row.example,
+        example_translation: row.example_translation,
+        synonyms: row.synonyms,
+        note: row.note,
+        difficulty: row.difficulty,
+        created_at: row.created_at,
+        is_starred: row.is_starred,
+      });
+    }
+
+    const words: SelectableVocabularyWord[] = [];
+    const unauthorizedIds: string[] = [];
+
+    for (const id of cleanIds) {
+      const found = byId.get(id);
+      if (found) {
+        words.push(found);
+      } else {
+        unauthorizedIds.push(id);
+      }
+    }
+
+    return { words, unauthorizedIds };
   },
 };

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateVocabeeTestJson } from "../vocabee-test-validator";
+import { validateVocabeeTestJson, resolveAnswerToTargetWord } from "../vocabee-test-validator";
 import { gradeVocabeeTest, normalizeAnswer, getQuestionKey } from "../vocabee-test-grader";
 import { parseClozePassage, extractClozeBlankIds } from "../vocabee-test-parser";
 import { SAMPLE_VOCABEE_TEST } from "../sample-test";
@@ -77,7 +77,10 @@ describe("Personal Test: Vocabee Test Validator & Schema", () => {
 
   it("should fail when sentence completion is missing a blank placeholder", () => {
     const cloned = JSON.parse(JSON.stringify(SAMPLE_VOCABEE_TEST)) as VocabeeTest;
-    (cloned.sets[0].exercises[1] as any).items[0].sentence = "This sentence has no blank placeholder.";
+    const ex1 = cloned.sets[0].exercises[1];
+    if (ex1.type === "sentence_completion") {
+      ex1.items[0].sentence = "This sentence has no blank placeholder.";
+    }
     const result = validateVocabeeTestJson(cloned);
     expect(result.valid).toBe(false);
     if (!result.valid) {
@@ -87,7 +90,10 @@ describe("Personal Test: Vocabee Test Validator & Schema", () => {
 
   it("should fail when sentence completion has multiple blanks in one sentence", () => {
     const cloned = JSON.parse(JSON.stringify(SAMPLE_VOCABEE_TEST)) as VocabeeTest;
-    (cloned.sets[0].exercises[1] as any).items[0].sentence = "This ___ has multiple ___ blanks.";
+    const ex1 = cloned.sets[0].exercises[1];
+    if (ex1.type === "sentence_completion") {
+      ex1.items[0].sentence = "This ___ has multiple ___ blanks.";
+    }
     const result = validateVocabeeTestJson(cloned);
     expect(result.valid).toBe(false);
     if (!result.valid) {
@@ -97,7 +103,10 @@ describe("Personal Test: Vocabee Test Validator & Schema", () => {
 
   it("should detect invalid placeholder format in cloze test passage", () => {
     const cloned = JSON.parse(JSON.stringify(SAMPLE_VOCABEE_TEST)) as VocabeeTest;
-    (cloned.sets[0].exercises[3] as any).passage = "Some text with ***(1)*** invalid syntax and ___(2)___ and ___(3)___.";
+    const ex3 = cloned.sets[0].exercises[3];
+    if (ex3.type === "cloze_test") {
+      ex3.passage = "Some text with ***(1)*** invalid syntax and ___(2)___ and ___(3)___.";
+    }
     const result = validateVocabeeTestJson(cloned);
     expect(result.valid).toBe(false);
     if (!result.valid) {
@@ -107,7 +116,10 @@ describe("Personal Test: Vocabee Test Validator & Schema", () => {
 
   it("should fail when cloze test blanks count does not match answers count", () => {
     const cloned = JSON.parse(JSON.stringify(SAMPLE_VOCABEE_TEST)) as VocabeeTest;
-    (cloned.sets[0].exercises[3] as any).answers.pop(); // remove 1 answer
+    const ex3 = cloned.sets[0].exercises[3];
+    if (ex3.type === "cloze_test") {
+      ex3.answers.pop(); // remove 1 answer
+    }
     const result = validateVocabeeTestJson(cloned);
     expect(result.valid).toBe(false);
     if (!result.valid) {
@@ -180,5 +192,16 @@ describe("Personal Test: Parser & Grader", () => {
     const set1Summary = result.setSummaries.find((s) => s.setIndex === 1);
     expect(set1Summary?.score).toBe(0);
     expect(set1Summary?.correctQuestions).toBe(0);
+  });
+
+  it("should resolve regular, irregular, and derivational grammatical transformations to base target words", () => {
+    const bank = ["exacerbate", "mitigate", "seek", "analyze", "strengthen"];
+    expect(resolveAnswerToTargetWord("exacerbated", bank)).toBe("exacerbate");
+    expect(resolveAnswerToTargetWord("mitigating", bank)).toBe("mitigate");
+    expect(resolveAnswerToTargetWord("mitigation", bank)).toBe("mitigate");
+    expect(resolveAnswerToTargetWord("sought", bank)).toBe("seek");
+    expect(resolveAnswerToTargetWord("analytical", bank)).toBe("analyze");
+    expect(resolveAnswerToTargetWord("strengthens", bank)).toBe("strengthen");
+    expect(resolveAnswerToTargetWord("unrelated", bank)).toBeNull();
   });
 });

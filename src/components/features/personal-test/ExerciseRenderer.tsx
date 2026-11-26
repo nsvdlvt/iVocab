@@ -26,10 +26,13 @@ export function ExerciseRenderer({
   mode,
   isChecked,
 }: ExerciseRendererProps) {
+  const instanceKey = `s${setIndex}_e${exerciseIndex}_${exercise.type}`;
+
   switch (exercise.type) {
     case "matching":
       return (
         <MatchingExercise
+          key={instanceKey}
           exercise={exercise}
           setIndex={setIndex}
           exerciseIndex={exerciseIndex}
@@ -43,6 +46,7 @@ export function ExerciseRenderer({
     case "sentence_completion":
       return (
         <SentenceCompletionExercise
+          key={instanceKey}
           exercise={exercise}
           setIndex={setIndex}
           exerciseIndex={exerciseIndex}
@@ -56,6 +60,7 @@ export function ExerciseRenderer({
     case "synonyms_matching":
       return (
         <SynonymsMatchingExercise
+          key={instanceKey}
           exercise={exercise}
           setIndex={setIndex}
           exerciseIndex={exerciseIndex}
@@ -69,6 +74,7 @@ export function ExerciseRenderer({
     case "cloze_test":
       return (
         <ClozeTestExercise
+          key={instanceKey}
           exercise={exercise}
           setIndex={setIndex}
           exerciseIndex={exerciseIndex}

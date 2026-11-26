@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateVocabeeTestJson } from "../vocabee-test-validator";
-import { gradeVocabeeTest, checkSingleAnswer, normalizeAnswer, getQuestionKey } from "../vocabee-test-grader";
+import { gradeVocabeeTest, checkSingleAnswer, getQuestionKey } from "../vocabee-test-grader";
 import { parseClozePassage, extractClozeBlankIds } from "../vocabee-test-parser";
 import { SAMPLE_VOCABEE_TEST } from "../sample-test";
 import { VocabeeTest } from "@/types/vocabee-test";
@@ -38,6 +38,17 @@ describe("Personal Test: Comprehensive Engine & Edge Cases", () => {
     expect(checkSingleAnswer("sentence_completion", "  mitigate  ", "mitigate")).toBe(true);
     expect(checkSingleAnswer("sentence_completion", "MITIGATE", "mitigate")).toBe(true);
     expect(checkSingleAnswer("sentence_completion", "pioneer", "mitigate")).toBe(false);
+  });
+
+  it("should grade inflected grammatical forms strictly without accepting uninflected base forms or unrelated synonyms", () => {
+    expect(checkSingleAnswer("sentence_completion", "  Exacerbated. ", "exacerbated")).toBe(true);
+    expect(checkSingleAnswer("sentence_completion", "exacerbate", "exacerbated")).toBe(false);
+    expect(checkSingleAnswer("cloze_test", "worsened", "exacerbated")).toBe(false);
+    expect(checkSingleAnswer("sentence_completion", "mitigating", "mitigating")).toBe(true);
+    expect(checkSingleAnswer("sentence_completion", "mitigate", "mitigating")).toBe(false);
+    expect(checkSingleAnswer("sentence_completion", "strengthens", "strengthens")).toBe(true);
+    expect(checkSingleAnswer("sentence_completion", "analyzed", "analyzed / analysed")).toBe(true);
+    expect(checkSingleAnswer("sentence_completion", "analysed", "analyzed / analysed")).toBe(true);
   });
 
   it("should grade a 100% perfect attempt across all 24 questions in 2 sets", () => {
@@ -101,7 +112,10 @@ describe("Personal Test: Comprehensive Engine & Edge Cases", () => {
 
   it("should catch empty required fields via Zod validation", () => {
     const invalidTest = JSON.parse(JSON.stringify(SAMPLE_VOCABEE_TEST)) as VocabeeTest;
-    invalidTest.sets[0].exercises[0].items[0].explanation = "";
+    const matchingEx = invalidTest.sets[0].exercises[0];
+    if (matchingEx.type === "matching") {
+      matchingEx.items[0].explanation = "";
+    }
 
     const validation = validateVocabeeTestJson(invalidTest);
     expect(validation.valid).toBe(false);
