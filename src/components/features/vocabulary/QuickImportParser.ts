@@ -289,3 +289,27 @@ export function parseQuickImportText(
 
   return results;
 }
+
+export interface QuickImportedCard {
+  word: string;
+  meaning: string;
+  ipa?: string;
+  partOfSpeech?: string;
+  example?: string;
+  example_translation?: string;
+  synonyms?: string;
+}
+
+export function mapParsedItemsToImportedCards(
+  validItems: ParsedItem[]
+): QuickImportedCard[] {
+  return validItems.map((item) => ({
+    word: item.word,
+    meaning: item.meaning,
+    ipa: item.ipa || undefined,
+    partOfSpeech: item.partOfSpeech || undefined,
+    example: item.example || undefined,
+    example_translation: item.example_translation || undefined,
+    synonyms: item.synonyms || undefined,
+  }));
+}

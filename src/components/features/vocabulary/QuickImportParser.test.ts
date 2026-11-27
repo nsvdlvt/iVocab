@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { detectMarkdownTable, parseMarkdownTable, parseQuickImportText } from "./QuickImportParser";
+import {
+  detectMarkdownTable,
+  mapParsedItemsToImportedCards,
+  parseMarkdownTable,
+  parseQuickImportText,
+} from "./QuickImportParser";
 
 const baseOptions = {
   termDelimiter: "tab" as const,
@@ -170,5 +175,25 @@ describe("QuickImportParser markdown table", () => {
       example_translation: "Cô ấy miễn cưỡng chia sẻ.",
       synonyms: "hesitant",
     });
+  });
+
+  it("preserves example_translation when mapping parsed items to imported cards", () => {
+    const items = parseQuickImportText(
+      `| Từ vựng | Ý nghĩa | IPA | Từ loại | Câu ví dụ | Nghĩa của ví dụ | Từ đồng nghĩa |\n|---|---|---|---|---|---|---|\n| resilient | kiên cường | /rɪˈzɪl.i.ənt/ | adjective | She is resilient under pressure. | Cô ấy kiên cường dưới áp lực. | tough, adaptable |`,
+      baseOptions
+    );
+
+    const cards = mapParsedItemsToImportedCards(items.filter((i) => i.isValid));
+    expect(cards).toEqual([
+      {
+        word: "resilient",
+        meaning: "kiên cường",
+        ipa: "/rɪˈzɪl.i.ənt/",
+        partOfSpeech: "adjective",
+        example: "She is resilient under pressure.",
+        example_translation: "Cô ấy kiên cường dưới áp lực.",
+        synonyms: "tough, adaptable",
+      },
+    ]);
   });
 });

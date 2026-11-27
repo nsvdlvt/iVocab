@@ -5,7 +5,9 @@ import {
   TestMode,
   PersonalTestRecord,
   PersonalTestAttemptRecord,
+  PersonalTestFlashcardItem,
 } from "@/types/vocabee-test";
+import { resolveFlashcardsForTestContent } from "@/lib/personal-test/flashcard-session";
 import { gradeVocabeeTest } from "@/lib/personal-test/vocabee-test-grader";
 import { SrsService } from "@/lib/srs/srs-service";
 import {
@@ -706,6 +708,7 @@ export const PersonalTestRepository = {
         difficulty: row.difficulty,
         created_at: row.created_at,
         is_starred: row.is_starred,
+        audio_url: row.audio_url,
       });
     }
 
@@ -722,5 +725,87 @@ export const PersonalTestRepository = {
     }
 
     return { words, unauthorizedIds };
+  },
+
+  /**
+   * Resolves actual database vocabulary records for a Personal Test's Flashcards stage.
+   * Does not invent missing vocabulary data and avoids duplicating records.
+   */
+  async getFlashcardsForTest(
+    userId: string,
+    test: PersonalTestRecord
+  ): Promise<PersonalTestFlashcardItem[]> {
+    const supabase = await createClient();
+    const targetWords = Array.from(
+      new Set(
+        test.content.sets
+          .flatMap((s) => s.words)
+          .map((w) => w.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    );
+
+    if (targetWords.length === 0) return [];
+
+    const dbRecords: SelectableVocabularyWord[] = [];
+    const PAGE_SIZE = 1000;
+    let from = 0;
+
+    while (true) {
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("vocabularies")
+        .select(
+          `
+          *,
+          vocab_sets!inner(id, title, color, user_id, deleted_at)
+        `
+        )
+        .eq("owner_id", userId)
+        .is("deleted_at", null)
+        .eq("vocab_sets.user_id", userId)
+        .is("vocab_sets.deleted_at", null)
+        .range(from, to);
+
+      if (error) {
+        console.error("[PersonalTestRepository.getFlashcardsForTest] error:", error);
+        break;
+      }
+
+      type JoinedRow = VocabularyRow & {
+        vocab_sets:
+          | { id: string; title: string; color: string | null; user_id: string; deleted_at: string | null }
+          | Array<{ id: string; title: string; color: string | null; user_id: string; deleted_at: string | null }>;
+      };
+
+      const page = (data ?? []) as unknown as JoinedRow[];
+      for (const row of page) {
+        const setObj = Array.isArray(row.vocab_sets) ? row.vocab_sets[0] : row.vocab_sets;
+        if (!setObj || setObj.user_id !== userId || setObj.deleted_at !== null) continue;
+        dbRecords.push({
+          id: row.id,
+          set_id: row.set_id,
+          set_title: setObj.title,
+          set_color: setObj.color,
+          word: row.word,
+          ipa: row.ipa,
+          part_of_speech: row.part_of_speech,
+          meaning: row.meaning,
+          example: row.example,
+          example_translation: row.example_translation,
+          synonyms: row.synonyms,
+          note: row.note,
+          difficulty: row.difficulty,
+          created_at: row.created_at,
+          is_starred: row.is_starred,
+          audio_url: row.audio_url,
+        });
+      }
+
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    return resolveFlashcardsForTestContent(test.content, dbRecords);
   },
 };

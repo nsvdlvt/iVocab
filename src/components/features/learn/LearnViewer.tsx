@@ -39,9 +39,25 @@ type LearnWord = VocabularyRow & { review?: ReviewRow | null };
 
 interface LearnViewerProps {
   initialWords: VocabularyRow[];
+  distractorPool?: VocabularyRow[];
   setInfo: { id: string; title: string };
   onBack: () => void;
   reviewSessionId?: string;
+  disablePerAnswerSrsSave?: boolean;
+  skipExitConfirm?: boolean;
+  subtitle?: string;
+  summaryTitle?: string;
+  primaryActionLabel?: string;
+  summaryPrimaryDisabled?: boolean;
+  hideRestartOnSummary?: boolean;
+  summaryExtraContent?: React.ReactNode;
+  onRoundComplete?: (stats: {
+    totalWords: number;
+    totalQuestions: number;
+    correctCount: number;
+    wrongCount: number;
+  }) => void | Promise<void>;
+  onPrimaryAction?: () => void;
 }
 
 const getStorageKey = (setId: string) => `ivocab_learn_v${SESSION_CONFIG.STORAGE_VERSION}_${setId}`;
@@ -59,7 +75,23 @@ interface SerializedSession {
   timestamp: number;
 }
 
-export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: LearnViewerProps) {
+export function LearnViewer({
+  initialWords,
+  distractorPool,
+  setInfo,
+  onBack,
+  reviewSessionId,
+  disablePerAnswerSrsSave = false,
+  skipExitConfirm = false,
+  subtitle,
+  summaryTitle,
+  primaryActionLabel,
+  summaryPrimaryDisabled = false,
+  hideRestartOnSummary = false,
+  summaryExtraContent,
+  onRoundComplete,
+  onPrimaryAction,
+}: LearnViewerProps) {
   const router = useRouter();
   const settingsKey = getSettingsStorageKey();
   const [words, setWords] = useState<LearnWord[]>(() => initialWords as LearnWord[]);
@@ -237,6 +269,9 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
 
   const enqueueSave = useCallback(
     (payload: { vocabularyId: string; answerResult: "correct" | "wrong" }) => {
+      if (disablePerAnswerSrsSave) {
+        return Promise.resolve();
+      }
       const nextSave = saveQueueRef.current.then(async () => {
         const response = await fetch("/api/srs/result", {
           method: "POST",
@@ -270,7 +305,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
 
       return nextSave;
     },
-    [reviewSessionId, router]
+    [disablePerAnswerSrsSave, reviewSessionId, router]
   );
 
   // Debounce saver hook
@@ -307,7 +342,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
         word: nextInfo.selected.word,
         direction: nextInfo.direction,
         type: nextInfo.type,
-        distractorPool: initialWords,
+        distractorPool: distractorPool && distractorPool.length > 0 ? distractorPool : initialWords,
         recentAskedIds,
       });
 
@@ -332,7 +367,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
       setSelectedOptionId(null);
       setAnswerState("unanswered");
     },
-    [recentAskedIds, settings, initialWords, recentConfigs, setInfo.id]
+    [recentAskedIds, settings, distractorPool, initialWords, recentConfigs, setInfo.id]
   );
 
   // Trigger loading next question on initial fetch or settings changes
@@ -623,13 +658,17 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
 
       if (e.code === "Escape") {
         e.preventDefault();
-        setExitPromptOpen(true);
+        if (skipExitConfirm) {
+          void handleLeave();
+        } else {
+          setExitPromptOpen(true);
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [answerState, currentQuestion, settingsOpened, settings.autoContinue, onBack, handleCheckAnswer, handleContinue, handleSkip]);
+  }, [answerState, currentQuestion, settingsOpened, settings.autoContinue, skipExitConfirm, handleLeave, handleCheckAnswer, handleContinue, handleSkip]);
 
   // Format Timer strings helper
   const formatTime = (seconds: number) => {
@@ -638,6 +677,22 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
     if (minutes === 0) return `${secs} giây`;
     return `${minutes} phút ${secs} giây`;
   };
+
+  const roundCompleteFiredRef = useRef(false);
+  useEffect(() => {
+    if (isFinished && !roundCompleteFiredRef.current) {
+      roundCompleteFiredRef.current = true;
+      void onRoundComplete?.({
+        totalWords: initialWords.length,
+        totalQuestions,
+        correctCount,
+        wrongCount,
+      });
+    }
+    if (!isFinished) {
+      roundCompleteFiredRef.current = false;
+    }
+  }, [isFinished, initialWords.length, totalQuestions, correctCount, wrongCount, onRoundComplete]);
 
   usePreserveScrollPosition(currentQuestion?.id ?? (isFinished ? "finished" : "ready"));
 
@@ -663,8 +718,19 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
         wrongCount={wrongCount}
         accuracy={accuracyValue}
         timeString={formatTime(elapsedTime)}
+        title={summaryTitle}
+        primaryActionLabel={primaryActionLabel}
+        primaryActionDisabled={summaryPrimaryDisabled}
+        hideRestart={hideRestartOnSummary}
+        extraContent={summaryExtraContent}
         onRestart={handleRestart}
-        onBackToSet={() => void handleLeave()}
+        onBackToSet={() => {
+          if (onPrimaryAction) {
+            onPrimaryAction();
+          } else {
+            void handleLeave();
+          }
+        }}
       />
     );
   }
@@ -684,7 +750,13 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setExitPromptOpen(true)}
+            onClick={() => {
+              if (skipExitConfirm) {
+                void handleLeave();
+              } else {
+                setExitPromptOpen(true);
+              }
+            }}
             className="h-9 w-9 shrink-0 rounded-xl hover:bg-muted/80 cursor-pointer"
             title="Quay lại (Esc)"
           >
@@ -695,7 +767,7 @@ export function LearnViewer({ initialWords, setInfo, onBack, reviewSessionId }: 
               {setInfo.title}
             </h1>
             <p className="text-xs text-muted-foreground font-medium">
-              Chế độ Học thích ứng • Lượt #{totalQuestions + 1}
+              {subtitle ?? `Chế độ Học thích ứng • Lượt #${totalQuestions + 1}`}
             </p>
           </div>
         </div>

@@ -15,20 +15,16 @@ import { QuickImportPreview } from "./QuickImportPreview";
 import { QuickImportOptions } from "./QuickImportOptions";
 import { QuickImportHelp } from "./QuickImportHelp";
 import { QuickImportPromptDialog } from "./QuickImportPromptDialog";
-import { parseQuickImportText, ParseOptions } from "./QuickImportParser";
+import {
+  parseQuickImportText,
+  mapParsedItemsToImportedCards,
+  type ParseOptions,
+  type QuickImportedCard,
+} from "./QuickImportParser";
 import { toast } from "sonner";
 
-interface ImportedCard {
-  word: string;
-  meaning: string;
-  ipa?: string;
-  partOfSpeech?: string;
-  example?: string;
-  synonyms?: string;
-}
-
 interface QuickImportDialogProps {
-  onImport: (newCards: ImportedCard[]) => void;
+  onImport: (newCards: QuickImportedCard[]) => void;
   isPending: boolean;
 }
 
@@ -73,14 +69,7 @@ export function QuickImportDialog({
       return;
     }
 
-    const newCards = validItems.map((item) => ({
-      word: item.word,
-      meaning: item.meaning,
-      ipa: item.ipa || undefined,
-      partOfSpeech: item.partOfSpeech || undefined,
-      example: item.example || undefined,
-      synonyms: item.synonyms || undefined,
-    }));
+    const newCards = mapParsedItemsToImportedCards(validItems);
 
     onImport(newCards);
     setIsOpen(false);

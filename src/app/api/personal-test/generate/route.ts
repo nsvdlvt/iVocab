@@ -10,6 +10,7 @@ import {
   suggestTestTitle,
 } from "@/lib/personal-test/vocabulary-selection";
 import { generatePersonalTestWithAI } from "@/lib/personal-test/ai-generator";
+import { resolveFlashcardsForTestContent } from "@/lib/personal-test/flashcard-session";
 import {
   acquireGenerationSlot,
   releaseGenerationSlot,
@@ -172,6 +173,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const flashcards = resolveFlashcardsForTestContent(
+      generatedTest,
+      verifiedRecords,
+      verifiedRecords.map((r) => r.id)
+    );
+
     revalidatePath("/u/personal-test");
     revalidatePath("/personal-test");
 
@@ -183,6 +190,7 @@ export async function POST(request: Request) {
         sourceVocabularyIds: verifiedRecords.map((r) => r.id),
         sourceSetIds: sourceSets.map((s) => s.id),
         uniqueTargetWordsCount: deduplicatedWords.length,
+        flashcards,
       },
     });
   } catch (error) {

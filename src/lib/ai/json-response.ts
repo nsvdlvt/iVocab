@@ -1,8 +1,27 @@
 import { request as responsesRequest } from "@/lib/ai/responsesClient";
 import { AIAbortError, AIResponseError, AINetworkError } from "@/lib/ai/errors";
+import type { AIFeature } from "@/lib/ai/cloudflare";
 
-export async function requestTextResponse(prompt: string, signal?: AbortSignal): Promise<string> {
-  const response = await responsesRequest<string | { content?: string }>({ input: prompt }, signal);
+export interface TextResponseOptions {
+  maxTokens?: number;
+  temperature?: number;
+  feature?: AIFeature;
+}
+
+export async function requestTextResponse(
+  prompt: string,
+  signal?: AbortSignal,
+  options?: TextResponseOptions
+): Promise<string> {
+  const response = await responsesRequest<string | { content?: string }>(
+    {
+      input: prompt,
+      ...(typeof options?.maxTokens === "number" ? { max_tokens: options.maxTokens } : {}),
+      ...(typeof options?.temperature === "number" ? { temperature: options.temperature } : {}),
+      ...(options?.feature ? { feature: options.feature } : {}),
+    },
+    signal
+  );
   return typeof response === "string" ? response : response.content ?? JSON.stringify(response);
 }
 

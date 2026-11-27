@@ -86,7 +86,7 @@ export async function request<T = unknown>(
       signal: abortSignal,
       modelsOverride: payload.model ? [payload.model] : undefined,
       temperature: typeof payload.temperature === "number" ? payload.temperature : 0.3,
-      maxTokens: typeof payload.max_tokens === "number" ? payload.max_tokens : undefined,
+      maxTokens: typeof payload.max_tokens === "number" ? payload.max_tokens : 2048,
     });
 
     const replyText = result.completion.choices?.[0]?.message?.content ?? "";

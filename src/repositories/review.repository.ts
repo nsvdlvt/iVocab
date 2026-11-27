@@ -284,6 +284,60 @@ export const ReviewRepository = {
     if (error) throwDbError(error);
   },
 
+  async promoteVocabularyLevelForPersonalTestLearn(params: {
+    userId: string;
+    vocabularyId: string;
+  }): Promise<ProcessedReviewResult> {
+    const supabase = await createClient();
+    const now = new Date();
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("reviews")
+      .select("*")
+      .eq("user_id", params.userId)
+      .eq("vocabulary_id", params.vocabularyId)
+      .maybeSingle();
+
+    if (fetchError) throwDbError(fetchError);
+
+    const previousLevel = existing ? SrsService.getLevelFromReview(existing) : 0;
+    const promoted = SrsService.promoteAfterPersonalTestLearn({
+      currentState: existing
+        ? {
+            level: previousLevel,
+            progress: existing.repetitions ?? 0,
+            nextReviewAt: existing.next_review,
+            intervalDays: existing.interval,
+          }
+        : { level: 0, progress: 0, nextReviewAt: null, intervalDays: null },
+      now,
+    });
+
+    const updatePayload = SrsService.toReviewUpdate(promoted.state, now);
+    if (existing?.id) {
+      const { error } = await supabase
+        .from("reviews")
+        .update(updatePayload)
+        .eq("id", existing.id);
+      if (error) throwDbError(error);
+    } else {
+      const { error } = await supabase
+        .from("reviews")
+        .insert({
+          user_id: params.userId,
+          vocabulary_id: params.vocabularyId,
+          ...updatePayload,
+        });
+      if (error) throwDbError(error);
+    }
+
+    return {
+      previousLevel,
+      nextLevel: promoted.state.level,
+      gainedLevel: promoted.gainedLevel,
+    };
+  },
+
   async processResult(params: {
     userId: string;
     vocabularyId: string;

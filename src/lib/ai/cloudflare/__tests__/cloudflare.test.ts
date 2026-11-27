@@ -81,7 +81,7 @@ describe("Cloudflare Workers AI Configuration", () => {
     );
   });
 
-  it("returns default Gemma 4 26B A4B primary and GPT-OSS-20B fallback models", () => {
+  it("returns default Gemma 4 26B A4B for chat and GPT-OSS-20B for vocab/fallback", () => {
     delete process.env.CLOUDFLARE_CHAT_MODEL;
     delete process.env.CLOUDFLARE_VOCAB_MODEL;
     delete process.env.CLOUDFLARE_FALLBACK_MODEL;
@@ -89,18 +89,24 @@ describe("Cloudflare Workers AI Configuration", () => {
     delete process.env.AI_MODEL;
 
     expect(getCloudflareChatModel()).toBe(DEFAULT_CLOUDFLARE_CHAT_MODEL);
-    expect(getCloudflareVocabModel()).toBe(DEFAULT_CLOUDFLARE_VOCAB_MODEL);
+    expect(getCloudflareVocabModel()).toBe("@cf/openai/gpt-oss-20b");
     expect(getCloudflareFallbackModel()).toBe(DEFAULT_CLOUDFLARE_FALLBACK_MODEL);
   });
 
-  it("orders models [Gemma 4 primary, GPT-OSS-20B fallback] for features", () => {
+  it("orders models cleanly for chat and vocab features", () => {
+    delete process.env.CLOUDFLARE_CHAT_MODEL;
+    delete process.env.CLOUDFLARE_VOCAB_MODEL;
+    delete process.env.CLOUDFLARE_FALLBACK_MODEL;
+    delete process.env.CLOUDFLARE_MODEL;
+    delete process.env.AI_MODEL;
+
     const chatModels = getCloudflareModelsForFeature("chat");
     expect(chatModels[0]).toBe("@cf/google/gemma-4-26b-a4b-it");
     expect(chatModels[1]).toBe("@cf/openai/gpt-oss-20b");
 
     const vocabModels = getCloudflareModelsForFeature("vocab");
-    expect(vocabModels[0]).toBe("@cf/google/gemma-4-26b-a4b-it");
-    expect(vocabModels[1]).toBe("@cf/openai/gpt-oss-20b");
+    expect(vocabModels[0]).toBe("@cf/openai/gpt-oss-20b");
+    expect(vocabModels[1]).toBe("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
   });
 
   it("sanitizes Cloudflare tokens, sk- keys, and Bearer tokens from error strings", () => {
@@ -211,6 +217,44 @@ describe("Cloudflare AI Provider & Fallback Logic", () => {
       "Xin chào từ Gemma 4 trên Cloudflare sau retry!"
     );
     expect(result.isFallback).toBe(false);
+
+    createSpy.mockRestore();
+  });
+
+  it("fails over immediately on timeout without retrying the slow primary model", async () => {
+    const mockClient = getCloudflareClient();
+    resetCloudflareClient(mockClient);
+
+    const createSpy = vi.spyOn(mockClient.chat.completions, "create");
+
+    createSpy
+      .mockRejectedValueOnce(new Error("Request timed out."))
+      .mockResolvedValueOnce({
+        id: "call-fallback",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: "Fallback OK",
+            },
+            finish_reason: "stop",
+          },
+        ],
+      } as unknown as ChatCompletion);
+
+    const result = await executeChatCompletionWithFallback({
+      messages: [{ role: "user", content: "Test" }],
+      modelsOverride: [
+        "@cf/google/gemma-4-26b-a4b-it",
+        "@cf/openai/gpt-oss-20b",
+      ],
+      maxRetriesPerModel: 1,
+    });
+
+    expect(createSpy).toHaveBeenCalledTimes(2);
+    expect(result.model).toBe("@cf/openai/gpt-oss-20b");
+    expect(result.isFallback).toBe(true);
 
     createSpy.mockRestore();
   });

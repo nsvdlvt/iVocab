@@ -179,3 +179,28 @@ export interface PersonalTestAttemptRecord {
   started_at: string;
   completed_at: string | null;
 }
+
+export type PersonalTestStage = "flashcards" | "exercise" | "learn";
+
+export interface PersonalTestLearnWordPromotion {
+  vocabularyId: string;
+  word: string;
+  previousLevel: number;
+  nextLevel: number;
+  gainedLevel: boolean;
+}
+
+export type FlashcardAssessmentStatus = "remembered" | "not_remembered";
+
+export interface PersonalTestFlashcardItem {
+  id: string;
+  sourceVocabularyIds: string[];
+  word: string;
+  ipa: string | null;
+  partOfSpeech: string | null;
+  meaning: string;
+  example: string | null;
+  exampleTranslation: string | null;
+  synonyms: string[];
+  audioUrl?: string | null;
+}

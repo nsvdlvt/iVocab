@@ -30,6 +30,7 @@ export interface SelectableVocabularyWord {
   created_at: string;
   is_starred: boolean | null;
   srsLevel?: number;
+  audio_url?: string | null;
 }
 
 export interface DeduplicatedTargetWord {

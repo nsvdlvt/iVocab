@@ -256,6 +256,50 @@ export const SrsService = {
     });
   },
 
+  /**
+   * Promotes a vocabulary item's SRS level after finishing a Personal Test /learn stage:
+   * - Level 0 or 1 -> Level 2 (with initial 1-day review schedule)
+   * - Level >= 2   -> min(5, level + 1) (advances immediately regardless of due date)
+   */
+  promoteAfterPersonalTestLearn(params: {
+    currentState?: Partial<SrsReviewState> | null;
+    now?: Date;
+  }): ProcessLearningResult {
+    const now = params.now ?? new Date();
+    const currentLevel = params.currentState?.level ?? 0;
+
+    if (currentLevel < 2) {
+      const nextState: SrsReviewState = {
+        level: 2,
+        progress: 0,
+        ...this.scheduleInitialReview(now),
+      };
+      return {
+        shouldPersist: true,
+        canContribute: true,
+        gainedLevel: true,
+        state: nextState,
+      };
+    }
+
+    const nextLevel = Math.min(5, currentLevel + 1) as SrsLevel;
+    const scheduled =
+      nextLevel >= 5
+        ? { nextReviewAt: null, intervalDays: null }
+        : this.scheduleNextReview({ level: currentLevel as 2 | 3 | 4, now });
+
+    return {
+      shouldPersist: true,
+      canContribute: true,
+      gainedLevel: nextLevel > currentLevel,
+      state: {
+        level: nextLevel,
+        progress: 0,
+        ...scheduled,
+      },
+    };
+  },
+
   scheduleInitialReview(now = new Date()): Pick<SrsReviewState, "nextReviewAt" | "intervalDays"> {
     return {
       nextReviewAt: addDays(now, INITIAL_REVIEW_INTERVAL_DAYS).toISOString(),

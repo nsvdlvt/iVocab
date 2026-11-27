@@ -183,6 +183,8 @@ export function VocabularyEditor({
         partOfSpeech?: string;
         example?: string;
         exampleSentence?: string;
+        example_translation?: string;
+        exampleTranslation?: string;
         synonyms?: string[] | string;
         topic?: string;
       }>
@@ -200,11 +202,7 @@ export function VocabularyEditor({
         antonyms: "",
         note: "",
         example_translation:
-          (card as { example_translation?: string; exampleTranslation?: string })
-            .example_translation ||
-          (card as { example_translation?: string; exampleTranslation?: string })
-            .exampleTranslation ||
-          "",
+          card.example_translation || card.exampleTranslation || "",
       }));
 
       setItems((prev) => {

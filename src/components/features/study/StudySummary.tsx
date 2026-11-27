@@ -16,6 +16,10 @@ interface StudySummaryProps {
   onRestart: () => void;
   onBackToSet: () => void;
   title?: string;
+  primaryActionLabel?: string;
+  primaryActionDisabled?: boolean;
+  hideRestart?: boolean;
+  extraContent?: React.ReactNode;
 }
 
 export function StudySummary({
@@ -28,6 +32,10 @@ export function StudySummary({
   onRestart,
   onBackToSet,
   title = "Hoàn thành phiên học!",
+  primaryActionLabel = "Quay lại bộ từ",
+  primaryActionDisabled = false,
+  hideRestart = false,
+  extraContent,
 }: StudySummaryProps) {
   const encouragement =
     accuracy >= 80
@@ -86,24 +94,29 @@ export function StudySummary({
         <p className="text-xs text-muted-foreground font-medium pt-1">
           Tổng số lượt trả lời: <strong>{totalQuestions}</strong> • Tổng số từ vựng: <strong>{totalWords}</strong>
         </p>
+
+        {extraContent}
       </SectionCard>
 
       {/* Control Actions */}
       <div className="flex gap-3">
-        <Button
-          variant="outline"
-          onClick={onRestart}
-          className="rounded-xl h-11 flex-1 gap-2 text-sm font-semibold border-border/80 hover:bg-muted cursor-pointer"
-        >
-          <RotateCcw className="h-4 w-4" />
-          <span>Học lại vòng này</span>
-        </Button>
+        {!hideRestart && (
+          <Button
+            variant="outline"
+            onClick={onRestart}
+            className="rounded-xl h-11 flex-1 gap-2 text-sm font-semibold border-border/80 hover:bg-muted cursor-pointer"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>Học lại vòng này</span>
+          </Button>
+        )}
         <Button
           onClick={onBackToSet}
+          disabled={primaryActionDisabled}
           className="rounded-xl h-11 flex-1 gap-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
         >
           <Home className="h-4 w-4" />
-          <span>Quay lại bộ từ</span>
+          <span>{primaryActionLabel}</span>
         </Button>
       </div>
     </div>

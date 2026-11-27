@@ -64,15 +64,34 @@ export function SentenceCompletionExercise({
     setSelectedBankWord(word);
   };
 
-  const handleBlankContainerClick = (itemId: number) => {
+  const handleBlankContainerClick = (
+    itemId: number,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
     if (isLocked) return;
+
+    const selection = typeof window !== "undefined" ? window.getSelection() : null;
+    if (selection && selection.toString().trim().length > 0) {
+      return;
+    }
+
     if (selectedBankWord) {
       fillBlank(itemId, selectedBankWord);
       setSelectedBankWord(null);
-    } else {
-      setFocusedItemId(itemId);
-      inputRefs.current.get(itemId)?.focus();
+      return;
     }
+
+    if (e.detail >= 2) {
+      return;
+    }
+
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("[data-selectable-sentence='true']")) {
+      return;
+    }
+
+    setFocusedItemId(itemId);
+    inputRefs.current.get(itemId)?.focus();
   };
 
   const usedAnswers = exercise.items.map((item) => {
@@ -120,10 +139,10 @@ export function SentenceCompletionExercise({
             <div
               key={item.id}
               data-blank-drop-id={item.id}
-              onClick={() => handleBlankContainerClick(item.id)}
+              onClick={(e) => handleBlankContainerClick(item.id, e)}
               className={cn(
                 "rounded-2xl border p-4 sm:p-5 transition-all space-y-3",
-                !isLocked && "cursor-pointer",
+                !isLocked && selectedBankWord && "cursor-pointer",
                 isDropHovered
                   ? "border-primary bg-primary/10 ring-2 ring-primary/40 shadow-sm"
                   : isFocused
@@ -168,8 +187,11 @@ export function SentenceCompletionExercise({
               </div>
 
               {/* Natural Sentence Flow with Inline Editable & Droppable Input */}
-              <div className="text-sm sm:text-base leading-loose text-foreground">
-                <span>{prefix}</span>
+              <div
+                data-selectable-sentence="true"
+                className="text-sm sm:text-base leading-loose text-foreground select-text cursor-text"
+              >
+                <span className="select-text cursor-text">{prefix}</span>
                 <span
                   data-blank-drop-id={item.id}
                   className="inline-flex items-center gap-1 mx-1.5 align-middle"
@@ -224,7 +246,7 @@ export function SentenceCompletionExercise({
                     </button>
                   )}
                 </span>
-                <span>{suffix}</span>
+                <span className="select-text cursor-text">{suffix}</span>
               </div>
 
               {/* Explanation Section */}

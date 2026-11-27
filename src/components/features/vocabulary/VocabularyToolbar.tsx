@@ -15,6 +15,8 @@ interface ImportedCard {
   partOfSpeech?: string;
   example?: string;
   exampleSentence?: string;
+  example_translation?: string;
+  exampleTranslation?: string;
   synonyms?: string[] | string;
   topic?: string;
 }

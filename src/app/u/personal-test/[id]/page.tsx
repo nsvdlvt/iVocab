@@ -31,8 +31,13 @@ export default async function PersonalTestTakingPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get active unfinished attempt or create new one
-  let activeAttempt = await PersonalTestRepository.getActiveAttempt(id, user.id);
+  // Get active unfinished attempt or create new one, and resolve DB flashcards in parallel
+  const [existingAttempt, initialFlashcards] = await Promise.all([
+    PersonalTestRepository.getActiveAttempt(id, user.id),
+    PersonalTestRepository.getFlashcardsForTest(user.id, test),
+  ]);
+
+  let activeAttempt = existingAttempt;
   if (!activeAttempt) {
     activeAttempt = await PersonalTestRepository.createAttempt(id, user.id, "practice");
   }
@@ -45,6 +50,7 @@ export default async function PersonalTestTakingPage({ params }: PageProps) {
     <TestSessionView
       test={test}
       initialAttempt={activeAttempt}
+      initialFlashcards={initialFlashcards}
     />
   );
 }

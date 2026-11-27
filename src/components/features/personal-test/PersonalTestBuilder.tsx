@@ -17,6 +17,7 @@ import {
   selectPriorityWordIdsToCap,
   suggestTestTitle,
 } from "@/lib/personal-test/vocabulary-selection";
+import { getPersonalTestFlashcardsStorageKey } from "@/lib/personal-test/flashcard-session";
 
 interface PersonalTestBuilderProps {
   selectableSets: SelectableVocabSet[];
@@ -313,6 +314,17 @@ export function PersonalTestBuilder({
         setGenerationError(msg);
         toast.error(msg);
         return;
+      }
+
+      if (json.testId && Array.isArray(json.metadata?.flashcards)) {
+        try {
+          window.sessionStorage.setItem(
+            getPersonalTestFlashcardsStorageKey(json.testId),
+            JSON.stringify(json.metadata.flashcards)
+          );
+        } catch {
+          // Ignore sessionStorage quota/privacy mode errors
+        }
       }
 
       toast.success("Đã tạo bài kiểm tra cá nhân thành công!");

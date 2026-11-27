@@ -106,10 +106,14 @@ export function ClozeTestExercise({
           )}
         </div>
 
-        <div className="text-base sm:text-lg leading-loose sm:leading-loose text-foreground font-normal">
+        <div className="text-base sm:text-lg leading-loose sm:leading-loose text-foreground font-normal select-text cursor-text">
           {segments.map((segment, idx) => {
             if (segment.type === "text") {
-              return <span key={idx}>{segment.value}</span>;
+              return (
+                <span key={idx} className="select-text cursor-text">
+                  {segment.value}
+                </span>
+              );
             }
 
             const blankId = segment.blankId!;

@@ -78,6 +78,9 @@ function standardizeItem(raw: unknown): unknown {
       obj.exampleTranslation ??
         obj.example_translation ??
         obj.exampleVi ??
+        obj.exampleMeaning ??
+        obj.example_meaning ??
+        obj.sentenceTranslation ??
         obj.translation ??
         ""
     )
@@ -110,7 +113,10 @@ async function singleRequest(
   signal?: AbortSignal
 ): Promise<AIVocabItem[]> {
   const requestStart = performance.now();
-  const rawText = await requestTextResponse(prompt, signal);
+  const rawText = await requestTextResponse(prompt, signal, {
+    maxTokens: 4096,
+    feature: "import",
+  });
   const aiRequestMs = performance.now() - requestStart;
 
   const parsingStart = performance.now();
@@ -139,6 +145,45 @@ async function singleRequest(
   return validated.data;
 }
 
+function splitWordListEntries(rawInput: string): string[] {
+  const lines = rawInput
+    .split(/\r?\n+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (lines.length > 1) {
+    return lines;
+  }
+
+  return rawInput
+    .split(/[,;]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+function wrapImportError(err: unknown): never {
+  if (
+    err instanceof AIAbortError ||
+    err instanceof AINetworkError ||
+    err instanceof AIValidationError ||
+    err instanceof AIResponseError
+  ) {
+    throw err;
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  throw new AIResponseError(
+    `Không thể tạo danh sách từ vựng từ AI (${message}). Vui lòng thử lại.`
+  );
+}
+
 export async function importVocabulary(
   inputOrOptions: string | ImportVocabularyOptions,
   legacyImageFileBase64?: string,
@@ -148,7 +193,6 @@ export async function importVocabulary(
 
   const isOptions =
     typeof inputOrOptions === "object" && inputOrOptions !== null;
-  const promptText = isOptions ? inputOrOptions.prompt : inputOrOptions;
   const signal = isOptions ? inputOrOptions.signal : legacySignal;
 
   const promptOptions: ImportPromptOptions = isOptions
@@ -166,23 +210,38 @@ export async function importVocabulary(
   if (cached) return cached;
 
   const promptStart = performance.now();
-  const prompt = buildImportPrompt(promptOptions);
-  const promptGenerationMs = performance.now() - promptStart;
+  let result: AIVocabItem[];
 
-  const result = await singleRequest(prompt, signal).catch((err) => {
-    if (
-      err instanceof AIAbortError ||
-      err instanceof AINetworkError ||
-      err instanceof AIValidationError ||
-      err instanceof AIResponseError
-    ) {
-      throw err;
+  if (promptOptions.mode === "words") {
+    const entries = splitWordListEntries(promptOptions.input);
+    if (entries.length > 8) {
+      const chunks = chunkArray(entries, 8);
+      const batchResults = await Promise.all(
+        chunks.map((chunk) =>
+          singleRequest(
+            buildImportPrompt({ ...promptOptions, input: chunk.join("\n") }),
+            signal
+          )
+        )
+      ).catch(wrapImportError);
+
+      const seen = new Set<string>();
+      result = batchResults.flat().filter((item) => {
+        const key = normalizeWord(item.word);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    } else {
+      const prompt = buildImportPrompt(promptOptions);
+      result = await singleRequest(prompt, signal).catch(wrapImportError);
     }
-    const message = err instanceof Error ? err.message : String(err);
-    throw new AIResponseError(
-      `Không thể tạo danh sách từ vựng từ AI (${message}). Vui lòng thử lại.`
-    );
-  });
+  } else {
+    const prompt = buildImportPrompt(promptOptions);
+    result = await singleRequest(prompt, signal).catch(wrapImportError);
+  }
+
+  const promptGenerationMs = performance.now() - promptStart;
 
   importCache.set(cacheKey, result);
   if (process.env.NODE_ENV === "development") {
@@ -234,7 +293,10 @@ Return JSON object containing ONLY the requested missing fields:
   ${missingFields.map((f) => `"${f}": ...`).join(",\n  ")}
 }`;
 
-  const rawText = await requestTextResponse(prompt, signal);
+  const rawText = await requestTextResponse(prompt, signal, {
+    maxTokens: 512,
+    feature: "import",
+  });
   const parsed = extractJsonPayload(rawText);
   if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
     return parsed as Record<string, unknown>;

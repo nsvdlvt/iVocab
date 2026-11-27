@@ -163,6 +163,17 @@ export function isRetryableModelError(error: unknown): boolean {
   return false;
 }
 
+function isTimeoutError(error: unknown): boolean {
+  if (!error) return false;
+  const err = error as { name?: string; message?: string; error?: { message?: string } };
+  const msg = (err.message || err.error?.message || "").toLowerCase();
+  return (
+    err.name === "APIConnectionTimeoutError" ||
+    msg.includes("timeout") ||
+    msg.includes("timed out")
+  );
+}
+
 export interface ExecuteChatOptions {
   messages: ChatCompletionMessageParam[];
   tools?: ChatCompletionTool[];
@@ -258,7 +269,7 @@ export async function executeChatCompletionWithFallback(
         lastError = err;
         const sanitized = sanitizeErrorMessage(err);
 
-        if (attempt < maxRetries && isRetryableModelError(err)) {
+        if (attempt < maxRetries && isRetryableModelError(err) && !isTimeoutError(err)) {
           const backoff = (attempt + 1) * 600;
           console.warn(
             `[Cloudflare AI Provider] Model "${model}" attempt ${attempt + 1} failed: ${sanitized}. Retrying in ${backoff}ms...`

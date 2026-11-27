@@ -10,8 +10,10 @@ export const DEFAULT_CLOUDFLARE_BASE_ORIGIN = "https://api.cloudflare.com/client
 
 // Primary and Fallback Models configured for Cloudflare Workers AI
 export const DEFAULT_CLOUDFLARE_CHAT_MODEL = "@cf/google/gemma-4-26b-a4b-it";
-export const DEFAULT_CLOUDFLARE_VOCAB_MODEL = "@cf/google/gemma-4-26b-a4b-it";
+export const DEFAULT_CLOUDFLARE_VOCAB_MODEL = "@cf/openai/gpt-oss-20b";
 export const DEFAULT_CLOUDFLARE_FALLBACK_MODEL = "@cf/openai/gpt-oss-20b";
+export const DEFAULT_CLOUDFLARE_VOCAB_FALLBACK_MODEL =
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 export const DEFAULT_CLOUDFLARE_MODELS: readonly string[] = [
   DEFAULT_CLOUDFLARE_CHAT_MODEL,
@@ -178,6 +180,11 @@ export function getCloudflareModelsForFeature(feature?: AIFeature): string[] {
 
   if (fallback && fallback !== primary) {
     models.push(fallback);
+  } else if (
+    DEFAULT_CLOUDFLARE_VOCAB_FALLBACK_MODEL &&
+    DEFAULT_CLOUDFLARE_VOCAB_FALLBACK_MODEL !== primary
+  ) {
+    models.push(DEFAULT_CLOUDFLARE_VOCAB_FALLBACK_MODEL);
   }
 
   const rawExtra = process.env.CLOUDFLARE_MODELS;
